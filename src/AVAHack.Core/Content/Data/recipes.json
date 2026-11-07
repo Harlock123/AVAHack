@@ -1,0 +1,106 @@
+// Meals (spec 13.5): cooked at a campfire; food, water and a buff.
+[
+ {
+  "id": "ratSkewer",
+  "name": "Rat Skewer",
+  "ingredients": [
+   "ratHaunch"
+  ],
+  "food": 30,
+  "water": 0,
+  "buff": null,
+  "buffSeconds": 0,
+  "text": "Better than nothing. Just."
+ },
+ {
+  "id": "spiderStew",
+  "name": "Spider Leg Stew",
+  "ingredients": [
+   "spiderLeg",
+   "caveOnion"
+  ],
+  "food": 45,
+  "water": 25,
+  "buff": "guidance",
+  "buffSeconds": 300,
+  "text": "Sharpens the eye. +1 to hit."
+ },
+ {
+  "id": "mushroomBroth",
+  "name": "Mushroom Broth",
+  "ingredients": [
+   "puffcapFlesh",
+   "salt"
+  ],
+  "food": 25,
+  "water": 45,
+  "buff": "resistPoison",
+  "buffSeconds": 300,
+  "text": "Settles the gut against poison."
+ },
+ {
+  "id": "wargRoast",
+  "name": "Warg Roast",
+  "ingredients": [
+   "wargSteak",
+   "salt"
+  ],
+  "food": 65,
+  "water": 0,
+  "buff": "might",
+  "buffSeconds": 300,
+  "text": "Heavy and strengthening. +2 weapon damage."
+ },
+ {
+  "id": "beetleBake",
+  "name": "Beetle Bake",
+  "ingredients": [
+   "beetleMeat",
+   "flour"
+  ],
+  "food": 55,
+  "water": 0,
+  "buff": "bulwark",
+  "buffSeconds": 300,
+  "text": "Sits like armour. +2 AC."
+ },
+ {
+  "id": "delversPie",
+  "name": "Delver's Pie",
+  "ingredients": [
+   "ratHaunch",
+   "beetleMeat",
+   "flour"
+  ],
+  "food": 85,
+  "water": 15,
+  "buff": "regen",
+  "buffSeconds": 300,
+  "text": "A proper meal. Heals over time."
+ },
+ {
+  "id": "lanternTea",
+  "name": "Lantern Tea",
+  "ingredients": [
+   "teaLeaves"
+  ],
+  "food": 0,
+  "water": 55,
+  "buff": "nightEye",
+  "buffSeconds": 600,
+  "text": "Bitter. The dark seems thinner."
+ },
+ {
+  "id": "coilGrill",
+  "name": "Grilled Coil",
+  "ingredients": [
+   "coilFillet",
+   "salt"
+  ],
+  "food": 50,
+  "water": 10,
+  "buff": "resistElements",
+  "buffSeconds": 300,
+  "text": "Rich, and oddly warming. Resists the elements."
+ }
+]

@@ -108,6 +108,10 @@ public sealed record ConditionDef
 /// <summary>Trait ids that ancestries carry and the rules check for.</summary>
 public static class Traits
 {
+    /// <summary>The buffs potions and meals may give (and spells already do).</summary>
+    public static readonly IReadOnlySet<string> Buffs = new HashSet<string>
+        { "regen", "bulwark", "guidance", "resistElements", "resistPoison", "might", "quickness", "nightEye", "fortitude" };
+
     public const string Versatile = "versatile";
     public const string ExtraPerkPoint = "extraPerkPoint";
     public const string Darkvision = "darkvision";

@@ -1122,7 +1122,7 @@ Each milestone is finished when its exit test passes.
 | **M5** | Magic. *Done (2026-11-06)* | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play. *Result:* a test casts every calling's starting spells and checks each one does something; in the progression report the spellblade raises Destruction and the paladin Warding beside their weapons |
 | **M6** | Generator. *Done (2026-11-06)* | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable. *Result:* 1,000 seeds at each of depths 1, 5 and 9 give finishable levels with no fallbacks; the bot's quick-start party gets through a 4-level Delve on 6 seeds of 8 (one fell on level 4, one got stuck) |
 | **M7** | The bestiary. *Done (2026-11-07), exit target not met* | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30. *Result:* the bot gets nowhere near. Over 6 seeds it averages depth 3.8 (best 5), and its heroes are still level 1 when they fall. Character level comes only from skill use (M4: about 50–100 fights a level), while a level holds 8–16 creatures, so a 12-level Delve holds roughly 150 fights. The target needs a balance pass on progression against depth (section 29) |
-| **M8** | Crafting and survival | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game |
+| **M8** | Crafting and survival. *Done (2026-11-07)* | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game. *Result:* at skill 45, a test brews a healing potion stronger than a bought one, works a weapon to at least +3, binds two affixes into a helm and cooks a meal whose buff lasts over five minutes (section 30) |
 | **M9** | Polish and release | Art from the manifest, audio, the hall of fame, Ironman, help pages, README and screenshots, portfolio card | The user plays through a Delve; v1.0 tag |
 
 **The MVP is M0–M2.** It proves the view, movement and the real-time d20 fights feel right before anything else
@@ -1685,4 +1685,69 @@ is built.
   - or a bot that clears each level.
 
   That pass is left for after M8, so M8's food, rest and crafting can be weighed with it.
+
+## 30. Implementation decisions (M8)
+
+- **Content** (`alchemy.json`, `reagents.json`, `ingredients.json`, `recipes.json`; the validator checks them all).
+  - **30 alchemy effects.**
+    - 20 good: healing, Stamina, Mana, six cures, nine buffs, food and water.
+    - 10 harmful: six blade coatings, two drains and two burns.
+  - **40 reagents,** each hiding four effects. Every effect is in at least two of them, so all can be brewed.
+  - **10 cooking ingredients.** Six are creature parts (Rat Haunch, Spider Leg, Beetle Meat, Warg Steak, Puffcap
+    Flesh, Coil Fillet); four are finds (onion, flour, salt, tea).
+  - **8 recipes.**
+  - New item bases: reagents, ingredients, meals (`meal:<id>`), brews, Spirit Shards, Scrap Iron, a mortar and a
+    campfire kit.
+  - Loot tables now roll reagents, ingredients and tools.
+  - New buffs, which work for spells too: `resistPoison`, `might` (+2 weapon damage), `quickness` (20% faster
+    recovery), `nightEye` (light 0.85) and `fortitude` (advantage on CON saves).
+- **Food and water** (13.6), when the Delve's option is on.
+  - Food drains over 40 minutes and water over 33.
+  - Below 25 a hero is hungry or thirsty: half regeneration and disadvantage on CON saves.
+  - At 0, 1 HP every 10 s.
+  - A Delve party sets out with 3 rations and 3 waterskins each, plus a campfire kit and a mortar.
+  - The bot eats and drinks below 35.
+- **Resting** (13.7, the R key) is instant.
+  - It takes 1–8 hours, enough to heal the worst hurt.
+  - Each hour costs 4 food and 4 water, and rolls 15% for a wandering monster, × the level's density and × the
+    region (Works 1.2, Choir 1.4, Heart 2).
+  - The chance is halved behind a closed door, and none in a cleared room shut by doors or at a Waystone.
+  - An encounter wakes the party with the completed hours' share of healing, and the creature arrives 4–10 cells
+    away, hunting.
+  - A full rest is `Character.Rest`: pools, rest cures and once-per-rest traits come back.
+  - No rest with enemies within 8 cells.
+- **Alchemy** (anywhere; needs a mortar to brew).
+  - Tasting uses the reagent up and reveals its next 1 + Alchemy/34 effects. The party's knowledge is saved.
+  - Brewing takes 2–3 reagents. The effects shared by at least two make the potion, each at its base × (1 +
+    Alchemy/50); with nothing shared you get sludge.
+  - A brew whose effects are all harmful coats the weapon instead of being drunk. For a minute each hit passes the
+    condition on, against a CON save of DC 10 + Alchemy/8.
+  - Brews carry their effects on the item and never stack.
+- **Cooking** needs a campfire kit and no enemies near. A meal gives food, water and its buff for its seconds × (1 +
+  cook's Survival/100, in tenths).
+- **Stations.** Smithing needs an anvil: a forge in half the Deep Works' levels, or any Waystone. Enchanting needs an
+  altar: one in a quarter of levels from 3, or any Waystone. Stations block their cell; F opens the craft screen on
+  that craft.
+- **Smithing.**
+  - **Improve:** quality +1, at (quality + 1) × 2 scrap. The cap is Smithing/15, at most +5. Quality already adds
+    damage and AC (M3).
+  - **Melt:** about 1 scrap per kilogram; cursed items won't melt.
+  - **Forge:** any weapon, shield or armour worth up to 20 + Smithing × 4, for scrap of twice its weight, at quality
+    Smithing/30.
+  - *Not done:* durability, so repairs, whetstones and patch kits; ore and bars (scrap stands in for both).
+- **Enchanting.**
+  - **Unravel:** destroys a Fine, Enchanted or Masterwork item that has been identified and learns its first
+    non-curse affix the party doesn't know yet.
+  - **Bind:** puts a learned affix on a weapon, shield, armour or gear it fits, for 1 + its affix count in shards.
+    The value is rolled at item level 1 + Enchanting/8. An enchanter can bind 1 affix into one item, 2 from
+    Enchanting 40 and 3 from 75. Uniques can't be changed.
+  - **Recharge:** a wand to 6 + Enchanting/10 charges for one shard.
+- **Spirit shards** drop from 3% of lesser creatures, 10% of common, 30% of greater and 60% of dread, +20% for an
+  elite. Champions and bosses leave 1–3. Creature parts drop at each ingredient's chance (Warg Steak 70%).
+- **The screens.** K opens crafting (Alchemy, Cooking, Smithing, Enchanting). The Waystone screen has a button for
+  its anvil and altar. The party cards show food and water under the bars when they count.
+- **Reports after M8:**
+  - The lone hero clears the Cellars on 14 of 40 seeds, and the party on 40 of 40, the same as at M7.
+  - The 4-level Delve: 6 of 8.
+  - The 12-level Delve: average depth 4.8, best 6, heroes still level 1. The M7 balance problem stands.
 

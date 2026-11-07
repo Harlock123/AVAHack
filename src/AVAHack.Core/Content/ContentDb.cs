@@ -44,6 +44,14 @@ public sealed class ContentDb
     public IReadOnlyList<SetDef> Sets { get; init; } = [];
     public IReadOnlyList<LootTableDef> LootTables { get; init; } = [];
     public IReadOnlyList<Magic.SpellDef> Spells { get; init; } = [];
+    public IReadOnlyList<AlchemyEffectDef> AlchemyEffects { get; init; } = [];
+    public IReadOnlyList<ReagentDef> Reagents { get; init; } = [];
+    public IReadOnlyList<IngredientDef> Ingredients { get; init; } = [];
+    public IReadOnlyList<RecipeDef> Recipes { get; init; } = [];
+
+    public AlchemyEffectDef Effect(string id) => AlchemyEffects.FirstOrDefault(e => e.Id == id) ?? throw new KeyNotFoundException($"No alchemy effect '{id}'.");
+    public ReagentDef? Reagent(string id) => Reagents.FirstOrDefault(r => r.Id == id);
+    public RecipeDef Recipe(string id) => Recipes.FirstOrDefault(r => r.Id == id) ?? throw new KeyNotFoundException($"No recipe '{id}'.");
 
     private Dictionary<string, Items.ItemBase>? _bases;
 
@@ -100,6 +108,10 @@ public sealed class ContentDb
             Sets = Read<SetDef>("sets"),
             LootTables = Read<LootTableDef>("loot"),
             Spells = OptionalRead<Magic.SpellDef>("spells"),
+            AlchemyEffects = OptionalRead<AlchemyEffectDef>("alchemy"),
+            Reagents = OptionalRead<ReagentDef>("reagents"),
+            Ingredients = OptionalRead<IngredientDef>("ingredients"),
+            Recipes = OptionalRead<RecipeDef>("recipes"),
         };
         var problems = db.Validate();
         if (problems.Count > 0) throw new InvalidDataException("The game's content has problems:\n" + string.Join('\n', problems));
@@ -259,6 +271,32 @@ public sealed class ContentDb
         foreach (var a in Armours)
             if (a.Kind == ArmourKind.Heavy && a.DexCap is not 0) p.Add($"armour: {a.Id} is heavy, so its DEX cap must be 0.");
         ValidateItems(p);
+        // Crafting (spec 13.5).
+        Unique(AlchemyEffects, e => e.Id, "alchemy");
+        Unique(Reagents, r => r.Id, "reagents");
+        Unique(Ingredients, i => i.Id, "ingredients");
+        Unique(Recipes, r => r.Id, "recipes");
+        string[] effectKinds = ["heal", "stamina", "mana", "cure", "buff", "food", "water", "coat", "drain", "burn"];
+        foreach (var e in AlchemyEffects)
+        {
+            if (!effectKinds.Contains(e.Kind)) p.Add($"alchemy: {e.Id} has an unknown kind '{e.Kind}'.");
+            if (e.Kind is "cure" or "coat" && !Enum.TryParse<ConditionId>(e.Scope, true, out _)) p.Add($"alchemy: {e.Id} names no condition.");
+            if (e.Kind is "buff" && (e.Scope is null || !Traits.Buffs.Contains(e.Scope))) p.Add($"alchemy: {e.Id} names an unknown buff '{e.Scope}'.");
+        }
+        foreach (var r in Reagents)
+        {
+            if (r.Effects.Length != 4 || r.Effects.Distinct().Count() != 4) p.Add($"reagents: {r.Id} needs four different effects.");
+            foreach (var e in r.Effects) if (AlchemyEffects.All(x => x.Id != e)) p.Add($"reagents: {r.Id} has an unknown effect '{e}'.");
+        }
+        foreach (var e in AlchemyEffects)
+            if (Reagents.Count > 0 && Reagents.Count(r => r.Effects.Contains(e.Id)) < 2) p.Add($"alchemy: {e.Id} is in fewer than two reagents, so it can never be brewed.");
+        foreach (var i in Ingredients)
+            foreach (var f in i.From) if (Creatures.All(c => c.Id != f)) p.Add($"ingredients: {i.Id} comes from '{f}', which isn't a creature.");
+        foreach (var r in Recipes)
+        {
+            foreach (var i in r.Ingredients) if (Ingredients.All(x => x.Id != i)) p.Add($"recipes: {r.Id} needs '{i}', which isn't an ingredient.");
+            if (r.Buff is { } b && !Traits.Buffs.Contains(b)) p.Add($"recipes: {r.Id} gives an unknown buff '{b}'.");
+        }
         return p;
     }
 

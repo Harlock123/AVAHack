@@ -19,7 +19,7 @@ namespace AVAHack.App.Views;
 
 public enum Screen { Title, Create, Load, Options, Play }
 
-public enum Overlay { None, Inventory, Menu, Character, Spellbook, Help, Waystone }
+public enum Overlay { None, Inventory, Menu, Character, Spellbook, Help, Waystone, Craft }
 
 /// <summary>
 /// The game window's one control. Everything is drawn on a fixed 1280×800 canvas scaled to fit: the title, the
@@ -105,6 +105,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     {
         g.Float += OnFloat;
         g.WaystoneTouched += OpenWaystone;
+        g.StationTouched += k => OpenCraft(k);
     }
     private void OnFloat(FloatText f) => _floats.Add((f, 0));
 

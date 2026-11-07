@@ -178,6 +178,7 @@ public sealed partial class GameView
         Bar(dc, x, card.Y + 52, 210, h.Hp, h.MaxHp, HpBrush);
         Bar(dc, x, card.Y + 70, 210, h.Stamina, h.MaxStamina, StBrush);
         Bar(dc, x, card.Y + 88, 210, h.Mana, h.MaxMana, MpBrush);
+        DrawMeters(dc, x, card.Y + 104, h);
         DrawHand(dc, HandBox(i, HandSide.Left), h.LeftHand, (i * 2 + 1).ToString(CultureInfo.InvariantCulture), LeftIcon(h), Engine.IsBlocking(h));
         DrawHand(dc, HandBox(i, HandSide.Right), h.RightHand, (i * 2 + 2).ToString(CultureInfo.InvariantCulture), RightIcon(h), h.RightHand.Held);
         if (h.RightHand.Held)
@@ -246,6 +247,7 @@ public sealed partial class GameView
             case Overlay.Spellbook: DrawSpellbook(dc); return;
             case Overlay.Help: DrawHelp(dc); return;
             case Overlay.Waystone: DrawWaystone(dc); return;
+            case Overlay.Craft: DrawCraft(dc); return;
         }
         DrawBossBar(dc);
         if (Engine.Paused) Banner(dc, "Paused", "Press Space to carry on.");

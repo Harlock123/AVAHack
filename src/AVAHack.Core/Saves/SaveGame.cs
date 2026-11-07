@@ -181,6 +181,9 @@ public sealed record SaveGame
     public bool Ironman { get; init; }
     /// <summary>The Waystones' stash, shared by all of them.</summary>
     public List<Items.Item> Stash { get; init; } = [];
+    /// <summary>How many effects of each reagent the party knows, and the enchantments it has learned.</summary>
+    public Dictionary<string, int> ReagentKnown { get; init; } = [];
+    public List<string> Enchantments { get; init; } = [];
     /// <summary>Every affix the run's champions have shown (the Unmaker borrows them).</summary>
     public List<string> ChampionAffixes { get; init; } = [];
     /// <summary>For the slot list: who, where, how long.</summary>

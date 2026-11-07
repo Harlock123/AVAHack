@@ -46,6 +46,7 @@ public sealed partial class GameEngine
             Delve = delve ?? [],
             Ironman = ironman,
             Stash = Stash.ToList(), ChampionAffixes = ChampionAffixes.ToList(),
+            ReagentKnown = new Dictionary<string, int>(ReagentKnown), Enchantments = Enchantments.ToList(),
             Summary = $"{string.Join(", ", members.Select(c => c.Name))} · {Level.Name} · {(int)t.TotalMinutes}:{t.Seconds:00}",
         };
     }
@@ -102,6 +103,8 @@ public sealed partial class GameEngine
         g.Kills = s.Kills;
         g.Stash.AddRange(s.Stash);
         g.ChampionAffixes.AddRange(s.ChampionAffixes);
+        foreach (var (k, v) in s.ReagentKnown) g.ReagentKnown[k] = v;
+        g.Enchantments.AddRange(s.Enchantments);
         g._log.Clear();
         g._log.AddRange(s.Log);
         g.LightLeft = s.LightLeft;

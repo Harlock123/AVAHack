@@ -109,6 +109,13 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         }
         if (g.LeftHand.Held) g.HandUp(HandSide.Left);
 
+        // Eat and drink when hungry or thirsty (spec 13.6), as a player would.
+        foreach (var c in g.Party.Standing)
+        {
+            if (c.Food < 35 && Array.FindIndex(c.Backpack, i => i is not null && (i.BaseId == "ration" || i.BaseId.StartsWith("meal:", StringComparison.Ordinal))) is >= 0 and var f) g.UseItem(c, f);
+            if (c.Water < 35 && Array.FindIndex(c.Backpack, i => i?.BaseId == "waterskin") is >= 0 and var w) g.UseItem(c, w);
+        }
+
         // Rest when hurt and nothing is coming.
         bool danger = g.Monsters.Any(x => x.IsAware && !x.Ally && x.Cell.Distance(g.PartyCell) <= 6);
         double worst = g.Party.Standing.Min(c => c.Hp / c.MaxHp);

@@ -150,7 +150,7 @@ public sealed partial class Character
         if (it.Count > 1 && Content.Base(it.BaseId).Stacks)
         {
             it.Count--;
-            return new Item { BaseId = it.BaseId, Count = 1, Level = it.Level, Charges = it.Charges, SpellId = it.SpellId, KeyId = it.KeyId };
+            return new Item { BaseId = it.BaseId, Count = 1, Level = it.Level, Charges = it.Charges, SpellId = it.SpellId, KeyId = it.KeyId, Effects = it.Effects.ToList() };
         }
         Backpack[index] = null;
         return it;

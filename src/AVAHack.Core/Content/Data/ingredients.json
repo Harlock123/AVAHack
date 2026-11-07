@@ -1,0 +1,90 @@
+// Cooking ingredients (spec 13.5): parts from creatures (from, chance %) and finds.
+[
+ {
+  "id": "ratHaunch",
+  "name": "Rat Haunch",
+  "chance": 50,
+  "text": "Stringy, but meat.",
+  "from": [
+   "cellarRat",
+   "bristleRat"
+  ]
+ },
+ {
+  "id": "spiderLeg",
+  "name": "Spider Leg",
+  "chance": 50,
+  "text": "Crack it and eat what's inside.",
+  "from": [
+   "tunnelSpider",
+   "weepingSpider",
+   "broodMother"
+  ]
+ },
+ {
+  "id": "beetleMeat",
+  "name": "Beetle Meat",
+  "chance": 60,
+  "text": "Pale and sweet, if you don't think about it.",
+  "from": [
+   "carrionBeetle"
+  ]
+ },
+ {
+  "id": "wargSteak",
+  "name": "Warg Steak",
+  "chance": 70,
+  "text": "A good red cut.",
+  "from": [
+   "wargRider"
+  ]
+ },
+ {
+  "id": "puffcapFlesh",
+  "name": "Puffcap Flesh",
+  "chance": 50,
+  "text": "Edible once the spores are out.",
+  "from": [
+   "puffcap",
+   "mycelidWalker"
+  ]
+ },
+ {
+  "id": "coilFillet",
+  "name": "Coil Fillet",
+  "chance": 60,
+  "text": "Firm white flesh with a faint shine.",
+  "from": [
+   "nagaOracle",
+   "motherOfCoils"
+  ]
+ },
+ {
+  "id": "caveOnion",
+  "name": "Cave Onion",
+  "chance": 0,
+  "text": "Small, pale, eye-watering.",
+  "from": []
+ },
+ {
+  "id": "flour",
+  "name": "Sack of Flour",
+  "chance": 0,
+  "text": "Delvers' flour, a little damp.",
+  "from": []
+ },
+ {
+  "id": "salt",
+  "name": "Pinch of Salt",
+  "chance": 0,
+  "text": "Grey rock salt.",
+  "from": []
+ },
+ {
+  "id": "teaLeaves",
+  "name": "Tea Leaves",
+  "chance": 0,
+  "text": "Dark leaves from the surface.",
+  "from": []
+ }
+]

@@ -38,6 +38,7 @@ public static partial class Generator
         private string? _boss;
         private Cell? _waystone;
         private readonly List<Cell> _valves = new();
+        private readonly Dictionary<Cell, string> _stations = new();
 
         /// <summary>Make the simplest level that works: no vaults, locks, secrets or traps.</summary>
         public bool Plain { get; init; }
@@ -645,6 +646,12 @@ public static partial class Generator
                 if (_boss == "motherOfCoils")
                     foreach (var c in near.Skip(1).Take(2)) { _spawns.Add(new Spawn("coilGuard", c, Dir.South) { Level = MonsterLevel() }); _taken.Add(c); }
             }
+            // Crafting stations (spec 13.5): a forge in half the Deep Works' levels, an enchanting altar in a quarter from level 3.
+            if (!Plain)
+            {
+                if (_theme == "works" && Roll(2) == 0) PlaceStation("anvil");
+                if (depth >= 3 && Roll(4) == 0) PlaceStation("altar");
+            }
             // The Hollow Choir: five singers in a hall on level 6 (an optional fight; the stairs don't need it).
             if (depth == 6 && o.MaxDepth >= 6 && !Plain)
             {
@@ -663,6 +670,19 @@ public static partial class Generator
                     _notes.Add((hall.Centre, "Five voices, singing one note that never ends. The air shapes itself to it."));
                 }
             }
+        }
+
+        private void PlaceStation(string kind)
+        {
+            var spots = _rooms.Where(r => r.Vault is null && !r.Contains(_start)).SelectMany(RoomCells)
+                              .Where(c => At(c) == CellKind.Floor && !_taken.Contains(c) && c.Distance(_down) > 1
+                                          && Enum.GetValues<Dir>().All(d => At(c.Step(d)) != CellKind.Door)
+                                          && Enum.GetValues<Dir>().Count(d => At(c.Step(d)) == CellKind.Floor) >= 3)
+                              .ToList();
+            if (spots.Count == 0) return;
+            var at = spots[Roll(spots.Count)];
+            _stations[at] = kind;
+            _taken.Add(at);
         }
 
         private int MonsterLevel() => Math.Max(1, (int)(depth * 1.6)) + Roll(2);
@@ -758,6 +778,7 @@ public static partial class Generator
             var openDoors = _doors.Where(d => d.Kind == DoorKind.Hand && d.Key is null || d.Open).Select(d => d.Cell).ToHashSet();
             var blocked = _chests.Select(c => c.Cell).Concat(_pits.Select(p => p.Cell)).Concat(_altars).ToHashSet();
             if (_waystone is { } ws) blocked.Add(ws);
+            blocked.UnionWith(_stations.Keys);
             HashSet<Cell> reach = [];
             bool grew = true;
             while (grew)
@@ -795,6 +816,7 @@ public static partial class Generator
             level.Boss = _boss;
             level.Waystone = _waystone;
             level.Valves.AddRange(_valves);
+            foreach (var (c, k) in _stations) level.Stations[c] = k;
             level.Final = _theme == "heart";
             level.AddStairs(_down);
             if (depth > 1) level.AddStairsUp(_start);

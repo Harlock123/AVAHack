@@ -14,7 +14,10 @@ public sealed record ItemBase(string Id, string Name, ItemKind Kind, string Cate
     public BookDef? Book { get; init; }
     public string Text { get; init; } = "";
     /// <summary>Several of the same can share one backpack slot.</summary>
-    public bool Stacks => Kind is ItemKind.Consumable or ItemKind.Gold or ItemKind.Reagent or ItemKind.Food or ItemKind.Shard;
+    public bool Stacks => Kind is ItemKind.Consumable or ItemKind.Gold or ItemKind.Reagent or ItemKind.Food or ItemKind.Shard && Id != BrewId;
+
+    /// <summary>A potion an alchemist brewed: its effects are on the item, so brews never stack.</summary>
+    public const string BrewId = "brewedPotion";
 
     public static Dictionary<string, ItemBase> All(ContentDb db)
     {
@@ -48,6 +51,18 @@ public sealed record ItemBase(string Id, string Name, ItemKind Kind, string Cate
             Add(new("scroll", "Scroll", ItemKind.Scroll, "scroll", 0.1, 30, []) { Text = "Read it once to cast the spell; anyone can." });
             Add(new("wand", "Wand", ItemKind.Wand, "wand", 0.3, 120, []) { Text = "Holds charges of a spell. Enchanting recharges it." });
         }
+        // Crafting (spec 13.5): reagents, ingredients, meals, brews, spirit shards, scrap and tools.
+        foreach (var r in db.Reagents) Add(new(r.Id, r.Name, ItemKind.Reagent, "reagent", 0.1, r.Value, []) { Text = r.Text });
+        foreach (var i in db.Ingredients) Add(new(i.Id, i.Name, ItemKind.Reagent, "ingredient", 0.3, 3, []) { Text = i.Text });
+        foreach (var m in db.Recipes) Add(new("meal:" + m.Id, m.Name, ItemKind.Food, "meal", 0.4, 12 + (int)(m.Food + m.Water) / 4, []) { Text = m.Text });
+        if (db.AlchemyEffects.Count > 0)
+        {
+            Add(new(BrewId, "Brew", ItemKind.Consumable, "brew", 0.3, 20, []) { Text = "Something you made yourself." });
+            Add(new("spiritShard", "Spirit Shard", ItemKind.Shard, "shard", 0.05, 40, []) { Text = "A splinter of whatever held a creature together. Enchanters bind it into things." });
+            Add(new("scrapIron", "Scrap Iron", ItemKind.Reagent, "material", 0.5, 4, []) { Text = "Melted-down metal, ready for the anvil." });
+            Add(new("mortar", "Mortar and Pestle", ItemKind.Junk, "tool", 1, 30, []) { Text = "For brewing: combine two or three reagents (spec 13.5)." });
+            Add(new("campfireKit", "Campfire Kit", ItemKind.Junk, "tool", 2, 25, []) { Text = "Flint, tinder and a little pot. Cooks a meal where it's safe." });
+        }
         foreach (var x in ExtraBases) Add(x);
         return d;
     }
@@ -63,7 +78,7 @@ public sealed record AffixRoll(string Affix, int Value);
 public sealed class Item
 {
     public required string BaseId { get; init; }
-    public Rarity Rarity { get; init; }
+    public Rarity Rarity { get; set; }
     public List<AffixRoll> Affixes { get; init; } = [];
     public bool Identified { get; set; } = true;
     public string? UniqueId { get; init; }
@@ -78,6 +93,8 @@ public sealed class Item
     public string? KeyId { get; init; }
     /// <summary>For a tome, wand or scroll: the spell.</summary>
     public string? SpellId { get; init; }
+    /// <summary>A brew's effects and their strengths (spec 13.5).</summary>
+    public List<AffixRoll> Effects { get; init; } = [];
 
     public bool Cursed(ContentDb db) => Affixes.Any(a => db.Affix(a.Affix).Curse);
 
@@ -85,6 +102,12 @@ public sealed class Item
     public string Name(ContentDb db)
     {
         var b = db.Base(BaseId);
+        if (BaseId == ItemBase.BrewId && Effects.Count > 0)
+        {
+            var names = Effects.Select(e => db.Effect(e.Affix).Name).ToList();
+            bool bad = Effects.All(e => db.Effect(e.Affix).Harmful);
+            return (bad ? "Poison of " : "Potion of ") + string.Join(" and ", names);
+        }
         string baseName = SpellId is { } sp && db.Spells.Any(s => s.Id == sp) ? $"{b.Name}: {Magic.SpellNames.Of(db, sp)}" : b.Name;
         if (Count > 1 && b.Stacks) return $"{Count} × {baseName}";
         if (!Identified) return $"Unidentified {baseName}";
@@ -107,6 +130,7 @@ public sealed class Item
         if (b.Armour is { } a) yield return $"AC +{a.Ac + Quality} ({a.Kind.ToString().ToLowerInvariant()}{(a.DexCap is { } c ? $", DEX up to {c}" : "")})";
         if (b.Gear is { Ac: > 0 } g) yield return $"AC +{g.Ac + Quality}";
         if (b.Consumable is { } k) yield return k.Text;
+        foreach (var e in Effects) yield return $"{db.Effect(e.Affix).Name} ({e.Value}): {db.Effect(e.Affix).Text}";
         if (b.Book is { } bk) yield return $"Teaches {db.Skill(bk.Skill).Name}.";
         if (!Identified) { yield return "Its properties are unknown (needs Lore, or a scroll of Identify)."; yield break; }
         foreach (var r in Affixes) yield return ItemRules.Describe(db, r);

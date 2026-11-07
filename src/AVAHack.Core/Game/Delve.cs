@@ -111,6 +111,16 @@ public sealed class Delve
         var engine = new GameEngine(level, seed, party, db, spawn: false) { };
         engine.Difficulty = o.Strength;
         var delve = new Delve(db, o, seed, engine, 1);
+        // The party sets out with a campfire kit and a mortar, and a day's food and water each (spec 13.5–13.6).
+        foreach (var tool in new[] { "campfireKit", "mortar" })
+            if (db.Bases.ContainsKey(tool) && !party.Members.Any(h => h.Backpack.Any(i => i?.BaseId == tool)))
+                party.Members.FirstOrDefault(h => h.FreeSlots > 0)?.AddToBackpack(new Items.Item { BaseId = tool });
+        if (o.Food)
+            foreach (var h in party.Members)
+            {
+                h.AddToBackpack(new Items.Item { BaseId = "ration", Count = 3 });
+                h.AddToBackpack(new Items.Item { BaseId = "waterskin", Count = 3 });
+            }
         engine.ChangeLevel(level, level.Start, level.StartFacing);
         engine.Say($"The Delve begins. Seed {delve.SeedCode}, {o.Depth} levels, {o.Strength.Name}.");
         return delve;

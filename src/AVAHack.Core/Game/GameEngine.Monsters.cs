@@ -85,7 +85,7 @@ public sealed partial class GameEngine
         if (_sanctuary.ContainsKey(c) && !m.Ally) return false;
         var kind = Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
-        if (Level.Waystone == c) return false;
+        if (Level.Waystone == c || Level.Stations.ContainsKey(c)) return false;
         if (Level.TrapAt(c) is { } trap && (trap.Kind == TrapKind.CursedAltar || (trap.Armed && !m.Def.Has("mindless") && !m.Ally && trap.Kind != TrapKind.AntiMagic))) return false;
         if (kind == CellKind.Door)
         {

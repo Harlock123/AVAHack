@@ -54,6 +54,8 @@ public static class Scene
             list.Add(p.Look == "stone"
                 ? new SpriteInstance(p.X, p.Y, 0.42, 0.12, 0.12, art.Stone())
                 : new SpriteInstance(p.X, p.Y, 0.36, 0.24, 0.24, art.Bolt(p.Look), SelfLit: true));
+        foreach (var (cell, kind) in g.Level.Stations)
+            list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.8, 0.8, art.Prop(kind == "anvil" ? "anvil" : "altar-enchant"), Glow: 0.15));
         if (g.Level.Waystone is { } ws)
             list.Add(new SpriteInstance(ws.X + 0.5, ws.Y + 0.5, 0, 0.95, 0.95, art.Prop("waystone"), Glow: 0.2));
         foreach (var t in g.Level.Traps)

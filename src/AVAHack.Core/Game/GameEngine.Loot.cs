@@ -23,6 +23,7 @@ public sealed partial class GameEngine
         if (m.Elite || m.Affixes.Count > 0)
             items.AddRange(Loot.Roll(m.Affixes.Count > 0 ? "chest.rich" : "chest.cellar", Level.Depth, Rng.Loot, Magic));
         foreach (var item in items) Level.Drop(m.Cell, item);
+        DropCraftingLoot(m);
     }
 
     /// <summary>Opens a chest ahead: its contents spill onto the floor in front of the party.</summary>
@@ -103,6 +104,8 @@ public sealed partial class GameEngine
             "food" or "water" => Eat(c, index),
             _ => null,
         };
+        if (it.BaseId.StartsWith("meal:", StringComparison.Ordinal)) said ??= EatMeal(c, index);
+        if (it.BaseId == ItemBase.BrewId && it.Effects.Count > 0) said ??= DrinkBrew(c, index);
         said ??= SpellItemHook?.Invoke(c, index);
         said ??= c.Use(index, Rng.Combat);
         if (said is not null) Say(said);

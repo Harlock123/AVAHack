@@ -85,6 +85,19 @@ public sealed partial class SpriteFactory
                 p.Ellipse(20, 26, 2, 5, Paint.Rgb(230, 220, 180));
                 p.Ellipse(44, 26, 2, 5, Paint.Rgb(230, 220, 180));
                 break;
+            case "anvil":
+                p.Rect(14, 44, 50, 63, Paint.Rgb(70, 50, 40));                // the forge's hearth
+                p.Ellipse(32, 46, 12, 4, Paint.Rgb(255, 120, 30), false);
+                p.Rect(20, 30, 46, 36, Paint.Rgb(90, 92, 100));                 // the anvil
+                p.Triangle(46, 30, 56, 30, 46, 36, Paint.Rgb(90, 92, 100));
+                p.Rect(28, 36, 38, 44, Paint.Rgb(70, 72, 80));
+                break;
+            case "altar-enchant":
+                p.Rect(18, 34, 46, 63, Paint.Rgb(110, 100, 130));
+                p.Ellipse(32, 32, 16, 5, Paint.Rgb(140, 130, 170));
+                p.Ellipse(32, 30, 9, 3, Paint.Rgb(170, 230, 255), false);
+                for (int i = 0; i < 3; i++) p.Dot(26 + i * 6, 22 - i % 2 * 4, Paint.Rgb(200, 240, 255));
+                break;
             case "waystone":
                 p.Rect(22, 14, 42, 63, Paint.Rgb(120, 126, 140));
                 p.Triangle(22, 14, 32, 2, 42, 14, Paint.Rgb(120, 126, 140));

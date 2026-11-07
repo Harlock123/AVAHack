@@ -57,6 +57,8 @@ public sealed class Level
     public Cell? Waystone { get; internal set; }
     /// <summary>The Bellwright Engine's pressure valves: levers that must all be pulled before it can be hurt.</summary>
     public List<Cell> Valves { get; } = new();
+    /// <summary>Crafting stations by cell: "anvil" (a forge) or "altar" (an enchanting altar). Each blocks its cell.</summary>
+    public Dictionary<Cell, string> Stations { get; } = new();
     /// <summary>The Unmade Heart, the Delve's last level.</summary>
     public bool Final { get; internal set; }
 

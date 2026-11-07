@@ -1,0 +1,268 @@
+// Alchemy effects (spec 13.5): each reagent hides four; the ones two reagents share make the potion.
+[
+ {
+  "id": "heal",
+  "name": "Healing",
+  "kind": "heal",
+  "amount": 12,
+  "harmful": false,
+  "text": "Closes wounds."
+ },
+ {
+  "id": "vigour",
+  "name": "Vigour",
+  "kind": "stamina",
+  "amount": 30,
+  "harmful": false,
+  "text": "Restores Stamina."
+ },
+ {
+  "id": "clarity",
+  "name": "Clarity",
+  "kind": "mana",
+  "amount": 25,
+  "harmful": false,
+  "text": "Restores Mana."
+ },
+ {
+  "id": "purge",
+  "name": "Purging",
+  "kind": "cure",
+  "amount": 0,
+  "harmful": false,
+  "text": "Cures poison.",
+  "scope": "poisoned"
+ },
+ {
+  "id": "cleanse",
+  "name": "Cleansing",
+  "kind": "cure",
+  "amount": 0,
+  "harmful": false,
+  "text": "Cures disease.",
+  "scope": "diseased"
+ },
+ {
+  "id": "staunch",
+  "name": "Staunching",
+  "kind": "cure",
+  "amount": 0,
+  "harmful": false,
+  "text": "Stops bleeding.",
+  "scope": "bleeding"
+ },
+ {
+  "id": "courage",
+  "name": "Courage",
+  "kind": "cure",
+  "amount": 0,
+  "harmful": false,
+  "text": "Drives out fear.",
+  "scope": "frightened"
+ },
+ {
+  "id": "restore",
+  "name": "Restoring",
+  "kind": "cure",
+  "amount": 0,
+  "harmful": false,
+  "text": "Lifts weakness.",
+  "scope": "weakened"
+ },
+ {
+  "id": "unbind",
+  "name": "Unbinding",
+  "kind": "cure",
+  "amount": 0,
+  "harmful": false,
+  "text": "Lifts a curse.",
+  "scope": "cursed"
+ },
+ {
+  "id": "mending",
+  "name": "Mending",
+  "kind": "buff",
+  "amount": 60,
+  "harmful": false,
+  "text": "Heals over time.",
+  "scope": "regen"
+ },
+ {
+  "id": "ironskin",
+  "name": "Ironskin",
+  "kind": "buff",
+  "amount": 60,
+  "harmful": false,
+  "text": "+2 AC for a while.",
+  "scope": "bulwark"
+ },
+ {
+  "id": "keeneye",
+  "name": "Keen Eye",
+  "kind": "buff",
+  "amount": 60,
+  "harmful": false,
+  "text": "+1 to hit for a while.",
+  "scope": "guidance"
+ },
+ {
+  "id": "warding",
+  "name": "Elemental Warding",
+  "kind": "buff",
+  "amount": 90,
+  "harmful": false,
+  "text": "Resists fire, cold and lightning.",
+  "scope": "resistElements"
+ },
+ {
+  "id": "antivenom",
+  "name": "Antivenom",
+  "kind": "buff",
+  "amount": 120,
+  "harmful": false,
+  "text": "Resists poison.",
+  "scope": "resistPoison"
+ },
+ {
+  "id": "might",
+  "name": "Might",
+  "kind": "buff",
+  "amount": 60,
+  "harmful": false,
+  "text": "+2 weapon damage for a while.",
+  "scope": "might"
+ },
+ {
+  "id": "quickness",
+  "name": "Quickness",
+  "kind": "buff",
+  "amount": 45,
+  "harmful": false,
+  "text": "Recover 20% faster.",
+  "scope": "quickness"
+ },
+ {
+  "id": "nighteye",
+  "name": "Night Eye",
+  "kind": "buff",
+  "amount": 180,
+  "harmful": false,
+  "text": "See in the dark.",
+  "scope": "nightEye"
+ },
+ {
+  "id": "fortitude",
+  "name": "Fortitude",
+  "kind": "buff",
+  "amount": 120,
+  "harmful": false,
+  "text": "Advantage on CON saves.",
+  "scope": "fortitude"
+ },
+ {
+  "id": "satiate",
+  "name": "Satiation",
+  "kind": "food",
+  "amount": 30,
+  "harmful": false,
+  "text": "Fills the belly."
+ },
+ {
+  "id": "quench",
+  "name": "Quenching",
+  "kind": "water",
+  "amount": 35,
+  "harmful": false,
+  "text": "Slakes thirst."
+ },
+ {
+  "id": "venom",
+  "name": "Venom",
+  "kind": "coat",
+  "amount": 12,
+  "harmful": true,
+  "text": "Poison: coat a blade with it.",
+  "scope": "poisoned"
+ },
+ {
+  "id": "slumber",
+  "name": "Slumber",
+  "kind": "coat",
+  "amount": 10,
+  "harmful": true,
+  "text": "Sleep: coat a blade with it.",
+  "scope": "asleep"
+ },
+ {
+  "id": "frailty",
+  "name": "Frailty",
+  "kind": "coat",
+  "amount": 12,
+  "harmful": true,
+  "text": "Weakness: coat a blade with it.",
+  "scope": "weakened"
+ },
+ {
+  "id": "dread",
+  "name": "Dread",
+  "kind": "coat",
+  "amount": 11,
+  "harmful": true,
+  "text": "Fear: coat a blade with it.",
+  "scope": "frightened"
+ },
+ {
+  "id": "stillness",
+  "name": "Stillness",
+  "kind": "coat",
+  "amount": 13,
+  "harmful": true,
+  "text": "Paralysis: coat a blade with it.",
+  "scope": "paralysed"
+ },
+ {
+  "id": "rot",
+  "name": "Rot",
+  "kind": "coat",
+  "amount": 12,
+  "harmful": true,
+  "text": "Disease: coat a blade with it.",
+  "scope": "diseased"
+ },
+ {
+  "id": "drainMind",
+  "name": "Mind-drain",
+  "kind": "drain",
+  "amount": 20,
+  "harmful": true,
+  "text": "Drains Mana.",
+  "scope": "mana"
+ },
+ {
+  "id": "drainBody",
+  "name": "Lassitude",
+  "kind": "drain",
+  "amount": 30,
+  "harmful": true,
+  "text": "Drains Stamina.",
+  "scope": "stamina"
+ },
+ {
+  "id": "scald",
+  "name": "Scalding",
+  "kind": "burn",
+  "amount": 8,
+  "harmful": true,
+  "text": "Burns whoever drinks it.",
+  "scope": "fire"
+ },
+ {
+  "id": "bile",
+  "name": "Bile",
+  "kind": "burn",
+  "amount": 6,
+  "harmful": true,
+  "text": "Burns the throat.",
+  "scope": "acid"
+ }
+]

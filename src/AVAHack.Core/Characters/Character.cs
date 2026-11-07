@@ -177,6 +177,8 @@ public sealed partial class Character
     {
         if (against == "poison" && HasTrait(Traits.PoisonResistance)) adv = AdvantageRules.Combine(adv, Advantage.Advantage);
         if (against == "illusion" && HasTrait(Traits.IllusionWard)) adv = AdvantageRules.Combine(adv, Advantage.Advantage);
+        if (a == Attribute.Con && Buffs.ContainsKey("fortitude")) adv = AdvantageRules.Combine(adv, Advantage.Advantage);
+        if (a == Attribute.Con && Hungry) adv = AdvantageRules.Combine(adv, Advantage.Disadvantage); // spec 13.6
         int n = RollD20(rng, adv);
         return n + SaveBonus(a) + (against == "spell" ? (int)PerkTotal("spellSave") : 0) >= dc;
     }
@@ -242,6 +244,7 @@ public sealed partial class Character
         double f = 1 - 0.03 * Mod(Attribute.Dex);
         if (weaponSkill == BestWeaponSkill) f *= Math.Pow(0.9, RecoverySpeedUps);
         f *= 1 + (PerkTotal("recoveryPct", SkillKey(weaponSkill)) + ItemTotal("recoveryPct")) / 100.0;
+        if (Buffs.ContainsKey("quickness")) f *= 0.8;
         return f * Conditions.RecoveryFactor;
     }
 
@@ -257,6 +260,7 @@ public sealed partial class Character
             if (HasTrait(Traits.FireResistance)) r.Resist(DamageType.Fire);
             foreach (var t in ItemScopes("resist")) if (Enum.TryParse<DamageType>(t, true, out var d)) r.Resist(d);
             if (Buffs.ContainsKey("resistElements")) r.Resist(DamageType.Fire, DamageType.Cold, DamageType.Lightning);
+            if (Buffs.ContainsKey("resistPoison")) r.Resist(DamageType.Poison);
             return r;
         }
     }
@@ -288,6 +292,9 @@ public sealed partial class Character
     }
 
     public void Heal(double amount) => Hp = Math.Min(MaxHp, Hp + Math.Max(0, amount));
+
+    /// <summary>Heals a share of what's missing (a rest cut short).</summary>
+    public void HealShare(double share) { if (!IsDown) Hp = Math.Min(MaxHp, Hp + (MaxHp - Hp) * Math.Clamp(share, 0, 1)); }
     public bool SpendStamina(double amount)
     {
         if (Stamina < amount) return false;
@@ -337,8 +344,8 @@ public sealed partial class Character
     /// </summary>
     public void Regenerate(double seconds)
     {
-        double scale = InFight ? 0.25 : 1;
-        if (!InFight && !IsDown && !Conditions.StopsRegeneration) Hp = Math.Min(MaxHp, Hp + MaxHp * 0.01 * seconds);
+        double scale = (InFight ? 0.25 : 1) * (Hungry ? 0.5 : 1);
+        if (!InFight && !IsDown && !Conditions.StopsRegeneration) Hp = Math.Min(MaxHp, Hp + MaxHp * 0.01 * seconds * (Hungry ? 0.5 : 1));
         if (!IsDown && ItemTotal("hpRegen") is > 0 and var regen) Hp = Math.Min(MaxHp, Hp + regen / 10.0 * seconds);
         if (!IsDown && Buffs.ContainsKey("regen")) Hp = Math.Min(MaxHp, Hp + 2.0 / 3 * seconds);
         Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * scale * seconds * (1 + PerkTotalFor("regenPct", "stamina") / 100));

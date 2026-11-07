@@ -15,6 +15,10 @@
    {
     "item": "bandage",
     "weight": 1
+   },
+   {
+    "category": "reagent",
+    "weight": 1.5
    }
   ]
  },
@@ -45,6 +49,10 @@
    {
     "category": "scroll",
     "weight": 0.4
+   },
+   {
+    "category": "reagent",
+    "weight": 1
    }
   ]
  },
@@ -75,6 +83,14 @@
    {
     "category": "scroll",
     "weight": 0.6
+   },
+   {
+    "category": "reagent",
+    "weight": 1
+   },
+   {
+    "category": "ingredient",
+    "weight": 1
    }
   ]
  },
@@ -126,6 +142,18 @@
    {
     "category": "wand",
     "weight": 0.3
+   },
+   {
+    "category": "reagent",
+    "weight": 2
+   },
+   {
+    "category": "ingredient",
+    "weight": 1.5
+   },
+   {
+    "category": "tool",
+    "weight": 0.4
    }
   ]
  },
@@ -173,6 +201,14 @@
    {
     "category": "wand",
     "weight": 0.8
+   },
+   {
+    "category": "reagent",
+    "weight": 2
+   },
+   {
+    "category": "tool",
+    "weight": 0.3
    }
   ]
  }

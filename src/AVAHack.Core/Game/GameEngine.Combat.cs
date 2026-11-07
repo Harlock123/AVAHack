@@ -241,7 +241,7 @@ public sealed partial class GameEngine
         if (type == DamageType.Bludgeoning && target.Def.Family == "restlessDead") mult *= 1 + c.PerkTotalFor("damagePct", "bludgeoningVsUndead") / 100;
         if (skill == SkillId.Unarmed && _power && c.HasPerkFlag("quiveringPalm") && target.Conditions.Has(ConditionId.Stunned)) mult *= 3;
         int mod = c.Mod(attr) - (attr == Attribute.Str ? c.Conditions.StrengthPenalty : 0);
-        int dmg = Combat.Damage(Rng.Combat, dice, mod, c.SkillLevel(skill), mult, crit, target.Resistances.For(type));
+        int dmg = Combat.Damage(Rng.Combat, dice, mod + (c.Buffs.ContainsKey("might") ? 2 : 0), c.SkillLevel(skill), mult, crit, target.Resistances.For(type));
         if (hand is { } h)
             foreach (var (t, amount) in c.ExtraDamage(h))
                 dmg += Combat.ApplyAffinity(amount, target.Resistances.For(t));

@@ -10,7 +10,7 @@ produces one self-contained executable per platform (Windows, macOS and Linux, x
 
 The design lives in `docs/SPECIFICATION.md`:
 - section 20 has the milestones;
-- sections 22–24 have the implementation decisions, one section per milestone.
+- sections 22–30 have the implementation decisions, one section per milestone (M0–M8).
 
 Everything in the game is original: the world, names, monsters and art. Keep it that way. Use no names, maps,
 art, text or UI layouts from other games, and no trademarked tabletop content (spec section 2).
@@ -33,66 +33,73 @@ implicit usings, invariant globalization and central package versions. Package v
 
 - `src/AVAHack.Core/`: the game, with no UI references.
   - `World/`:
-    - `Dir` (compass directions and yaw).
-    - `Cell`.
-    - `Level` (the grid, doors, levers, pits, plates, notes, stairs and the creatures to place).
-    - `Door`, `Lever`, and `Features.cs` (`Pit`, `Plate`, `Note`, `Spawn`, `FloorLook`).
-    - `LevelLoader`, which reads the text level format; the format is in its doc comment and in spec
-      section 22.
-  - `Game/`:
-    - `GameEngine.cs`: the fixed 60 Hz `Tick`, `Update` and `Alpha`, the mode (playing, dead, won) and pause, the
-      action queue, the step, turn and bump motions, `Camera(alpha)`, doors and levers, `Press(GameAction)` and
-      `ClickWorld(WorldTarget)`.
-    - `GameEngine.Combat.cs`: the hands (`HandDown`, `HandUp`), swings, power attacks, bashes and blocks;
-      creatures' blows and projectiles; damage, death, reassembly; the fight state.
-    - `GameEngine.Monsters.cs`: placing creatures, noticing, packs, fleeing, turning, tells, the path search,
-      line of sight.
-    - `GameEngine.Traps.cs`: notes, spotting hidden pits, falling, plates, stairs, the automap's explored
-      cells.
-    - `Monster.cs`: `Monster`, `Projectile`, `Hand` and `FloatText`.
-    - `GameAction`, `CameraPose` and `WorldTarget`.
-  - `Rules/` (spec 6):
-    - `Rng`: `Pcg32`, `RngStreams` and `ScriptedRng` for tests.
-    - `Dice`: parses expressions such as `2d6+3`.
-    - `Attributes`: `AttributeSet`, modifiers, point buy, and 4d6 drop the lowest.
-    - `Checks`: d20 rolls, advantage, proficiency, spell DCs.
-    - `Damage`: `Combat.Attack` and `Combat.Damage`, damage types, `Resistances`.
-    - `Conditions`: `ConditionSet`, with saves every 3 s, damage over time and cures.
+    - `Dir`, `Cell`, `Door`, `Lever`, and `Features.cs` (pits, plates, notes, spawns, secrets, traps, chests).
+    - `Level`: the grid and everything on it, including the boss, the Waystone, the valves and the crafting
+      stations.
+    - `LevelLoader`, which reads the text level format (its doc comment and spec section 22).
+    - `Generator*.cs` and `Vault.cs`: seeded 32×32 levels.
+      - `Generator.Builder.cs` places rooms, stairs, bosses, Waystones and stations, then barriers, secrets, traps,
+        pits, monsters and loot.
+      - `Check` proves each level can be finished.
+      - `SpawnTables` says which families live where.
+  - `Game/`: `GameEngine` is one class split by subject.
+    - `GameEngine.cs`: the 60 Hz tick, the mode, the queue and the motions.
+    - `.Combat`: hands, blows, blocks, damage and death.
+    - `.Monsters`: AI, packs, paths and line of sight.
+    - `.Bestiary`: champions, affixes, summoners and the boss scripts.
+    - `.Traps` and `.TrapKinds`: traps, stairs and the boss seal.
+    - `.Loot`: chests, pickup, light and use.
+    - `.Magic`: spells, hazards and summons.
+    - `.Stealth`.
+    - `.Levels`: difficulty, changing level and winning.
+    - `.Waystone`: merchant, trainer, shrine and stash.
+    - `.Crafting`: food, rest, Alchemy, cooking, Smithing and Enchanting.
+    - `.Save`.
+    - The rest:
+      - `Delve`: the run across levels, the Unmade Heart, and seed codes.
+      - `Bestiary.Scale` and `ScaleTo`.
+      - `Monster`.
+  - `Rules/` (spec 6): `Rng` (`Pcg32`, `RngStreams`, `ScriptedRng`), `Dice`, `Attributes`, `Checks`, `Damage`,
+    `Conditions`.
   - `Characters/` (spec 5, 7 and 8):
-    - `Character`: one hero's attributes, derived statistics, saves, attacks, pools and regeneration, skills and
-      skill XP, books and trainers, levels and level-up choices, and perks and respecs.
-    - `Progression`: the formulas as pure functions.
-    - `CharacterBuilder`: creation checks and the quick-start party.
-    - `SkillId`.
+    - `Character`, with partials for items and saves.
+    - `Party`, `Progression`, `CharacterBuilder` and `StartingKit`.
+  - `Items/`: `Item`, `ItemBase` (every base, crafting ones included) and `LootGenerator`.
+  - `Magic/`: spell definitions and names.
+  - `Saves/`: `SaveGame` and `SaveStore`.
   - `Content/`:
-    - `Definitions.cs` and `Creatures.cs`: the record shape of each data file.
+    - `Definitions.cs`, `Creatures.cs`, `Items.cs` and `Crafting.cs`: the record shapes.
     - `ContentDb`: strict loading and `Validate`.
-    - `Data/*.json`: skills, ancestries, callings, backgrounds, perks, conditions, creatures, weapons, shields and
-      armour.
-    - `Levels/*.txt`: built-in levels: `test-hall` (M0's) and `the-cellars` (the M2 level).
+    - `Data/*.json`: skills, ancestries, callings, backgrounds, perks, conditions, creatures, weapons, shields,
+      armour, gear, consumables, books, affixes, uniques, sets, loot, spells, alchemy, reagents, ingredients and
+      recipes.
+    - `Levels/*.txt`: `test-hall` and `the-cellars`.
+    - `Vaults/vaults.txt`.
 - `src/AVAHack.Render/`: the first-person view, depending only on Core.
-  - `IViewRenderer`.
-  - `SoftwareViewRenderer`: the column ray caster, doors, floors by `FloorLook`, light, the depth buffer, sprites,
-    `Project` and picking.
-  - `Texture`, `TextureSet` and `TextureFactory`: the procedural placeholder textures.
-  - `SpriteImage`, `SpriteInstance`, `Paint` and `SpriteFactory`: the code-drawn creatures (views × frames).
-  - `Scene`: the engine's creatures and stones as sprites, picking each creature's view from the camera angle.
-- `src/AVAHack.App/`: Avalonia.
-  - `Views/GameView.cs`: the 1280×800 canvas, the frame loop (`RequestAnimationFrame`), copying the framebuffer to
-    a `WriteableBitmap`, keys, clicks, the hands on the mouse, restarting.
-  - `Views/GameView.Draw.cs`: the view with floating numbers and the compass, the side panel (automap, log), the
-    hero bar (portrait, bars, hands with cooldowns) and the pause, death and victory banners.
-  - `Input/InputHandler`: keys to actions (`Map`) and to hands (`MapHand`: 1 and 2).
-- `tests/AVAHack.Core.Tests`:
-  - levels, movement, the queue, timing, doors, levers and determinism (M0);
-  - every formula in spec sections 6–8, conditions, and the content's strictness and validation (M1);
-  - combat, creature behaviour, traps and The Cellars' solvability (M2).
-  - `Heroes` makes the quick-start heroes and levels them up.
-  - `Bot` plays a level the way a fallible person might, and `BalanceReport` runs it over many seeds.
-- `tests/AVAHack.Render.Tests`: golden images in `Golden/` (compared by `GoldenImage`, PNG I/O through
-  SkiaSharp), full coverage from every cell and facing, a frame-time check, and the creatures' contact sheet
-  (`SpriteTests`, saved as `sprites.png` under `AVAHACK_SHOTS`).
-- `tests/AVAHack.App.Tests`: the real `GameView` in an Avalonia.Headless window, with keys and clicks.
+  - `SoftwareViewRenderer`: the ray caster.
+  - `TextureFactory`: regional textures.
+  - `SpriteFactory` and `SpriteFactory.Bestiary`: code-drawn creatures, props and icons.
+  - `Scene`: the engine's creatures, missiles and props as sprites, with elite and champion tints.
+- `src/AVAHack.App/`: Avalonia. `Views/GameView*.cs` is one control split by screen:
+  - play;
+  - menus (title, party creation, load, menu, help and inventory);
+  - the sheet, magic and the Delve options;
+  - the Waystone and crafting.
+
+  `Input/InputHandler` maps keys.
+- `tests/AVAHack.Core.Tests`: every rule and formula.
+  - Subject tests: combat, traps, Cellars, party, items, saves, perks, magic, the generator, the Delve, the bestiary
+    and crafting.
+  - Reports:
+    - `BalanceReport`: the Cellars.
+    - `ProgressionReport`: callings to level 8.
+    - `DelveReport`: 4-level and 12-level Delves.
+  - `Bot` plays like a fallible person.
+- `tests/AVAHack.Render.Tests`:
+  - golden images;
+  - a sprite sheet that checks every creature has art;
+  - a frame-time check.
+- `tests/AVAHack.App.Tests`: the real `GameView` in Avalonia.Headless, driven by keys and clicks.
 
 ## Rules that keep it working
 
@@ -108,6 +115,9 @@ implicit usings, invariant globalization and central package versions. Package v
   clock.
 - **Keys go through `InputHandler`, matched by `PhysicalKey`.** Test new keys through `InputHandler` too. On
   this desktop, Shift's release can arrive as CapsLock, so never track held keys by `Key`.
+- **New content gets its validation.** A new creature behaviour, effect kind or buff needs its name in the lists
+  `ContentDb.Validate` knows (`CreatureDef` behaviours, effect kinds, `Traits.Buffs`).
+- **Saves keep everything.** New engine or monster state goes in `SaveGame` or `MonsterSave`, and a test reloads it.
 - **A level change gets its checks.** Change `the-cellars.txt` and `CellarsTests` must still pass: every floor
   cell, creature and the stairs must be reachable while working the mechanisms in order. Read the
   `BalanceReport` before and after a change to creatures, combat or the level.

@@ -123,6 +123,28 @@ public sealed class MenuTests
     }
 
     [AvaloniaFact]
+    public void The_craft_screen_brews_a_potion()
+    {
+        var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(Db), Db);
+        var (w, v) = Open(new GameView(g, startLoop: false, store: TempStore()));
+        var hero = g.Selected;
+        Array.Clear(hero.Backpack);
+        var heal = Db.Reagents.Where(r => r.Effects.Contains("heal")).Take(2).ToList();
+        hero.AddToBackpack(new Item { BaseId = heal[0].Id });
+        hero.AddToBackpack(new Item { BaseId = heal[1].Id });
+        hero.AddToBackpack(new Item { BaseId = "mortar" });
+        w.KeyPressQwerty(PhysicalKey.K, RawInputModifiers.None);
+        Assert.Equal(Overlay.Craft, v.Overlay);
+        Click(w, 134 + 380, 30 + 112 + 28 + 15);      // the first reagent
+        Click(w, 134 + 380, 30 + 112 + 28 + 36 + 15); // the second
+        Shot(w, "craft");
+        Click(w, 1170 - 180 + 78, 690 - 80 + 19);     // Brew
+        Assert.Contains(hero.Backpack, i => i?.BaseId == ItemBase.BrewId);
+        w.KeyPressQwerty(PhysicalKey.K, RawInputModifiers.None);
+        Assert.Equal(Overlay.None, v.Overlay);
+    }
+
+    [AvaloniaFact]
     public void The_inventory_wears_and_drops_things()
     {
         var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(Db), Db);

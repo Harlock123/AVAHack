@@ -46,6 +46,7 @@ public sealed partial class GameView
             x += 160;
         }
         Button(dc, new Rect(box.Right - 200, box.Y + 60, 176, 36), "Rest here (free)", () => Do(Engine.RestAtStone()), size: 14);
+        Button(dc, new Rect(box.Right - 390, box.Y + 60, 180, 36), "Anvil and altar (K)", () => OpenCraft("anvil"), size: 14);
         double y = box.Y + 112;
         switch (_waystoneTab)
         {

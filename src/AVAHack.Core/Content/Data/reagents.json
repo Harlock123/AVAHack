@@ -1,0 +1,523 @@
+// Reagents (spec 13.5): four hidden effects each, found deeper as minDepth rises.
+[
+ {
+  "id": "gravecap",
+  "name": "Gravecap",
+  "effects": [
+   "heal",
+   "clarity",
+   "mending",
+   "might"
+  ],
+  "minDepth": 1,
+  "value": 6,
+  "text": "Gravecap: an alchemist's find."
+ },
+ {
+  "id": "ashroot",
+  "name": "Ashroot",
+  "effects": [
+   "vigour",
+   "ironskin",
+   "heal",
+   "warding"
+  ],
+  "minDepth": 1,
+  "value": 6,
+  "text": "Ashroot: an alchemist's find."
+ },
+ {
+  "id": "bellwort",
+  "name": "Bellwort",
+  "effects": [
+   "restore",
+   "quench",
+   "heal",
+   "bile"
+  ],
+  "minDepth": 1,
+  "value": 7,
+  "text": "Bellwort: an alchemist's find."
+ },
+ {
+  "id": "cinderleaf",
+  "name": "Cinderleaf",
+  "effects": [
+   "purge",
+   "nighteye",
+   "satiate",
+   "fortitude"
+  ],
+  "minDepth": 1,
+  "value": 7,
+  "text": "Cinderleaf: an alchemist's find."
+ },
+ {
+  "id": "ratTallow",
+  "name": "Rat Tallow",
+  "effects": [
+   "quench",
+   "courage",
+   "rot",
+   "unbind"
+  ],
+  "minDepth": 2,
+  "value": 8,
+  "text": "Rat Tallow: an alchemist's find."
+ },
+ {
+  "id": "silkGland",
+  "name": "Silk Gland",
+  "effects": [
+   "quickness",
+   "keeneye",
+   "stillness",
+   "antivenom"
+  ],
+  "minDepth": 2,
+  "value": 8,
+  "text": "Silk Gland: an alchemist's find."
+ },
+ {
+  "id": "glowmoss",
+  "name": "Glowmoss",
+  "effects": [
+   "frailty",
+   "ironskin",
+   "satiate",
+   "fortitude"
+  ],
+  "minDepth": 2,
+  "value": 9,
+  "text": "Glowmoss: an alchemist's find."
+ },
+ {
+  "id": "boneDust",
+  "name": "Bone Dust",
+  "effects": [
+   "venom",
+   "courage",
+   "might",
+   "staunch"
+  ],
+  "minDepth": 2,
+  "value": 9,
+  "text": "Bone Dust: an alchemist's find."
+ },
+ {
+  "id": "cavePearl",
+  "name": "Cave Pearl",
+  "effects": [
+   "keeneye",
+   "quickness",
+   "heal",
+   "dread"
+  ],
+  "minDepth": 3,
+  "value": 10,
+  "text": "Cave Pearl: an alchemist's find."
+ },
+ {
+  "id": "tunnelLichen",
+  "name": "Tunnel Lichen",
+  "effects": [
+   "mending",
+   "warding",
+   "cleanse",
+   "rot"
+  ],
+  "minDepth": 3,
+  "value": 10,
+  "text": "Tunnel Lichen: an alchemist's find."
+ },
+ {
+  "id": "hollowReed",
+  "name": "Hollow Reed",
+  "effects": [
+   "scald",
+   "vigour",
+   "nighteye",
+   "mending"
+  ],
+  "minDepth": 3,
+  "value": 11,
+  "text": "Hollow Reed: an alchemist's find."
+ },
+ {
+  "id": "knellflower",
+  "name": "Knellflower",
+  "effects": [
+   "clarity",
+   "drainBody",
+   "antivenom",
+   "courage"
+  ],
+  "minDepth": 3,
+  "value": 11,
+  "text": "Knellflower: an alchemist's find."
+ },
+ {
+  "id": "brassFilings",
+  "name": "Brass Filings",
+  "effects": [
+   "purge",
+   "slumber",
+   "restore",
+   "unbind"
+  ],
+  "minDepth": 4,
+  "value": 12,
+  "text": "Brass Filings: an alchemist's find."
+ },
+ {
+  "id": "slickResidue",
+  "name": "Slick Residue",
+  "effects": [
+   "fortitude",
+   "unbind",
+   "restore",
+   "drainMind"
+  ],
+  "minDepth": 4,
+  "value": 12,
+  "text": "Slick Residue: an alchemist's find."
+ },
+ {
+  "id": "wispEmber",
+  "name": "Wisp Ember",
+  "effects": [
+   "frailty",
+   "purge",
+   "cleanse",
+   "quench"
+  ],
+  "minDepth": 4,
+  "value": 13,
+  "text": "Wisp Ember: an alchemist's find."
+ },
+ {
+  "id": "impHorn",
+  "name": "Imp Horn",
+  "effects": [
+   "antivenom",
+   "nighteye",
+   "might",
+   "drainMind"
+  ],
+  "minDepth": 4,
+  "value": 13,
+  "text": "Imp Horn: an alchemist's find."
+ },
+ {
+  "id": "frostSalt",
+  "name": "Frost Salt",
+  "effects": [
+   "heal",
+   "ironskin",
+   "staunch",
+   "venom"
+  ],
+  "minDepth": 5,
+  "value": 14,
+  "text": "Frost Salt: an alchemist's find."
+ },
+ {
+  "id": "sporePuff",
+  "name": "Spore Puff",
+  "effects": [
+   "clarity",
+   "bile",
+   "keeneye",
+   "fortitude"
+  ],
+  "minDepth": 5,
+  "value": 14,
+  "text": "Spore Puff: an alchemist's find."
+ },
+ {
+  "id": "coilScale",
+  "name": "Coil Scale",
+  "effects": [
+   "warding",
+   "vigour",
+   "clarity",
+   "dread"
+  ],
+  "minDepth": 5,
+  "value": 15,
+  "text": "Coil Scale: an alchemist's find."
+ },
+ {
+  "id": "mothWing",
+  "name": "Moth Wing",
+  "effects": [
+   "satiate",
+   "drainBody",
+   "quickness",
+   "might"
+  ],
+  "minDepth": 5,
+  "value": 15,
+  "text": "Moth Wing: an alchemist's find."
+ },
+ {
+  "id": "blindFern",
+  "name": "Blind Fern",
+  "effects": [
+   "restore",
+   "slumber",
+   "mending",
+   "staunch"
+  ],
+  "minDepth": 6,
+  "value": 16,
+  "text": "Blind Fern: an alchemist's find."
+ },
+ {
+  "id": "redClay",
+  "name": "Red Clay",
+  "effects": [
+   "heal",
+   "vigour",
+   "courage",
+   "stillness"
+  ],
+  "minDepth": 6,
+  "value": 16,
+  "text": "Red Clay: an alchemist's find."
+ },
+ {
+  "id": "ghostLily",
+  "name": "Ghost Lily",
+  "effects": [
+   "keeneye",
+   "scald",
+   "antivenom",
+   "quench"
+  ],
+  "minDepth": 6,
+  "value": 17,
+  "text": "Ghost Lily: an alchemist's find."
+ },
+ {
+  "id": "pitchResin",
+  "name": "Pitch Resin",
+  "effects": [
+   "cleanse",
+   "drainMind",
+   "satiate",
+   "quickness"
+  ],
+  "minDepth": 6,
+  "value": 17,
+  "text": "Pitch Resin: an alchemist's find."
+ },
+ {
+  "id": "ironBloom",
+  "name": "Iron Bloom",
+  "effects": [
+   "scald",
+   "unbind",
+   "purge",
+   "ironskin"
+  ],
+  "minDepth": 7,
+  "value": 18,
+  "text": "Iron Bloom: an alchemist's find."
+ },
+ {
+  "id": "weepcap",
+  "name": "Weepcap",
+  "effects": [
+   "restore",
+   "warding",
+   "stillness",
+   "nighteye"
+  ],
+  "minDepth": 7,
+  "value": 18,
+  "text": "Weepcap: an alchemist's find."
+ },
+ {
+  "id": "mireRoot",
+  "name": "Mire Root",
+  "effects": [
+   "courage",
+   "staunch",
+   "unbind",
+   "dread"
+  ],
+  "minDepth": 7,
+  "value": 19,
+  "text": "Mire Root: an alchemist's find."
+ },
+ {
+  "id": "saltpetre",
+  "name": "Saltpetre",
+  "effects": [
+   "satiate",
+   "nighteye",
+   "quickness",
+   "slumber"
+  ],
+  "minDepth": 7,
+  "value": 19,
+  "text": "Saltpetre: an alchemist's find."
+ },
+ {
+  "id": "deepTruffle",
+  "name": "Deep Truffle",
+  "effects": [
+   "quench",
+   "ironskin",
+   "venom",
+   "cleanse"
+  ],
+  "minDepth": 8,
+  "value": 20,
+  "text": "Deep Truffle: an alchemist's find."
+ },
+ {
+  "id": "eyeOfNewtMoth",
+  "name": "Eye of Newt-Moth",
+  "effects": [
+   "clarity",
+   "keeneye",
+   "purge",
+   "stillness"
+  ],
+  "minDepth": 8,
+  "value": 20,
+  "text": "Eye of Newt-Moth: an alchemist's find."
+ },
+ {
+  "id": "choirBellMoss",
+  "name": "Choir Bell Moss",
+  "effects": [
+   "warding",
+   "antivenom",
+   "drainBody",
+   "fortitude"
+  ],
+  "minDepth": 8,
+  "value": 21,
+  "text": "Choir Bell Moss: an alchemist's find."
+ },
+ {
+  "id": "drownedKelp",
+  "name": "Drowned Kelp",
+  "effects": [
+   "antivenom",
+   "nighteye",
+   "frailty",
+   "quench"
+  ],
+  "minDepth": 8,
+  "value": 21,
+  "text": "Drowned Kelp: an alchemist's find."
+ },
+ {
+  "id": "copperBark",
+  "name": "Copper Bark",
+  "effects": [
+   "rot",
+   "mending",
+   "might",
+   "vigour"
+  ],
+  "minDepth": 9,
+  "value": 22,
+  "text": "Copper Bark: an alchemist's find."
+ },
+ {
+  "id": "blackAmber",
+  "name": "Black Amber",
+  "effects": [
+   "quickness",
+   "bile",
+   "keeneye",
+   "heal"
+  ],
+  "minDepth": 9,
+  "value": 22,
+  "text": "Black Amber: an alchemist's find."
+ },
+ {
+  "id": "wargFang",
+  "name": "Warg Fang",
+  "effects": [
+   "cleanse",
+   "bile",
+   "satiate",
+   "purge"
+  ],
+  "minDepth": 9,
+  "value": 23,
+  "text": "Warg Fang: an alchemist's find."
+ },
+ {
+  "id": "spiderSilk",
+  "name": "Spider Silk",
+  "effects": [
+   "clarity",
+   "unbind",
+   "rot",
+   "restore"
+  ],
+  "minDepth": 9,
+  "value": 23,
+  "text": "Spider Silk: an alchemist's find."
+ },
+ {
+  "id": "grubJelly",
+  "name": "Grub Jelly",
+  "effects": [
+   "fortitude",
+   "warding",
+   "quench",
+   "slumber"
+  ],
+  "minDepth": 10,
+  "value": 24,
+  "text": "Grub Jelly: an alchemist's find."
+ },
+ {
+  "id": "thornApple",
+  "name": "Thorn Apple",
+  "effects": [
+   "heal",
+   "ironskin",
+   "vigour",
+   "scald"
+  ],
+  "minDepth": 10,
+  "value": 24,
+  "text": "Thorn Apple: an alchemist's find."
+ },
+ {
+  "id": "lanternGall",
+  "name": "Lantern Gall",
+  "effects": [
+   "frailty",
+   "staunch",
+   "might",
+   "courage"
+  ],
+  "minDepth": 10,
+  "value": 25,
+  "text": "Lantern Gall: an alchemist's find."
+ },
+ {
+  "id": "unmadeAsh",
+  "name": "Unmade Ash",
+  "effects": [
+   "clarity",
+   "mending",
+   "drainMind",
+   "cleanse"
+  ],
+  "minDepth": 10,
+  "value": 25,
+  "text": "Unmade Ash: an alchemist's find."
+ }
+]

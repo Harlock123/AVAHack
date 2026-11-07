@@ -51,6 +51,7 @@ public sealed partial class GameEngine
             if (MagicLight > 0) return 1.2;
             if (LightLeft > 0) return 1.05;
             // In the dark only the dwarves see much, and only close.
+            if (Party.Standing.Any(c => c.Buffs.ContainsKey("nightEye"))) return 0.85;
             return Party.Standing.Any(c => c.HasTrait(Traits.Darkvision)) ? 0.6 : 0.42;
         };
         SpellItemHook = UseSpellItem;

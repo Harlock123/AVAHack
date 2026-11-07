@@ -25,4 +25,7 @@ public sealed class TextureSet
     public required Texture Portcullis { get; init; }
     public required Texture LeverUp { get; init; }
     public required Texture LeverDown { get; init; }
+    public required Texture Pit { get; init; }
+    public required Texture Plate { get; init; }
+    public required Texture Stairs { get; init; }
 }

@@ -1,0 +1,4 @@
+[
+  { "id": "roundShield", "name": "Round Shield", "ac": 2, "blockPercent": 40, "bashDamage": "1d4", "bashRecovery": 1.5, "weightKg": 3,
+    "text": "Oak with an iron rim. Hold it up to block; tap it to bash." }
+]

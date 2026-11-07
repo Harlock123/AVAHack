@@ -10,7 +10,7 @@ produces one self-contained executable per platform (Windows, macOS and Linux, x
 
 The design lives in `docs/SPECIFICATION.md`:
 - section 20 has the milestones;
-- section 22 has the implementation decisions.
+- sections 22–24 have the implementation decisions, one section per milestone.
 
 Everything in the game is original: the world, names, monsters and art. Keep it that way. Use no names, maps,
 art, text or UI layouts from other games, and no trademarked tabletop content (spec section 2).
@@ -35,13 +35,21 @@ implicit usings, invariant globalization and central package versions. Package v
   - `World/`:
     - `Dir` (compass directions and yaw).
     - `Cell`.
-    - `Level` (the grid, doors and levers).
-    - `Door` and `Lever`.
+    - `Level` (the grid, doors, levers, pits, plates, notes, stairs and the creatures to place).
+    - `Door`, `Lever`, and `Features.cs` (`Pit`, `Plate`, `Note`, `Spawn`, `FloorLook`).
     - `LevelLoader`, which reads the text level format; the format is in its doc comment and in spec
       section 22.
   - `Game/`:
-    - `GameEngine`: the fixed 60 Hz `Tick`, `Update` and `Alpha`, the action queue, the step, turn and bump
-      motions, `Camera(alpha)`, doors and levers, `Press(GameAction)` and `ClickWorld(WorldTarget)`.
+    - `GameEngine.cs`: the fixed 60 Hz `Tick`, `Update` and `Alpha`, the mode (playing, dead, won) and pause, the
+      action queue, the step, turn and bump motions, `Camera(alpha)`, doors and levers, `Press(GameAction)` and
+      `ClickWorld(WorldTarget)`.
+    - `GameEngine.Combat.cs`: the hands (`HandDown`, `HandUp`), swings, power attacks, bashes and blocks;
+      creatures' blows and projectiles; damage, death, reassembly; the fight state.
+    - `GameEngine.Monsters.cs`: placing creatures, noticing, packs, fleeing, turning, tells, the path search,
+      line of sight.
+    - `GameEngine.Traps.cs`: notes, spotting hidden pits, falling, plates, stairs, the automap's explored
+      cells.
+    - `Monster.cs`: `Monster`, `Projectile`, `Hand` and `FloatText`.
     - `GameAction`, `CameraPose` and `WorldTarget`.
   - `Rules/` (spec 6):
     - `Rng`: `Pcg32`, `RngStreams` and `ScriptedRng` for tests.
@@ -57,24 +65,33 @@ implicit usings, invariant globalization and central package versions. Package v
     - `CharacterBuilder`: creation checks and the quick-start party.
     - `SkillId`.
   - `Content/`:
-    - `Definitions.cs`: the record shape of each data file.
+    - `Definitions.cs` and `Creatures.cs`: the record shape of each data file.
     - `ContentDb`: strict loading and `Validate`.
-    - `Data/*.json`: skills, ancestries, callings, backgrounds, perks and conditions.
-    - `Levels/*.txt`: built-in levels.
+    - `Data/*.json`: skills, ancestries, callings, backgrounds, perks, conditions, creatures, weapons, shields and
+      armour.
+    - `Levels/*.txt`: built-in levels: `test-hall` (M0's) and `the-cellars` (the M2 level).
 - `src/AVAHack.Render/`: the first-person view, depending only on Core.
   - `IViewRenderer`.
-  - `SoftwareViewRenderer`: the column ray caster, doors, light and picking.
+  - `SoftwareViewRenderer`: the column ray caster, doors, floors by `FloorLook`, light, the depth buffer, sprites,
+    `Project` and picking.
   - `Texture`, `TextureSet` and `TextureFactory`: the procedural placeholder textures.
+  - `SpriteImage`, `SpriteInstance`, `Paint` and `SpriteFactory`: the code-drawn creatures (views × frames).
+  - `Scene`: the engine's creatures and stones as sprites, picking each creature's view from the camera angle.
 - `src/AVAHack.App/`: Avalonia.
-  - `Views/GameView`: the frame loop (`RequestAnimationFrame`), copying the framebuffer to a `WriteableBitmap`,
-    fitting the view at 16:10, the compass, messages, F3 stats, and clicks.
-  - `Input/InputHandler`: keys to actions.
+  - `Views/GameView.cs`: the 1280×800 canvas, the frame loop (`RequestAnimationFrame`), copying the framebuffer to
+    a `WriteableBitmap`, keys, clicks, the hands on the mouse, restarting.
+  - `Views/GameView.Draw.cs`: the view with floating numbers and the compass, the side panel (automap, log), the
+    hero bar (portrait, bars, hands with cooldowns) and the pause, death and victory banners.
+  - `Input/InputHandler`: keys to actions (`Map`) and to hands (`MapHand`: 1 and 2).
 - `tests/AVAHack.Core.Tests`:
   - levels, movement, the queue, timing, doors, levers and determinism (M0);
-  - every formula in spec sections 6–8, conditions, and the content's strictness and validation (M1).
+  - every formula in spec sections 6–8, conditions, and the content's strictness and validation (M1);
+  - combat, creature behaviour, traps and The Cellars' solvability (M2).
   - `Heroes` makes the quick-start heroes and levels them up.
+  - `Bot` plays a level the way a fallible person might, and `BalanceReport` runs it over many seeds.
 - `tests/AVAHack.Render.Tests`: golden images in `Golden/` (compared by `GoldenImage`, PNG I/O through
-  SkiaSharp), full coverage from every cell and facing, and a frame-time check.
+  SkiaSharp), full coverage from every cell and facing, a frame-time check, and the creatures' contact sheet
+  (`SpriteTests`, saved as `sprites.png` under `AVAHACK_SHOTS`).
 - `tests/AVAHack.App.Tests`: the real `GameView` in an Avalonia.Headless window, with keys and clicks.
 
 ## Rules that keep it working
@@ -91,6 +108,9 @@ implicit usings, invariant globalization and central package versions. Package v
   clock.
 - **Keys go through `InputHandler`, matched by `PhysicalKey`.** Test new keys through `InputHandler` too. On
   this desktop, Shift's release can arrive as CapsLock, so never track held keys by `Key`.
+- **A level change gets its checks.** Change `the-cellars.txt` and `CellarsTests` must still pass: every floor
+  cell, creature and the stairs must be reachable while working the mechanisms in order. Read the
+  `BalanceReport` before and after a change to creatures, combat or the level.
 - **The eye stays in the party's cell.** `SoftwareViewRenderer.EyeBack` must stay below 0.5, or rays can start
   inside a wall.
 - **Changing the look means changing the goldens.** If a render change is meant to be seen, rewrite the goldens

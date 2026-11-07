@@ -32,6 +32,7 @@
 21. Open questions
 22. Implementation decisions (M0)
 23. Implementation decisions (M1)
+24. Implementation decisions (M2)
 
 ---
 
@@ -1110,7 +1111,7 @@ Each milestone is finished when its exit test passes.
 | --- | --- | --- | --- |
 | **M0** | Skeleton and view. *Done (2026-11-06)* | Solution, CI, the software renderer, a handmade test level, step and turn tweens, doors and a lever | Walk a 16×16 test level at 60 fps; golden images pass. *Result:* a frame takes about 2.3 ms at 640×400 on an 8-core ARM machine; 7 golden images pass |
 | **M1** | Rules core. *Done (2026-11-06)* | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8. *Result:* 94 new Core tests (120 in all) |
-| **M2** | One hero, one fight | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play |
+| **M2** | One hero, one fight. *Built (2026-11-06); the exit test waits on the user's play* | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play. *So far:* the balance bot wins The Cellars 10 times in 12, in about 2.6 minutes of game time |
 | **M3** | Party and creation | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it |
 | **M4** | Progression | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling |
 | **M5** | Magic | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play |
@@ -1163,6 +1164,7 @@ is built.
 ---
 
 ## 23. Implementation decisions (M1)
+24. Implementation decisions (M2)
 
 - **22 skills, not 20.** The table in section 7.1 always listed 22 (Survival and Lore are in the craft group). The
   count elsewhere was corrected to match.
@@ -1226,4 +1228,93 @@ is built.
   Darkvision, holding breath, raw meat and the Spark cantrip are carried as traits for later milestones.
 - **A downed hero doesn't regenerate.** Getting up after a fight is part of combat (M2).
 - **Merchant prices** move 5% per CHA point, held between 0.5× and 1.5×.
+
+---
+
+## 24. Implementation decisions (M2)
+
+- **One hero, as a Lone Delver.** M2 plays Brannoc, the quick-start dwarf fighter, alone, so the Lone Delver rules
+  of section 4 apply: +50% HP, +2 to saves and twice the skill XP. He has a longsword, a round shield and chain
+  mail: AC 18 and 19 HP. Weapons, shields and armour have small content files (`weapons.json`, `shields.json`,
+  `armour.json`), which M3 will grow into the full item system.
+- **The hands** are keys 1 (left, the shield) and 2 (right, the weapon), or a click on their boxes in the hero bar.
+  Right-clicking the view also swings.
+  - **The weapon swings when the key is released.** Held for 0.5 s or more, the swing is a power attack: +50%
+    damage, 15 Stamina, 30% longer recovery and a 30% chance to stagger.
+  - **The shield blocks while it is held.** Tapped (released within 0.25 s), it bashes instead: 1d4 + STR
+    bludgeoning, trained by Block, 5 Stamina and a 20% chance to stagger.
+  - **A perfect block** (raised no more than 0.2 s before the blow lands) stops all of it and staggers the
+    attacker.
+  - **Any later block** takes off (shield % + Block / 4)%, at most 90%, for 5 Stamina. Blocks only work against
+    blows from the cell ahead.
+  - **A staggered creature** reels for 0.8 s and loses its tell.
+- **Creatures are data** (`creatures.json`, read and checked like the other content), with the behaviour blocks of
+  section 12.4. All of them work except patrol and flank. M2 has the six lesser creatures of the Upper Hollow:
+  Cellar Rat, Tunnel Spider, Shambler, Bone Sentry, Gutter Goblin and Goblin Slinger.
+- **Noticing:**
+  - A creature sees the party out to (Perception − 5) cells, at least 2, if it has line of sight. Walls and shut
+    wooden doors block sight; a portcullis doesn't.
+  - Ambushers wait until the party is within 2 cells.
+  - Anything next to the party notices it.
+  - A blow is heard within 4 cells, through doors and round corners.
+  - A pack's alarm reaches the same kind of creature within 8 cells.
+  - Once aware, a creature stays aware. The awareness meter of section 11.1 arrives with stealth.
+- **A creature's blow lands at the end of its tell.**
+  - If the party has stepped out of the cell ahead by then, it whiffs. This is what makes the square dance work.
+  - Creatures must face the party to strike. A quarter turn costs the creature's turn time, and an about-face
+    costs double.
+  - Attacking a creature that isn't facing the party, or isn't yet aware of it, has advantage.
+  - Hitting an unaware creature is a sneak attack: ×2.
+- **Thrown stones** travel along straight rows and columns only, at 6 cells a second.
+  - They hit the first creature in the way as well as the party.
+  - A slinger backs away when the party closes in, and fights hand to hand only when cornered.
+- **Paths** come from a breadth-first search on the grid (every step costs the same here, so this matches A*).
+  - The first step must be free now; cells further along ignore other creatures, which will have moved on.
+  - The mindless walk into pits and die there. Everything else avoids every pit, seen or not.
+  - Openers (goblins) open wooden doors.
+  - A door never closes on a creature, just as it never closes on the party.
+- **Small creatures** share a cell, up to four, each drawn in its own corner. A blow hits the nearest first.
+- **Bone Sentries** fall into a pile of bones that stands up again at full HP after 8 s, unless the killing blow was
+  bludgeoning. A pile can also be crushed afterwards with a bludgeoning blow; a shield bash will do.
+- **The fight** is on while any aware creature is within 10 cells, and ends after 3 s of calm. Skill caps per fight,
+  regeneration in a fight, and Halfling luck use this.
+- **Pits** drop the party 2d6 damage to their landing cell on the same map. The multi-level dungeon is M6.
+  - A hidden pit is spotted when the party enters a cell within 2 of it, if passive Perception meets its DC.
+    Spotting one teaches Survival.
+  - Creatures falling in are gone.
+- **Plates** are toggle (each press flips the linked doors) or hold (the doors are open only while pressed). The
+  party or any living creature presses them.
+- **Notes** show the first time the party steps on their cell. **Stairs** end the level.
+- **Death:** when the lone hero falls, the run is over, and Enter starts a new one with a new seed. Death saves and
+  getting up after a fight wait for the party (M3).
+- **No rest key yet.** Out of a fight the hero regenerates 1% of HP a second (section 6.2), so waiting heals. Rest
+  and its encounters are M8.
+- **Level-ups** happen and are kept. The choice of HP, Stamina or Mana waits as "Level up!" on the hero bar until
+  the level-up screen in M4.
+- **Pause:** Space freezes everything. Queueing hand actions while paused is not done yet.
+- **Creatures on screen** are 64×64 pictures drawn in code (`SpriteFactory`), with views from the front, the side
+  (mirrored for the other side) and the back. Each view has idle, wind-up, strike and dead frames. They are drawn
+  as camera-facing pictures against a per-pixel depth buffer, so they hide behind walls and show through a
+  portcullis's gaps. The tell is the wind-up frame plus a pulsing glow; a hit flashes them red. Numbers float up
+  from what was hit.
+- **The screen** is a fixed 1280×800 canvas scaled to the window:
+  - the view (960×600) with the compass;
+  - a side panel with the level name, time and kills, an automap of the cells seen (3 cells' sight), and the
+    message log;
+  - a hero bar with a portrait, HP, Stamina, Mana and XP, the two hands with cooldown sweeps and a power-attack
+    charge bar, conditions, and the controls.
+- **The Cellars** (`Content/Levels/the-cellars.txt`):
+  - 32×32 cells, 24 creatures, two levers, a plate, two pits (one hidden), nine notes and the stairs.
+  - The route goes down to a dry cistern for the lever that opens the crypt. The crypt's lever opens the goblin
+    warren, and the warren's plate opens the stairs.
+  - A test walks the map working the mechanisms in order, and checks that every floor cell, every creature and
+    the stairs are reachable.
+- **Balance bot.** `BalanceReport` plays the level with a simple bot over 12 seeds (`AVAHACK_BALANCE_RUNS` for
+  more). The bot:
+  - reacts after 0.15–0.5 s;
+  - sees only half the tells, and raises its shield at a random point in the last half second when it does;
+  - rests when below half HP.
+
+  It wins about 10 runs in 12, in about 2.6 minutes of game time. A first-time player exploring blind should
+  take roughly 10–15 minutes.
 

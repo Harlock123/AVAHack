@@ -102,7 +102,7 @@ public sealed class WindowTests
         Pump();
         var r = v.ViewRect();
         Assert.Equal(1.6, r.Width / r.Height, 3);
-        Assert.Equal(1000, r.Width, 1);
+        Assert.Equal(1000 * 960 / 1280.0, r.Width, 1); // the canvas fills the width; the view is its left 960
     }
 
     [Theory]
@@ -119,6 +119,11 @@ public sealed class WindowTests
     [InlineData(PhysicalKey.ArrowRight, GameAction.TurnRight)]
     [InlineData(PhysicalKey.F, GameAction.Use)]
     public void Keys_map_to_actions(PhysicalKey key, GameAction action) => Assert.Equal(action, InputHandler.Map(key));
+
+    [Theory]
+    [InlineData(PhysicalKey.Digit1, HandSide.Left)]
+    [InlineData(PhysicalKey.Digit2, HandSide.Right)]
+    public void Keys_1_and_2_are_the_hands(PhysicalKey key, HandSide side) => Assert.Equal(side, InputHandler.MapHand(key));
 
     [Fact]
     public void Caps_lock_and_shift_do_nothing() // Shift's release can arrive as CapsLock on some desktops

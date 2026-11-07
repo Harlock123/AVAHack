@@ -80,6 +80,47 @@ public sealed class ViewTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void Creatures_stand_in_the_view_and_behind_the_portcullis()
+    {
+        var (g, r) = Make();
+        g.Stand(new Cell(6, 6), Dir.East);
+        g.AddMonster("gutterGoblin", new Cell(9, 6), Dir.West);   // beyond the portcullis, seen through its bars
+        g.AddMonster("cellarRat", new Cell(8, 6), Dir.West);
+        var art = new SpriteFactory();
+        r.Render(g.Level, g.Camera(), 0, Scene.Build(g, g.Camera(), art));
+        GoldenImage.Check("creatures-portcullis", r);
+
+        g.Stand(new Cell(2, 3), Dir.East);
+        g.AddMonster("boneSentry", new Cell(4, 3), Dir.West);
+        g.AddMonster("shambler", new Cell(3, 1), Dir.South); // round the corner: hidden by the wall
+        r.Render(g.Level, g.Camera(), 0, Scene.Build(g, g.Camera(), art));
+        GoldenImage.Check("creatures-room", r);
+        Assert.NotNull(r.Project(4.5, 3.5, 0.5));
+        Assert.Null(r.Project(1.5, 3.5, 0.5)); // behind the eye
+    }
+
+    [Fact]
+    public void Pits_plates_and_stairs_have_their_own_floors()
+    {
+        var level = LevelLoader.Parse("""
+            start: 1 2 north
+            pit: 1 1 -> 3 2
+            plate: 2 1 toggle -> 2 3
+            map:
+            #####
+            #^o>#
+            #...#
+            ##+##
+            #####
+            """);
+        var g = new GameEngine(level);
+        var r = new SoftwareViewRenderer(TextureFactory.Cellar());
+        g.Stand(new Cell(2, 2), Dir.North);
+        r.Render(level, g.Camera(), 0);
+        GoldenImage.Check("floors", r);
+    }
+
+    [Fact]
     public void Every_pixel_is_drawn_from_every_cell_and_facing()
     {
         var (g, r) = Make();

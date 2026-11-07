@@ -1,0 +1,131 @@
+using AVAHack.Characters;
+using AVAHack.Rules;
+
+namespace AVAHack.Content;
+
+public enum Tier { Lesser, Common, Greater, Dread }
+
+public enum CreatureSize { Small, Medium, Large }
+
+/// <summary>A condition an attack can put on what it hits.</summary>
+public sealed record OnHitDef
+{
+    public required ConditionId Condition { get; init; }
+    public required int Dc { get; init; }
+    public double? Seconds { get; init; }
+    /// <summary>The chance, 0–100, that a hit tries to apply it (the target still saves).</summary>
+    public double Chance { get; init; } = 100;
+}
+
+public sealed record CreatureAttackDef
+{
+    public required string Id { get; init; }
+    /// <summary>Seconds of visible tell before the blow lands.</summary>
+    public required double Windup { get; init; }
+    /// <summary>Seconds after the blow before the creature can act again.</summary>
+    public required double Recovery { get; init; }
+    public required int ToHit { get; init; }
+    public required string Damage { get; init; }
+    public required DamageType Type { get; init; }
+    /// <summary>Cells: 1 is melee (the cell ahead); more is a projectile thrown along a straight line.</summary>
+    public int Range { get; init; } = 1;
+    /// <summary>Cells a second a projectile flies.</summary>
+    public double ProjectileSpeed { get; init; } = 6;
+    public OnHitDef? OnHit { get; init; }
+}
+
+/// <summary>Something a creature does that isn't an attack (e.g. bones that reassemble).</summary>
+public sealed record CreatureSpecialDef
+{
+    /// <summary>reassemble: rises again after <see cref="Seconds"/> unless the killing blow was <see cref="UnlessKilledBy"/>.</summary>
+    public required string Kind { get; init; }
+    public double Seconds { get; init; }
+    public DamageType? UnlessKilledBy { get; init; }
+}
+
+/// <summary>A monster (spec 12.1).</summary>
+public sealed record CreatureDef
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Family { get; init; }
+    public required Tier Tier { get; init; }
+    public required int Level { get; init; }
+    public required string HitDice { get; init; }
+    public required int Ac { get; init; }
+    /// <summary>Save bonuses, keyed str, dex, con, int, wis, cha. Missing ones are 0.</summary>
+    public Dictionary<string, int> Saves { get; init; } = [];
+    public required int Perception { get; init; }
+    public required double StepSeconds { get; init; }
+    public required double TurnSeconds { get; init; }
+    public CreatureSize Size { get; init; } = CreatureSize.Medium;
+    public DamageType[] Resist { get; init; } = [];
+    public DamageType[] Vulnerable { get; init; } = [];
+    public DamageType[] Immune { get; init; } = [];
+    /// <summary>Conditions it can't suffer, e.g. poisoned for the dead.</summary>
+    public ConditionId[] ConditionImmune { get; init; } = [];
+    public required CreatureAttackDef[] Attacks { get; init; }
+    /// <summary>Behaviour blocks (spec 12.4): wander, guard, ambush, chase, melee, ranged, flee, opener, pack, mindless.</summary>
+    public required string[] Behaviour { get; init; }
+    /// <summary>Flees below this share of its HP, in percent (with the hero's CHA). 0 never flees.</summary>
+    public double FleeAtPercent { get; init; }
+    public CreatureSpecialDef[] Special { get; init; } = [];
+    public required string Sprite { get; init; }
+    public required string Text { get; init; }
+
+    public bool Has(string behaviour) => Behaviour.Contains(behaviour);
+}
+
+public static class Behaviours
+{
+    public static readonly IReadOnlySet<string> All = new HashSet<string>
+    {
+        "wander", "guard", "ambush", "patrol", "chase", "melee", "ranged", "flee", "opener", "pack", "mindless",
+    };
+}
+
+public enum ArmourKind { Light, Medium, Heavy }
+
+public sealed record WeaponDef
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required SkillId Skill { get; init; }
+    public required string Damage { get; init; }
+    public required DamageType Type { get; init; }
+    /// <summary>Seconds the hand needs after a swing, before DEX and perks.</summary>
+    public required double Recovery { get; init; }
+    /// <summary>Finesse weapons may use DEX instead of STR.</summary>
+    public bool Finesse { get; init; }
+    /// <summary>A dagger, for sneak attack multipliers.</summary>
+    public string Kind { get; init; } = "";
+    public double WeightKg { get; init; }
+    public required string Text { get; init; }
+}
+
+public sealed record ShieldDef
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required int Ac { get; init; }
+    /// <summary>Percent of a blow from the front taken off while blocking, before the Block skill's share.</summary>
+    public required double BlockPercent { get; init; }
+    /// <summary>A quick shove with the shield's rim.</summary>
+    public required string BashDamage { get; init; }
+    public required double BashRecovery { get; init; }
+    public double WeightKg { get; init; }
+    public required string Text { get; init; }
+}
+
+public sealed record ArmourDef
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required ArmourKind Kind { get; init; }
+    /// <summary>What it adds to AC.</summary>
+    public required int Ac { get; init; }
+    /// <summary>The most DEX it lets count, or null for no limit.</summary>
+    public int? DexCap { get; init; }
+    public double WeightKg { get; init; }
+    public required string Text { get; init; }
+}

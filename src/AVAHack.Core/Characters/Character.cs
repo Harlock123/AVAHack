@@ -57,6 +57,42 @@ public sealed class Character
     public bool RelentlessUsed { get; private set; }
     public ArmourWorn Armour { get; set; } = ArmourWorn.None;
 
+    /// <summary>What is in the right hand (null is a bare fist).</summary>
+    public WeaponDef? MainHand { get; private set; }
+    /// <summary>What is on the left arm.</summary>
+    public ShieldDef? OffHand { get; private set; }
+    public ArmourDef? Body { get; private set; }
+
+    /// <summary>
+    /// Playing alone (spec 4): +50% HP, +2 to every save and twice the skill XP. Setting it adjusts
+    /// <see cref="ExtraSkillXpPercent"/> and keeps the hero's share of HP.
+    /// </summary>
+    public bool LoneDelver
+    {
+        get => _lone;
+        set
+        {
+            if (_lone == value) return;
+            double share = MaxHp > 0 ? Hp / MaxHp : 1;
+            _lone = value;
+            ExtraSkillXpPercent += value ? 100 : -100;
+            Hp = Math.Round(MaxHp * share, 6);
+        }
+    }
+    private bool _lone;
+
+    /// <summary>Puts on weapon, shield and armour, and works out the armour class from them.</summary>
+    public void Equip(WeaponDef? mainHand, ShieldDef? offHand, ArmourDef? body)
+    {
+        MainHand = mainHand;
+        OffHand = offHand;
+        Body = body;
+        Armour = new ArmourWorn(body?.Ac ?? 0, body?.DexCap, offHand?.Ac ?? 0);
+    }
+
+    /// <summary>The armour skill that being hit trains: Heavy Armour in heavy armour, Light Armour otherwise.</summary>
+    public SkillId ArmourSkill => Body?.Kind == ArmourKind.Heavy ? SkillId.HeavyArmour : SkillId.LightArmour;
+
     public ConditionSet Conditions { get; }
 
     internal Character(ContentDb content, string name, AncestryDef ancestry, CallingDef calling, BackgroundDef background, AttributeSet baseAttributes)
@@ -104,7 +140,8 @@ public sealed class Character
         {
             int die = Calling.HitDie;
             int hp = die + (Level - 1) * Progression.HitDieAverage(die) + Level * Mod(Attribute.Con) + 5 * HealthChoices;
-            return Math.Max(Level, hp);
+            hp = Math.Max(Level, hp);
+            return LoneDelver ? hp * 3 / 2 : hp;
         }
     }
 
@@ -140,7 +177,7 @@ public sealed class Character
     public bool IsProficient(Attribute save) => Calling.Saves.Contains(save);
 
     public int SaveBonus(Attribute a) =>
-        Mod(a) + (IsProficient(a) ? Checks.Proficiency(Level) : 0) - Conditions.SavePenalty;
+        Mod(a) + (IsProficient(a) ? Checks.Proficiency(Level) : 0) - Conditions.SavePenalty + (LoneDelver ? 2 : 0);
 
     /// <summary>
     /// A saving throw. Dwarves have advantage against poison, gnomes against illusion: pass the

@@ -1,0 +1,4 @@
+[
+  { "id": "leather", "name": "Leather Jerkin", "kind": "light", "ac": 1, "weightKg": 5, "text": "Boiled leather." },
+  { "id": "chainMail", "name": "Chain Mail", "kind": "heavy", "ac": 6, "dexCap": 0, "weightKg": 20, "text": "Heavy, noisy, and very reassuring." }
+]

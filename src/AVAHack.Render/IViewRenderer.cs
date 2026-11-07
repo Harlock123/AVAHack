@@ -13,8 +13,14 @@ public interface IViewRenderer
     int Height { get; }
     uint[] Pixels { get; }
 
-    /// <summary>Draws the level as seen from <paramref name="camera"/>. <paramref name="time"/> drives torch flicker.</summary>
-    void Render(Level level, CameraPose camera, double time);
+    /// <summary>
+    /// Draws the level as seen from <paramref name="camera"/>, with <paramref name="sprites"/> standing in it.
+    /// <paramref name="time"/> drives torch flicker.
+    /// </summary>
+    void Render(Level level, CameraPose camera, double time, IReadOnlyList<SpriteInstance>? sprites = null);
+
+    /// <summary>Where a world point (z is height, 0 the floor, 1 the ceiling) appears in the last frame's framebuffer, if in front.</summary>
+    (double X, double Y, double Depth)? Project(double x, double y, double z);
 
     /// <summary>What the last frame showed at framebuffer pixel (x, y): a wall face, a door, or nothing.</summary>
     WorldTarget? Pick(int x, int y);

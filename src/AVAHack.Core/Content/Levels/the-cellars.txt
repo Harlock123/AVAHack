@@ -1,0 +1,73 @@
+name: The Cellars
+start: 2 3 east
+lever: 21 27 east -> 19 2          # in the dry cistern: raises the gate of the crypt
+lever: 24 1 north -> 21 12         # in the crypt: raises the portcullis into the goblin warren
+pit: 15 9 -> 5 18 hidden 12        # the rotten floor south of the rat nest
+pit: 6 12 -> 3 21                  # the open hole in the shamblers' hall
+plate: 28 19 toggle -> 25 21       # in the warren: opens the gate to the stairs
+note: 2 3 The cellar door booms shut above you. The stairs down to the Hollow are somewhere below these cellars. Squeaking, to the east.
+note: 18 2 An iron gate seals a crypt. Its chains run down into the floor, toward the cellars below.
+note: 15 7 Scratched into the wall: THE FLOOR IS ROTTEN PAST HERE. WATCH YOUR FEET.
+note: 20 2 A brass plaque: HERE THE DEAD OF THE HOUSE STAND GUARD. Bones knit again unless they are crushed; a shield's rim will do it.
+note: 10 12 The hall smells of the grave. There is a hole in the middle of the floor. Things that don't think might not see it.
+note: 20 12 Goblin scratchings beside the portcullis, and an arrow pointing north, toward the crypt.
+note: 3 21 You land in the wet dark of the lower cellar. Something skitters in the corners.
+note: 5 25 The old cistern, long dry. Iron chains run along the ceiling to a lever on the far wall.
+note: 25 22 Cold air rises from below. The way down.
+monster: cellarRat 15 3 west
+monster: cellarRat 15 3 west
+monster: cellarRat 15 3 west
+monster: cellarRat 13 5 north
+monster: shambler 16 12 west
+monster: shambler 9 11 west
+monster: shambler 4 13 east
+monster: tunnelSpider 2 22 north
+monster: tunnelSpider 9 18 west
+monster: shambler 10 27 west
+monster: shambler 18 28 west
+monster: cellarRat 14 25 south
+monster: cellarRat 14 25 south
+monster: cellarRat 14 25 south
+monster: tunnelSpider 20 30 north
+monster: boneSentry 22 4 east
+monster: boneSentry 27 5 west
+monster: gutterGoblin 24 11 west
+monster: gutterGoblin 27 13 west
+monster: gutterGoblin 23 18 north
+monster: goblinSlinger 28 10 west
+monster: goblinSlinger 26 17 north
+monster: cellarRat 25 24 north
+monster: cellarRat 25 24 north
+map:
+################################
+#.....######......##.........###
+#.....######.......P.........###
+#.....+...........##.........###
+#.....######......##....#....###
+#.....######......##.........###
+############......##.........###
+###############..###.........###
+###############..###############
+###############^.#####........##
+###........####..#####........##
+###........##.....####........##
+###...^..............P...#....##
+###........#......####...#....##
+###........#.#########........##
+############.#########.#......##
+############.#########....#...##
+#..........#.#########........##
+#.......#..#.#########........##
+#...#......#.#########......o.##
+#............#########........##
+#......#...##############P######
+#..........############......###
+#..........############......###
+#####+#################......###
+#.....................#......###
+#...#...#...#...#...#.#....>.###
+#.....................#......###
+#.....................##########
+#...#...#...#...#...#.##########
+#.....................##########
+################################

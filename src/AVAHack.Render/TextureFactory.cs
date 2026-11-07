@@ -16,7 +16,61 @@ public static class TextureFactory
         Portcullis = Bars(),
         LeverUp = WithLever(StoneBlocks(seed, 0x6E6A62), down: false),
         LeverDown = WithLever(StoneBlocks(seed, 0x6E6A62), down: true),
+        Pit = PitHole(seed + 5),
+        Plate = PressurePlate(seed + 6, 0x57524A),
+        Stairs = StairsDown(seed + 7),
     };
+
+    /// <summary>A square hole with a broken rim, black at the bottom.</summary>
+    public static Texture PitHole(int seed)
+    {
+        var t = new Texture();
+        for (int y = 0; y < Texture.Size; y++)
+        for (int x = 0; x < Texture.Size; x++)
+        {
+            int edge = Math.Min(Math.Min(x, 63 - x), Math.Min(y, 63 - y));
+            int jag = Hash(seed, x / 4, y / 4) / 64; // 0..3: a ragged rim
+            if (edge < 4 + jag) t[x, y] = Shade(0x4A453F, (Fractal(seed, x, y) - 128) / 5 - 10);
+            else t[x, y] = Rgb(Math.Max(0, 14 - edge / 3), Math.Max(0, 12 - edge / 3), Math.Max(0, 12 - edge / 3));
+        }
+        return t;
+    }
+
+    /// <summary>A flagstone raised a little proud of its neighbours, with a dark seam round it.</summary>
+    public static Texture PressurePlate(int seed, int baseRgb)
+    {
+        var t = new Texture();
+        for (int y = 0; y < Texture.Size; y++)
+        for (int x = 0; x < Texture.Size; x++)
+        {
+            int edge = Math.Min(Math.Min(x, 63 - x), Math.Min(y, 63 - y));
+            int grain = (Fractal(seed, x, y) - 128) / 5;
+            t[x, y] = edge < 10 ? Shade(baseRgb, -6 + grain)
+                    : edge < 12 ? Rgb(20, 18, 16)
+                    : edge < 14 ? Shade(baseRgb, 24 + grain)
+                    : Shade(baseRgb, 10 + grain);
+        }
+        return t;
+    }
+
+    /// <summary>Steps going down into the dark, lit from the top.</summary>
+    public static Texture StairsDown(int seed)
+    {
+        var t = new Texture();
+        for (int y = 0; y < Texture.Size; y++)
+        for (int x = 0; x < Texture.Size; x++)
+        {
+            int step = y / 10, sy = y % 10;
+            int depth = step * 14;
+            int grain = (Fractal(seed, x, y) - 128) / 6;
+            bool riser = sy >= 7;
+            bool wall = x < 6 || x > 57;
+            t[x, y] = wall ? Shade(0x5A554E, grain - 10)
+                    : riser ? Shade(0x2C2925, grain - depth / 2)
+                    : Shade(0x625C55, grain - depth);
+        }
+        return t;
+    }
 
     /// <summary>A hash of three integers, spread evenly over 0..255.</summary>
     internal static int Hash(int a, int b, int c)

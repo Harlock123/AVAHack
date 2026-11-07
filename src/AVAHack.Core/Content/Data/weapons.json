@@ -1,0 +1,9 @@
+// Weapons (spec 13.2). M2 has what the first hero carries; the rest arrive with M3.
+[
+  { "id": "longsword", "name": "Longsword", "skill": "blade", "damage": "1d8", "type": "slashing", "recovery": 2.0, "weightKg": 1.5,
+    "text": "A plain, honest blade." },
+  { "id": "mace", "name": "Mace", "skill": "blunt", "damage": "1d6", "type": "bludgeoning", "recovery": 2.0, "weightKg": 2,
+    "text": "Bones don't argue with it." },
+  { "id": "dagger", "name": "Dagger", "skill": "blade", "damage": "1d4", "type": "piercing", "recovery": 1.4, "finesse": true, "kind": "dagger", "weightKg": 0.5,
+    "text": "Quick, and quiet." }
+]

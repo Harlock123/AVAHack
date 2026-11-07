@@ -32,6 +32,10 @@ public sealed class ContentDb
     public IReadOnlyList<BackgroundDef> Backgrounds { get; }
     public IReadOnlyList<PerkDef> Perks { get; }
     public IReadOnlyList<ConditionDef> Conditions { get; }
+    public IReadOnlyList<CreatureDef> Creatures { get; private init; } = [];
+    public IReadOnlyList<WeaponDef> Weapons { get; private init; } = [];
+    public IReadOnlyList<ShieldDef> Shields { get; private init; } = [];
+    public IReadOnlyList<ArmourDef> Armours { get; private init; } = [];
 
     private readonly Dictionary<SkillId, SkillDef> _skills;
     private readonly Dictionary<string, AncestryDef> _ancestries;
@@ -57,13 +61,25 @@ public sealed class ContentDb
         _conditions = conditions.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
     }
 
+    /// <summary>A copy with creatures and equipment added (they arrived in M2).</summary>
+    public ContentDb With(IReadOnlyList<CreatureDef> creatures, IReadOnlyList<WeaponDef> weapons,
+                          IReadOnlyList<ShieldDef> shields, IReadOnlyList<ArmourDef> armours) =>
+        new(Skills, Ancestries, Callings, Backgrounds, Perks, Conditions)
+        {
+            Creatures = creatures,
+            Weapons = weapons,
+            Shields = shields,
+            Armours = armours,
+        };
+
     /// <summary>The content shipped with the game, loaded once and checked.</summary>
     public static ContentDb LoadBuiltIn()
     {
         if (_builtIn is { } db) return db;
         db = new ContentDb(
             Read<SkillDef>("skills"), Read<AncestryDef>("ancestries"), Read<CallingDef>("callings"),
-            Read<BackgroundDef>("backgrounds"), Read<PerkDef>("perks"), Read<ConditionDef>("conditions"));
+            Read<BackgroundDef>("backgrounds"), Read<PerkDef>("perks"), Read<ConditionDef>("conditions"))
+            .With(Read<CreatureDef>("creatures"), Read<WeaponDef>("weapons"), Read<ShieldDef>("shields"), Read<ArmourDef>("armour"));
         var problems = db.Validate();
         if (problems.Count > 0) throw new InvalidDataException("The game's content has problems:\n" + string.Join('\n', problems));
         return _builtIn = db;
@@ -101,6 +117,10 @@ public sealed class ContentDb
     public PerkDef Perk(string id) => _perks.TryGetValue(id, out var p) ? p : throw new KeyNotFoundException($"No perk '{id}'.");
     public ConditionDef Condition(ConditionId id) => _conditions[id];
     public IEnumerable<PerkDef> PerksFor(SkillId skill) => Perks.Where(p => p.Skill == skill);
+    public CreatureDef Creature(string id) => Creatures.FirstOrDefault(c => c.Id == id) ?? throw new KeyNotFoundException($"No creature '{id}'.");
+    public WeaponDef Weapon(string id) => Weapons.FirstOrDefault(c => c.Id == id) ?? throw new KeyNotFoundException($"No weapon '{id}'.");
+    public ShieldDef Shield(string id) => Shields.FirstOrDefault(c => c.Id == id) ?? throw new KeyNotFoundException($"No shield '{id}'.");
+    public ArmourDef ArmourPiece(string id) => Armours.FirstOrDefault(c => c.Id == id) ?? throw new KeyNotFoundException($"No armour '{id}'.");
 
     /// <summary>An ancestry's attribute bonuses as attributes.</summary>
     public static IEnumerable<(Attribute Attribute, int Bonus)> AttributeBonuses(AncestryDef a) =>
@@ -194,7 +214,56 @@ public sealed class ContentDb
             if (c.Save is null && c.Seconds is null && c.Cures.Length == 0) p.Add($"conditions: {c.Id} can never end.");
             if (c.RecoveryFactor < 1) p.Add($"conditions: {c.Id}'s recovery factor must be at least 1.");
         }
+        ValidateCreatures(p);
+        Unique(Weapons, w => w.Id, "weapons");
+        Unique(Shields, w => w.Id, "shields");
+        Unique(Armours, w => w.Id, "armour");
+        foreach (var w in Weapons)
+        {
+            CheckDice(p, $"weapons: {w.Id}'s damage", w.Damage);
+            if (w.Recovery <= 0) p.Add($"weapons: {w.Id} must take some time to recover.");
+            if (!Progression.WeaponSkills.Contains(w.Skill)) p.Add($"weapons: {w.Id} uses {w.Skill}, which is not a weapon skill.");
+        }
+        foreach (var s in Shields)
+        {
+            CheckDice(p, $"shields: {s.Id}'s bash", s.BashDamage);
+            if (s.BlockPercent is < 0 or > 90) p.Add($"shields: {s.Id} blocks {s.BlockPercent}%; it must be 0–90.");
+        }
+        foreach (var a in Armours)
+            if (a.Kind == ArmourKind.Heavy && a.DexCap is not 0) p.Add($"armour: {a.Id} is heavy, so its DEX cap must be 0.");
         return p;
+    }
+
+    private void ValidateCreatures(List<string> p)
+    {
+        foreach (var g in Creatures.GroupBy(c => c.Id).Where(g => g.Count() > 1)) p.Add($"creatures: '{g.Key}' is defined {g.Count()} times.");
+        foreach (var c in Creatures)
+        {
+            CheckDice(p, $"creatures: {c.Id}'s hit dice", c.HitDice);
+            foreach (var key in c.Saves.Keys)
+                if (!TryEnum<Attribute>(key)) p.Add($"creatures: {c.Id} has a save for '{key}', which is not an attribute.");
+            foreach (var b in c.Behaviour.Where(b => !Behaviours.All.Contains(b))) p.Add($"creatures: {c.Id} has an unknown behaviour '{b}'.");
+            if (c.Attacks.Length == 0) p.Add($"creatures: {c.Id} has no attacks.");
+            if (c.StepSeconds <= 0 || c.TurnSeconds <= 0) p.Add($"creatures: {c.Id} must take time to step and turn.");
+            if (c.Has("ranged") && !c.Attacks.Any(a => a.Range > 1)) p.Add($"creatures: {c.Id} is ranged but has no attack with range.");
+            if (c.Has("melee") && !c.Attacks.Any(a => a.Range == 1)) p.Add($"creatures: {c.Id} is melee but has no attack with range 1.");
+            foreach (var a in c.Attacks)
+            {
+                CheckDice(p, $"creatures: {c.Id}'s {a.Id} damage", a.Damage);
+                if (a.Windup is < 0.4 or > 1.5) p.Add($"creatures: {c.Id}'s {a.Id} tell is {a.Windup} s; tells run 0.4–1.5 s.");
+                if (a.Recovery <= 0) p.Add($"creatures: {c.Id}'s {a.Id} must take time to recover.");
+                if (a.Range < 1) p.Add($"creatures: {c.Id}'s {a.Id} has range {a.Range}.");
+            }
+            foreach (var s in c.Special.Where(s => s.Kind != "reassemble")) p.Add($"creatures: {c.Id} has an unknown special '{s.Kind}'.");
+            if (c.FleeAtPercent is < 0 or > 90) p.Add($"creatures: {c.Id} flees at {c.FleeAtPercent}%; it must be 0–90.");
+            if (c.FleeAtPercent > 0 && c.Has("mindless")) p.Add($"creatures: {c.Id} is mindless, so it can't flee.");
+        }
+    }
+
+    private static void CheckDice(List<string> p, string what, string dice)
+    {
+        try { Dice.Parse(dice); }
+        catch (FormatException) { p.Add($"{what} '{dice}' is not dice."); }
     }
 
     private bool HasCycle(PerkDef start)

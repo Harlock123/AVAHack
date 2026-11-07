@@ -20,4 +20,12 @@ public static class InputHandler
         PhysicalKey.F or PhysicalKey.NumPad5 or PhysicalKey.Enter => GameAction.Use,
         _ => null,
     };
+
+    /// <summary>Keys 1 and 2 are the hero's left hand (the shield) and right hand (the weapon), held and released.</summary>
+    public static HandSide? MapHand(PhysicalKey key) => key switch
+    {
+        PhysicalKey.Digit1 => HandSide.Left,
+        PhysicalKey.Digit2 => HandSide.Right,
+        _ => null,
+    };
 }

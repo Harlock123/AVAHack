@@ -187,6 +187,36 @@ public sealed class ViewTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void A_cavern_of_the_Rootdark()
+    {
+        var db = AVAHack.Content.ContentDb.LoadBuiltIn();
+        var level = LevelLoader.Parse("""
+            start: 2 3 east
+            theme: rootdark
+            map:
+            ##########
+            #........#
+            #........#
+            #........#
+            #........#
+            #........#
+            ##########
+            """);
+        for (int x = 1; x < 9; x += 2) { level.RootWalls.Add(new Cell(x, 0)); level.RootWalls.Add(new Cell(x + 1, 6)); }
+        for (int y = 1; y < 6; y += 2) level.RootWalls.Add(new Cell(9, y));
+        level.Stations[new Cell(5, 1)] = "pod";
+        level.Stations[new Cell(4, 3)] = "roots";
+        level.Stations[new Cell(7, 5)] = "pod";
+        var g = new GameEngine(level, 1, new AVAHack.Characters.Party(AVAHack.Characters.CharacterBuilder.QuickStartParty(db).ToArray()), db);
+        g.LevelFlags["burst:" + new Cell(7, 5)] = "1";
+        g.AddMonster("thralledDelver", new Cell(7, 2), Dir.West);
+        g.AddMonster("rootWyrm", new Cell(8, 4), Dir.West);
+        var r = new SoftwareViewRenderer(TextureFactory.ForTheme("rootdark"));
+        r.Render(level, g.Camera(), 0, Scene.Build(g, g.Camera(), new SpriteFactory()));
+        GoldenImage.Check("rootdark-cavern", r);
+    }
+
+    [Fact]
     public void Every_region_in_the_content_has_its_art()
     {
         foreach (var r in AVAHack.Content.ContentDb.LoadBuiltIn().Regions)

@@ -10,12 +10,12 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 **Status: milestone M8, plus a balance pass.** What's in so far:
 
 - **The Delve.** A seeded, generated descent of up to 24 levels across six regions of four, each with its own
-  creatures and boss, ending in the Unmade Heart. The newest region is the Ossuary Stacks (levels 13–16), a buried
-  archive:
-  - noise wakes its dead;
-  - candlelight gives you away;
-  - its shelves hold books;
-  - the many-handed Archivist reads by his candles.
+  creatures and boss, ending in the Unmade Heart. The newest regions:
+  - **The Ossuary Stacks** (levels 13–16), a buried archive. Noise wakes its dead, candlelight gives you away, its
+    shelves hold books, and the many-handed Archivist reads by his candles.
+  - **The Rootdark** (levels 17–20), giant roots beneath the Works. Spore pods burst in clouds that fire sets
+    alight, root tangles choke the passages, and burrowing worms come up behind you. The Mycel Crown can't be
+    hurt while its nodes live, and the nodes grow back unless you burn them.
   Choose the seed, depth, monster strength, density, traps, magic items, food and Ironman before you start.
 - **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Skills grow with use and
   kills bring experience, with level-ups and perk trees.
@@ -95,6 +95,8 @@ pixel art:
 ![The bestiary](Images/AVAHack-bestiary.png)
 
 ![A hall of the Ossuary Stacks](Images/AVAHack-stacks.png)
+
+![A cavern of the Rootdark](Images/AVAHack-rootdark.png)
 
 Every item has its own icon, drawn and finished the same way:
 - 18 weapons, 8 armours, 3 shields and 12 pieces of gear;

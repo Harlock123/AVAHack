@@ -76,7 +76,7 @@ public sealed record CreatureDef
     public string? Loot { get; init; }
     /// <summary>What a summoner calls up every so often.</summary>
     public string? Summons { get; init; }
-    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir, archivist or unmaker.</summary>
+    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir, archivist, mycelCrown, crownNode or unmaker.</summary>
     public string? Boss { get; init; }
     public required string Sprite { get; init; }
     public required string Text { get; init; }
@@ -90,7 +90,7 @@ public static class Behaviours
     {
         "wander", "guard", "ambush", "patrol", "chase", "melee", "ranged", "flee", "opener", "pack", "mindless",
         "flier", "swimmer", "phaser", "unyielding", "caster", "summoner", "splits", "explodes", "invisible", "raises", "boss",
-        "herald",
+        "herald", "rooted", "burrower",
     };
 }
 
@@ -171,5 +171,11 @@ public sealed record RegionDef
     public int Candles { get; init; }
     /// <summary>The share of room walls lined with bookshelves, which Use searches for a book.</summary>
     public double Shelves { get; init; }
+    /// <summary>Spore pods in each level: they burst near anything, and fire ignites the cloud.</summary>
+    public int Pods { get; init; }
+    /// <summary>Root tangles choking corridors: Use cuts one, fire burns it.</summary>
+    public int Roots { get; init; }
+    /// <summary>The share of room walls overgrown with roots (only the look).</summary>
+    public double RootWalls { get; init; }
     public bool Final { get; init; }
 }

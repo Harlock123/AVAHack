@@ -58,6 +58,8 @@ implicit usings, invariant globalization and central package versions. Package v
       panned to its side.
     - `.Stacks`: region rules switched on in `regions.json` (the hush, candles, shelves), heralds, and the
       Archivist.
+    - `.Rootdark`: spore pods and their fire, root tangles, burrowers, and the Mycel Crown and its nodes (also
+      switched on in `regions.json`).
     - `.Save`.
     - The rest:
       - `Delve`: the run across levels, the Unmade Heart, and seed codes.
@@ -89,8 +91,8 @@ implicit usings, invariant globalization and central package versions. Package v
   - `TextureFactory`: each region's textures. Walls, floors and ceilings come from the art in `Assets/Textures`
     (embedded, read by `PngReader`); doors, levers, pits, plates, stairs and markings are drawn in code over them.
     `TextureFactory.Drawn` is the all-code set.
-  - `SpriteFactory`, `.Bestiary` and `.Creatures`: code-drawn creatures, props and icons, drawn on a 64-unit grid
-    at 128 px. `Paint` lays down flat shapes (set `Mat` for fur, metal, bone, slime, stone or cloth; unshaded shapes
+  - `SpriteFactory`, `.Bestiary`, `.Creatures` and `.Rootdark`: code-drawn creatures, props and icons, drawn on a
+    64-unit grid at 128 px. `Paint` lays down flat shapes (set `Mat` for fur, metal, bone, slime, stone or cloth; unshaded shapes
     are eyes and glows), then `Paint.Finish` shades, dithers and outlines them as pixel art. Change the look there,
     not creature by creature. `SpriteFactory.Items` draws an icon for every item base; `IconFor` gives an item's
     icon key, and a test fails if any base has no icon of its own. `SpriteFactory.Portraits` draws the heroes'

@@ -32,6 +32,10 @@ public sealed partial class SpriteFactory
         ["candlewight"] = new(C(150, 146, 140), C(36, 32, 34), C(110, 90, 70), 1.0, false, "candle", false, true, C(255, 210, 120)),
         ["shrouder"] = new(C(170, 172, 168), C(206, 200, 184), C(120, 110, 96), 1.05, false, "hook", false, true, C(200, 220, 230)),
         ["archivist"] = new(C(190, 180, 150), C(70, 52, 40), C(200, 166, 70), 1.0, false, "book", false, true, C(255, 200, 90)),
+        // The Rootdark's spore-thralls: delvers and goblins the fungus took.
+        ["thralledDelver"] = new(C(178, 170, 148), C(84, 72, 54), C(70, 80, 60), 0.95, false, "pick", false, false, C(240, 220, 120)),
+        ["cappedGoblin"] = new(C(120, 140, 92), C(96, 78, 50), C(70, 56, 36), 0.8, true, "knife", false, false, C(240, 220, 120)),
+        ["mycelKnight"] = new(C(170, 160, 140), C(108, 104, 96), C(130, 100, 70), 1.05, false, "sword", false, false, C(240, 220, 120)),
     };
 
     private static readonly IReadOnlyList<string> MoreKnown =
@@ -41,6 +45,7 @@ public sealed partial class SpriteFactory
         "brain", "unborn", "unmaker", "mushroom", "walker", "walkerTall", "colossus", "sentinel", "crawler", "golem",
         "golemMagma", "juggernaut", "engine", "naga", "nagaQueen", "tentacles", "stalker", "mimic",
         "pages", "slimeInk", "quill", "waxGolem", "errata", "bell", "veil", "keener", "hush",
+        "grub", "rootBeetle", "sapsucker", "wyrm", "matron", "gnawing", "mossWarg", "carrier", "bloom", "node", "crown",
     ];
 
     /// <summary>Draws the M7 creatures. False if the id isn't one of them.</summary>
@@ -50,6 +55,8 @@ public sealed partial class SpriteFactory
         {
             Humanoid(p, v, f, look);
             if (f != SpriteFrame.Dead && v != SpriteView.Back) Extras(p, sprite, look);
+            if (f != SpriteFrame.Dead && sprite is "thralledDelver" or "cappedGoblin" or "mycelKnight")
+                Capped(p, look, sprite == "cappedGoblin" ? C(200, 90, 60) : C(170, 130, 80), big: sprite == "mycelKnight");
             return true;
         }
         switch (sprite)
@@ -99,6 +106,18 @@ public sealed partial class SpriteFactory
             case "veil": Floater(p, f, C(34, 30, 36), C(200, 200, 230), "veil"); return true;
             case "keener": Floater(p, f, C(196, 200, 210), C(170, 220, 255), "keener"); return true;
             case "hush": Floater(p, f, C(58, 58, 64), C(230, 230, 240), "hush"); return true;
+            // The Rootdark.
+            case "grub": Worm(p, v, f, C(214, 196, 168), C(170, 70, 70), 0.6, false, 8); return true;
+            case "wyrm": Worm(p, v, f, C(120, 96, 80), C(190, 60, 50), 0.95, true, 12); return true;
+            case "gnawing": Worm(p, v, f, C(90, 70, 62), C(230, 120, 40), 1.15, true, 16); return true;
+            case "rootBeetle": Bug(p, v, f, C(96, 74, 50), C(60, 44, 30), 1.05, 6, C(150, 120, 70)); return true;
+            case "matron": Bug(p, v, f, C(190, 170, 140), C(110, 90, 70), 1.2, 8, C(230, 210, 170), hairy: true); return true;
+            case "sapsucker": Floater(p, f, C(170, 110, 40), C(255, 200, 80), "wings"); return true;
+            case "mossWarg": Beast(p, v, f, C(80, 100, 60), C(240, 220, 120), false); return true;
+            case "carrier": Fungus(p, f, C(200, 176, 80), C(220, 210, 180), 0.8); return true;
+            case "bloom": Fungus(p, f, C(190, 80, 120), C(230, 200, 190), 1.0, heap: true); return true;
+            case "node": Node(p, f); return true;
+            case "crown": Crown(p, v, f); return true;
         }
         return false;
     }

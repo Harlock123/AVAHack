@@ -124,6 +124,7 @@ public sealed partial class GameEngine
         }
         if (m.Boss is not null) BossTick(m);
         if (!m.IsAware || !m.IsAlive) return;
+        Burrow(m);
         int dist = m.Cell.Distance(PartyCell);
 
         // Summoners call up their kind every 12 s, three at a time at most.
@@ -240,6 +241,15 @@ public sealed partial class GameEngine
     private int BossShield(Monster m, int dmg)
     {
         if (m.Boss is null || dmg <= 0) return dmg;
+        if (m.Boss == "mycelCrown" && CrownFed)
+        {
+            if (!LevelFlags.TryGetValue("bossSaid", out var fed) || Time - double.Parse(fed, CultureInfo.InvariantCulture) > 6)
+            {
+                LevelFlags["bossSaid"] = Time.ToString("R", CultureInfo.InvariantCulture);
+                Say("The blow sinks into the Crown and closes up. Its nodes feed it: find them, and burn them.");
+            }
+            return 0;
+        }
         if (m.Boss == "archivist" && ArchivistShield(m) is > 0 and var cut)
         {
             if (!LevelFlags.TryGetValue("bossSaid", out var said) || Time - double.Parse(said, CultureInfo.InvariantCulture) > 6)
@@ -310,6 +320,9 @@ public sealed partial class GameEngine
                 break;
             case "archivist":
                 ArchivistTick(m, share);
+                break;
+            case "mycelCrown":
+                CrownTick(m);
                 break;
             case "unmaker":
                 if (m.Phase == 0 && m.SpecialTimer >= 15) { m.SpecialTimer = 0; Summon(m, "unmadeHound", 2); }
@@ -382,6 +395,7 @@ public sealed partial class GameEngine
             }
             if (Party.AllDown) Die();
         }
+        if (m.Boss == "crownNode") NodeDied(m);
         if (m.Boss == "choir")
         {
             // A fallen singer returns in 10 s while another still sings.

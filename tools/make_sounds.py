@@ -438,6 +438,20 @@ def make_all(rng, only):
             save(name, loop(f, secs), rms_db=-24)
             print(name)
 
+    # The Rootdark (spec 38). Its own generator, so the sounds above stay as they were.
+    rng = random.Random(3838)
+    S("bark.burrowers", mix((env(lowpass(brown(0.8, rng, 0.08), 500), 0.05, 0.4, 2.5, hold=0.2), 1.0),
+                            *[(env(bandpass(noise(0.05, rng), rng.uniform(900, 1800), 3), 0.002, 0.03), 0.7, 0.1 + i * 0.08) for i in range(6)]), 0.65)
+    S("bark.sporeThralls", reverb(mix((env(voice(lambda t: 110 + 12 * math.sin(TAU * 4 * t), 0.9, OH, rng, rough=0.4, jitter=0.04), 0.1, 0.4, 2.5, hold=0.25), 1.0),
+                                      (env(lowpass(noise(0.6, rng), 900), 0.05, 0.3), 0.5, 0.3)), 0.3, 1.1, 0.5), 0.6)
+    S("burrow", mix((env(lowpass(brown(1.0, rng, 0.1), 260), 0.1, 0.5, 2, hold=0.3), 1.0),
+                    *[(env(bandpass(noise(0.08, rng), rng.uniform(600, 1400), 2), 0.002, 0.05), rng.uniform(0.4, 0.8), 0.3 + i * 0.06) for i in range(8)]), 0.75)
+    S("spore", mix((env(lowpass(noise(0.12, rng), 400), 0.002, 0.06), 1.0), (env(bandpass(noise(1.0, rng), lambda t: 1800 - 1000 * t, 2), 0.05, 0.6, 2, hold=0.3), 0.6, 0.04)), 0.6)
+    S("ignite", reverb(mix((env(lowpass(brown(0.3, rng, 0.2), 200), 0.001, 0.15), 1.0),
+                           (env(lowpass(mix((noise(1.2, rng), 1.0), (brown(1.2, rng, 0.1), 1.5)), lambda t: 5000 - 3500 * t), 0.01, 0.7, 2.5, hold=0.3), 0.9, 0.02)), 0.3, 1.3, 0.6), 0.85)
+    S("chop", mix((env(lowpass(noise(0.1, rng), 700), 0.001, 0.04), 1.0), (env(bandpass(noise(0.15, rng), 2200, 2), 0.002, 0.05), 0.6, 0.01),
+                  (env(bandpass(noise(0.3, rng), 900, 3), 0.02, 0.15), 0.3, 0.06)), 0.7)
+
 
 if __name__ == "__main__":
     make_all(random.Random(1234), set(sys.argv[1:]))

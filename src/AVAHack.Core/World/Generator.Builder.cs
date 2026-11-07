@@ -644,6 +644,20 @@ public static partial class Generator
                         _taken.Add(cell);
                     }
                 }
+                if (_boss == "mycelCrown")
+                {
+                    // Its three nodes, spread through the level's other rooms.
+                    var rooms = _rooms.Where(r => r.Vault is null && r != room && !r.Contains(_start)).OrderBy(r => r.X * 7 + r.Y * 13 % 11).ToList();
+                    int placed = 0;
+                    foreach (var r in rooms)
+                    {
+                        var spot = RoomCells(r).Where(c => At(c) == CellKind.Floor && !_taken.Contains(c)).OrderBy(c => Math.Abs(c.X - (r.X + r.W / 2)) + Math.Abs(c.Y - (r.Y + r.H / 2))).FirstOrDefault();
+                        if (spot == default) continue;
+                        _spawns.Add(new Spawn("crownNode", spot, Dir.South) { Level = lvl });
+                        _taken.Add(spot);
+                        if (++placed == 3) break;
+                    }
+                }
                 if (_boss == "archivist")
                     foreach (var c in near.Skip(1).Where(c => c.Distance(at) >= 2).Take(4)) { _stations[c] = "candle"; _taken.Add(c); } // his reading candles
                 if (_boss == "motherOfCoils")
@@ -655,6 +669,8 @@ public static partial class Generator
                 if (Region.ForgeOneIn > 0 && Roll(Region.ForgeOneIn) == 0) PlaceStation("anvil");
                 if (depth >= 3 && Roll(4) == 0) PlaceStation("altar");
                 for (int i = 0; i < Region.Candles; i++) PlaceStation("candle");
+                for (int i = 0; i < Region.Pods; i++) PlaceStation("pod");
+                if (Region.Roots > 0) PlaceRoots(Region.Roots);
             }
             // The Hollow Choir: five singers in a hall on level 6 (an optional fight; the stairs don't need it).
             if (depth == 6 && o.MaxDepth >= 6 && !Plain)
@@ -700,6 +716,37 @@ public static partial class Generator
                         var w = c.Step(d);
                         if (At(w) != CellKind.Wall || secrets.Contains(w) || w.X <= 0 || w.Y <= 0 || w.X >= Size - 1 || w.Y >= Size - 1 || level.Shelves.Contains(w)) continue;
                         if (Roll(100) < Region.Shelves * 100) level.Shelves.Add(w);
+                    }
+        }
+
+        /// <summary>Root tangles in corridors (the Rootdark), away from the stairs. They can be cut or burned, so
+        /// the check counts them as open.</summary>
+        private void PlaceRoots(int count)
+        {
+            var corridor = Enumerable.Range(0, Size * Size).Select(i => new Cell(i % Size, i / Size))
+                .Where(c => At(c) == CellKind.Floor && !_taken.Contains(c) && !_rooms.Any(r => r.Contains(c))
+                            && c.Distance(_start) > 3 && c.Distance(_down) > 3
+                            && Enum.GetValues<Dir>().Count(d => At(c.Step(d)) is CellKind.Floor or CellKind.Door) == 2)
+                .ToList();
+            for (int i = 0; i < count && corridor.Count > 0; i++)
+            {
+                var at = corridor[Roll(corridor.Count)];
+                corridor.RemoveAll(c => c.Distance(at) <= 4);
+                _stations[at] = "roots";
+                _taken.Add(at);
+            }
+        }
+
+        /// <summary>Roots grown over some of the rooms' walls (the Rootdark): only the look.</summary>
+        private void PlaceRootWalls(Level level)
+        {
+            foreach (var room in _rooms.Where(r => r.Vault is null))
+                foreach (var c in RoomCells(room))
+                    foreach (var d in Enum.GetValues<Dir>())
+                    {
+                        var w = c.Step(d);
+                        if (At(w) != CellKind.Wall || level.RootWalls.Contains(w) || w.X <= 0 || w.Y <= 0 || w.X >= Size - 1 || w.Y >= Size - 1) continue;
+                        if (Roll(100) < Region.RootWalls * 100) level.RootWalls.Add(w);
                     }
         }
 
@@ -817,7 +864,7 @@ public static partial class Generator
             var openDoors = _doors.Where(d => d.Kind == DoorKind.Hand && d.Key is null || d.Open).Select(d => d.Cell).ToHashSet();
             var blocked = _chests.Select(c => c.Cell).Concat(_pits.Select(p => p.Cell)).Concat(_altars).ToHashSet();
             if (_waystone is { } ws) blocked.Add(ws);
-            blocked.UnionWith(_stations.Keys);
+            blocked.UnionWith(_stations.Where(s => s.Value is not ("roots" or "pod")).Select(s => s.Key)); // tangles are cut, pods burst
             if (avoid is { } a) blocked.Add(a);
             HashSet<Cell> reach = [];
             bool grew = true;
@@ -850,6 +897,7 @@ public static partial class Generator
             level.Valves.AddRange(_valves);
             foreach (var (c, k) in _stations) level.Stations[c] = k;
             if (Region.Shelves > 0 && !Plain) PlaceShelves(level);
+            if (Region.RootWalls > 0 && !Plain) PlaceRootWalls(level);
             level.Final = Region.Final;
             level.AddStairs(_down);
             if (depth > 1) level.AddStairsUp(_start);

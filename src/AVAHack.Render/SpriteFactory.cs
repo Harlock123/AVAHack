@@ -130,6 +130,57 @@ public sealed partial class SpriteFactory
                 }
                 break;
             }
+            case "pod":
+            case "pod-burst":
+            {
+                // A spore pod on a knot of root: a swollen, veined sac, or its torn husk.
+                p.Mat = Material.Matte;
+                p.Ellipse(32, 60, 14, 4, C(70, 52, 36));
+                p.Limb(22, 62, 26, 54, 30, 46, 2.4, 1.6, C(88, 66, 42));
+                p.Limb(42, 62, 38, 54, 34, 46, 2.4, 1.6, C(88, 66, 42));
+                if (kind == "pod")
+                {
+                    p.Mat = Material.Gloss;
+                    p.Ellipse(32, 34, 15, 17, C(176, 150, 70));
+                    p.Ellipse(32, 30, 9, 9, C(206, 186, 96));
+                    p.Mat = Material.Matte;
+                    for (int i = 0; i < 5; i++) p.Line(24 + i * 4, 20 + i % 2 * 3, 26 + i * 3, 46, 0.7, C(130, 100, 50));
+                    foreach (var (x, y) in new[] { (26, 26), (38, 30), (31, 42), (35, 21) }) p.Ellipse(x, y, 1.4, 1.4, C(240, 230, 140), false);
+                }
+                else
+                {
+                    p.Poly(C(120, 96, 52), (20, 48), (24, 34), (28, 42), (32, 30), (36, 42), (41, 33), (44, 48));
+                    p.Ellipse(32, 47, 12, 4, C(70, 54, 30));
+                }
+                break;
+            }
+            case "roots":
+            case "roots-cut":
+            {
+                // A tangle of roots grown down across the passage, floor to ceiling; or the hacked stumps.
+                p.Mat = Material.Matte;
+                uint bark = C(92, 70, 48), dark = C(64, 48, 34);
+                if (kind == "roots")
+                {
+                    for (int i = 0; i < 9; i++)
+                    {
+                        double x0 = 4 + i * 7, x2 = 60 - i * 6.5;
+                        p.Limb(x0, 0, 32 + (i % 3 - 1) * 10, 30 + i % 4 * 3, x2, 63, 2.6 - i % 3 * 0.5, 1.6, i % 2 == 0 ? bark : dark);
+                    }
+                    for (int i = 0; i < 6; i++) p.Taper(10 + i * 9, 6 + i * 3 % 14, 1.2, 14 + i * 8, 40 + i * 5 % 20, 0.4, C(118, 94, 64));
+                }
+                else
+                {
+                    for (int i = 0; i < 6; i++)
+                    {
+                        double x = 8 + i * 10;
+                        p.Taper(x, 0, 2.4, x + 2, 8 + i % 3 * 4, 1.6, i % 2 == 0 ? bark : dark);
+                        p.Taper(x + 3, 63, 2.4, x + 2, 56 - i % 2 * 4, 1.4, dark);
+                    }
+                    p.Ellipse(32, 61, 16, 2, C(150, 120, 80), false);   // chips and sawdust
+                }
+                break;
+            }
             case "boulder":
                 p.Ellipse(32, 36, 27, 27, Paint.Rgb(110, 100, 90));
                 p.Ellipse(24, 28, 8, 6, Paint.Rgb(130, 120, 110));
@@ -140,8 +191,9 @@ public sealed partial class SpriteFactory
                 break;
             case "gasPoison":
             case "gasSleep":
+            case "gasSpores":
             {
-                uint c = kind == "gasPoison" ? Paint.Rgb(90, 160, 60) : Paint.Rgb(200, 170, 220);
+                uint c = kind == "gasPoison" ? Paint.Rgb(90, 160, 60) : kind == "gasSpores" ? Paint.Rgb(214, 190, 80) : Paint.Rgb(200, 170, 220);
                 for (int i = 0; i < 9; i++) p.Ellipse(10 + i * 6 % 44, 26 + i * 7 % 30, 10, 8, c, false);
                 p.Finish();
                 for (int i = 0; i < img.Pixels.Length; i++) if (img.Pixels[i] >> 24 != 0) img.Pixels[i] = img.Pixels[i] & 0x00FFFFFF | 0xFF000000;

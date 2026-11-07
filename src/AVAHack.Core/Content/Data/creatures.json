@@ -3431,5 +3431,750 @@
  "text": "Many-handed keeper of the Ossuary Stacks. It reads by candlelight, and it files away whatever it catches.",
  "loot": "chest.rich",
  "boss": "archivist"
+},
+{
+ "id": "tunnelGrub",
+ "name": "Tunnel Grub",
+ "family": "burrowers",
+ "tier": "common",
+ "level": 26,
+ "hitDice": "15d10+30",
+ "ac": 16,
+ "perception": 13,
+ "stepSeconds": 0.6,
+ "turnSeconds": 0.5,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "mandibles",
+   "windup": 0.6,
+   "recovery": 1.6,
+   "toHit": 11,
+   "damage": "2d10+5",
+   "type": "piercing",
+   "onHit": {
+    "condition": "bleeding",
+    "dc": 16,
+    "chance": 20
+   }
+  }
+ ],
+ "behaviour": [
+  "ambush",
+  "chase",
+  "melee",
+  "mindless",
+  "burrower"
+ ],
+ "resist": [
+  "bludgeoning"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "blinded"
+ ],
+ "sprite": "grub",
+ "text": "Pale as a root and as thick as a man. It comes out of the wall behind you.",
+ "loot": "rootdark"
+},
+{
+ "id": "rootbackBeetle",
+ "name": "Rootback Beetle",
+ "family": "burrowers",
+ "tier": "common",
+ "level": 26,
+ "hitDice": "15d10+45",
+ "ac": 20,
+ "perception": 12,
+ "stepSeconds": 0.7,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "horn",
+   "windup": 0.8,
+   "recovery": 2.0,
+   "toHit": 10,
+   "damage": "2d10+6",
+   "type": "bludgeoning",
+   "onHit": {
+    "condition": "stunned",
+    "dc": 16,
+    "chance": 15,
+    "seconds": 2
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "mindless",
+  "unyielding"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "rootBeetle",
+ "text": "Its shell has grown roots of its own. Blades skate off it; a hammer doesn't.",
+ "loot": "rootdark"
+},
+{
+ "id": "sapsucker",
+ "name": "Sapsucker",
+ "family": "burrowers",
+ "tier": "common",
+ "level": 27,
+ "hitDice": "13d8+26",
+ "ac": 17,
+ "perception": 15,
+ "stepSeconds": 0.4,
+ "turnSeconds": 0.35,
+ "size": "small",
+ "attacks": [
+  {
+   "id": "proboscis",
+   "windup": 0.5,
+   "recovery": 1.4,
+   "toHit": 11,
+   "damage": "2d8+4",
+   "type": "piercing",
+   "onHit": {
+    "condition": "weakened",
+    "dc": 16,
+    "chance": 30,
+    "seconds": 15
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "flier",
+  "pack"
+ ],
+ "vulnerable": [
+  "fire",
+  "cold"
+ ],
+ "conditionImmune": [
+  "asleep"
+ ],
+ "sprite": "sapsucker",
+ "text": "A whining thing the size of a cat that drinks from roots, and from you.",
+ "loot": "vermin"
+},
+{
+ "id": "rootWyrm",
+ "name": "Root Wyrm",
+ "family": "burrowers",
+ "tier": "greater",
+ "level": 29,
+ "hitDice": "18d12+54",
+ "ac": 18,
+ "perception": 14,
+ "stepSeconds": 0.7,
+ "turnSeconds": 0.6,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "bite",
+   "windup": 0.9,
+   "recovery": 2.2,
+   "toHit": 12,
+   "damage": "3d10+7",
+   "type": "piercing"
+  },
+  {
+   "id": "coil",
+   "windup": 1.1,
+   "recovery": 2.8,
+   "toHit": 11,
+   "damage": "2d10+6",
+   "type": "bludgeoning",
+   "onHit": {
+    "condition": "paralysed",
+    "dc": 17,
+    "chance": 20,
+    "seconds": 3
+   }
+  }
+ ],
+ "behaviour": [
+  "ambush",
+  "chase",
+  "melee",
+  "unyielding",
+  "burrower"
+ ],
+ "resist": [
+  "bludgeoning",
+  "piercing"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "wyrm",
+ "text": "A worm as long as a corridor, barked like the roots it hollows. It surfaces where you least want it.",
+ "loot": "chest.cellar"
+},
+{
+ "id": "burrowMatron",
+ "name": "Burrow Matron",
+ "family": "burrowers",
+ "tier": "greater",
+ "level": 30,
+ "hitDice": "18d10+54",
+ "ac": 17,
+ "perception": 13,
+ "stepSeconds": 0.9,
+ "turnSeconds": 0.7,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "crush",
+   "windup": 1.0,
+   "recovery": 2.4,
+   "toHit": 11,
+   "damage": "3d10+6",
+   "type": "bludgeoning"
+  },
+  {
+   "id": "brood",
+   "windup": 1.0,
+   "recovery": 3.0,
+   "toHit": 10,
+   "damage": "2d8",
+   "type": "acid",
+   "range": 4,
+   "projectileSpeed": 6,
+   "onHit": {
+    "condition": "poisoned",
+    "dc": 17,
+    "seconds": 10
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "melee",
+  "ranged",
+  "summoner",
+  "mindless"
+ ],
+ "summons": "tunnelGrub",
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "matron",
+ "text": "Bloated with eggs, she never stops laying. Every grub in the hall is hers.",
+ "loot": "chest.rich"
+},
+{
+ "id": "theGnawing",
+ "name": "The Gnawing",
+ "family": "burrowers",
+ "tier": "dread",
+ "level": 32,
+ "hitDice": "22d10+66",
+ "ac": 17,
+ "perception": 15,
+ "stepSeconds": 0.6,
+ "turnSeconds": 0.5,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "devour",
+   "windup": 0.8,
+   "recovery": 1.8,
+   "toHit": 13,
+   "damage": "4d10+6",
+   "type": "piercing",
+   "area": true,
+   "onHit": {
+    "condition": "bleeding",
+    "dc": 18,
+    "chance": 30
+   }
+  }
+ ],
+ "behaviour": [
+  "ambush",
+  "chase",
+  "melee",
+  "mindless",
+  "burrower",
+  "splits"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "paralysed",
+  "blinded"
+ ],
+ "sprite": "gnawing",
+ "text": "A knot of ten thousand rootworms that has learned to want. Cut it and it falls into two hungers.",
+ "loot": "chest.rich"
+},
+{
+ "id": "thralledDelver",
+ "name": "Thralled Delver",
+ "family": "sporeThralls",
+ "tier": "common",
+ "level": 26,
+ "hitDice": "15d8+30",
+ "ac": 16,
+ "perception": 12,
+ "stepSeconds": 0.75,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "rustyBlade",
+   "windup": 0.7,
+   "recovery": 1.8,
+   "toHit": 10,
+   "damage": "2d8+6",
+   "type": "slashing"
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "mindless",
+  "explodes"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "frightened",
+  "asleep",
+  "diseased"
+ ],
+ "sprite": "thralledDelver",
+ "text": "A delver who came this far. The fungus wears them now, and bursts from them when they fall.",
+ "loot": "undead.lesser"
+},
+{
+ "id": "cappedGoblin",
+ "name": "Capped Goblin",
+ "family": "sporeThralls",
+ "tier": "common",
+ "level": 26,
+ "hitDice": "13d8+26",
+ "ac": 16,
+ "perception": 13,
+ "stepSeconds": 0.55,
+ "turnSeconds": 0.45,
+ "size": "small",
+ "attacks": [
+  {
+   "id": "sporeSling",
+   "windup": 0.8,
+   "recovery": 2.0,
+   "toHit": 10,
+   "damage": "2d6+4",
+   "type": "poison",
+   "range": 5,
+   "projectileSpeed": 8,
+   "onHit": {
+    "condition": "poisoned",
+    "dc": 16,
+    "chance": 30,
+    "seconds": 8
+   }
+  },
+  {
+   "id": "knife",
+   "windup": 0.5,
+   "recovery": 1.4,
+   "toHit": 10,
+   "damage": "2d6+4",
+   "type": "piercing"
+  }
+ ],
+ "behaviour": [
+  "patrol",
+  "chase",
+  "ranged",
+  "melee",
+  "pack"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "diseased"
+ ],
+ "sprite": "cappedGoblin",
+ "text": "A goblin with a red cap growing out of its skull, and a sling full of spores.",
+ "loot": "goblin.lesser"
+},
+{
+ "id": "mossbackWarg",
+ "name": "Mossback Warg",
+ "family": "sporeThralls",
+ "tier": "common",
+ "level": 27,
+ "hitDice": "15d10+30",
+ "ac": 16,
+ "perception": 15,
+ "stepSeconds": 0.4,
+ "turnSeconds": 0.35,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "bite",
+   "windup": 0.55,
+   "recovery": 1.5,
+   "toHit": 11,
+   "damage": "2d10+5",
+   "type": "piercing",
+   "onHit": {
+    "condition": "diseased",
+    "dc": 16,
+    "chance": 20
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "pack"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "diseased"
+ ],
+ "sprite": "mossWarg",
+ "text": "Moss has grown into its fur and over its eyes. It hunts by the smell of your sweat.",
+ "loot": "vermin"
+},
+{
+ "id": "sporeCarrier",
+ "name": "Spore Carrier",
+ "family": "sporeThralls",
+ "tier": "greater",
+ "level": 29,
+ "hitDice": "18d10+54",
+ "ac": 15,
+ "perception": 11,
+ "stepSeconds": 0.95,
+ "turnSeconds": 0.8,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "slam",
+   "windup": 1.0,
+   "recovery": 2.4,
+   "toHit": 11,
+   "damage": "3d10+6",
+   "type": "bludgeoning",
+   "onHit": {
+    "condition": "poisoned",
+    "dc": 17,
+    "chance": 35,
+    "seconds": 10
+   }
+  }
+ ],
+ "behaviour": [
+  "patrol",
+  "chase",
+  "melee",
+  "mindless",
+  "explodes"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "frightened",
+  "asleep",
+  "diseased"
+ ],
+ "sprite": "carrier",
+ "text": "A sac of spores on stumbling legs. Don't be standing near it when it bursts, and never put a flame to it.",
+ "loot": "rootdark"
+},
+{
+ "id": "mycelKnight",
+ "name": "Mycel Knight",
+ "family": "sporeThralls",
+ "tier": "greater",
+ "level": 30,
+ "hitDice": "19d10+57",
+ "ac": 20,
+ "perception": 14,
+ "stepSeconds": 0.75,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "greatsword",
+   "windup": 1.0,
+   "recovery": 2.4,
+   "toHit": 12,
+   "damage": "3d10+8",
+   "type": "slashing"
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "unyielding",
+  "opener"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "resist": [
+  "slashing"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "frightened",
+  "asleep",
+  "diseased",
+  "paralysed"
+ ],
+ "sprite": "mycelKnight",
+ "text": "A knight of the old Works, still in its plate, laced through with white threads that move it.",
+ "loot": "chest.cellar"
+},
+{
+ "id": "bloomheart",
+ "name": "Bloomheart",
+ "family": "sporeThralls",
+ "tier": "dread",
+ "level": 32,
+ "hitDice": "21d10+63",
+ "ac": 17,
+ "perception": 16,
+ "stepSeconds": 0.8,
+ "turnSeconds": 0.6,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "lash",
+   "windup": 0.8,
+   "recovery": 2.0,
+   "toHit": 13,
+   "damage": "3d10+7",
+   "type": "slashing"
+  },
+  {
+   "id": "pollen",
+   "windup": 1.2,
+   "recovery": 3.0,
+   "toHit": 12,
+   "damage": "3d8",
+   "type": "poison",
+   "range": 5,
+   "projectileSpeed": 7,
+   "area": true,
+   "onHit": {
+    "condition": "asleep",
+    "dc": 18,
+    "chance": 20,
+    "seconds": 4
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "ranged",
+  "raises"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "frightened",
+  "asleep",
+  "diseased"
+ ],
+ "sprite": "bloom",
+ "text": "A flower the size of a door, opening on a mouth. Its pollen puts you to sleep, and its roots wake the dead.",
+ "loot": "chest.rich"
+},
+{
+ "id": "crownNode",
+ "name": "Node of the Crown",
+ "family": "sporeThralls",
+ "tier": "greater",
+ "level": 28,
+ "hitDice": "12d10+36",
+ "ac": 14,
+ "perception": 14,
+ "stepSeconds": 1.0,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "spores",
+   "windup": 1.2,
+   "recovery": 3.2,
+   "toHit": 10,
+   "damage": "2d10",
+   "type": "poison",
+   "range": 4,
+   "projectileSpeed": 6,
+   "onHit": {
+    "condition": "poisoned",
+    "dc": 17,
+    "seconds": 8
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "ranged",
+  "rooted",
+  "mindless",
+  "boss"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "frightened",
+  "asleep",
+  "diseased",
+  "paralysed",
+  "stunned",
+  "blinded"
+ ],
+ "sprite": "node",
+ "text": "A pulsing knot of fungus that feeds the Mycel Crown. Cut it down and it grows back. Burn it and it stays burned.",
+ "loot": "rootdark",
+ "boss": "crownNode"
+},
+{
+ "id": "mycelCrown",
+ "name": "The Mycel Crown",
+ "family": "sporeThralls",
+ "tier": "dread",
+ "level": 21,
+ "hitDice": "24d10+72",
+ "ac": 18,
+ "perception": 17,
+ "stepSeconds": 0.9,
+ "turnSeconds": 0.7,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "tendrils",
+   "windup": 1.0,
+   "recovery": 2.4,
+   "toHit": 12,
+   "damage": "3d10+7",
+   "type": "bludgeoning"
+  },
+  {
+   "id": "sporeBurst",
+   "windup": 1.3,
+   "recovery": 3.2,
+   "toHit": 12,
+   "damage": "3d10",
+   "type": "poison",
+   "range": 5,
+   "projectileSpeed": 7,
+   "area": true,
+   "onHit": {
+    "condition": "poisoned",
+    "dc": 18,
+    "seconds": 10
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "ranged",
+  "unyielding",
+  "boss"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "vulnerable": [
+  "fire"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "frightened",
+  "asleep",
+  "diseased",
+  "stunned",
+  "paralysed",
+  "blinded"
+ ],
+ "sprite": "crown",
+ "text": "The mind of the Rootdark: a cap of fungus as wide as a cart, fed by nodes spread through its halls. It can't be hurt while they live.",
+ "loot": "chest.rich",
+ "boss": "mycelCrown"
 }
 ]

@@ -101,6 +101,8 @@ public sealed partial class GameEngine
         "unmade" => "bark.unmade",
         "inkbound" => "bark.inkbound",
         "mourners" => m.Def.Sprite is "bell" ? "bell" : "bark.mourners",
+        "burrowers" => "bark.burrowers",
+        "sporeThralls" => "bark.sporeThralls",
         _ => "bark.goblin",
     };
 
@@ -111,6 +113,7 @@ public sealed partial class GameEngine
         "constructs" => "hit.metal",
         "oozes" => "hit.slime",
         "inkbound" or "mourners" => m.Def.Sprite switch { "quill" or "bell" => "hit.metal", "slimeInk" or "waxGolem" => "hit.slime", _ => "hit.flesh" },
+        "sporeThralls" when m.Def.Sprite is "mycelKnight" => "hit.metal",
         _ => m.Def.Sprite is "knight" ? "hit.metal" : "hit.flesh",
     };
 

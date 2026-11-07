@@ -62,6 +62,13 @@ public static class Scene
                 list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.7, 0.7, art.Prop(lit ? "candle" : "candle-out"), Glow: lit ? 0.5 : 0, SelfLit: lit));
                 continue;
             }
+            if (kind is "pod" or "roots")
+            {
+                string look = kind == "pod" ? (g.PodWhole(cell) ? "pod" : "pod-burst") : g.RootsStand(cell) ? "roots" : "roots-cut";
+                double size = kind == "roots" ? 1.0 : 0.75;
+                list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, size, size, art.Prop(look), Glow: look == "pod" ? 0.1 : 0));
+                continue;
+            }
             list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.8, 0.8, art.Prop(kind == "anvil" ? "anvil" : "altar-enchant"), Glow: 0.15));
         }
         if (g.Level.Waystone is { } ws)
@@ -77,7 +84,7 @@ public static class Scene
             list.Add(new SpriteInstance(b.X, b.Y, 0, 0.85, 0.85, art.Prop("boulder")));
         foreach (var cloud in g.Gas)
             foreach (var cell in cloud.Cells.Where(c => !g.Level.LooksLikeWall(c.X, c.Y)))
-                list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.9, 0.9, art.Prop(cloud.Variant == "sleep" ? "gasSleep" : "gasPoison"), Glow: 0.3));
+                list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.9, 0.9, art.Prop(cloud.Variant switch { "sleep" => "gasSleep", "spores" => "gasSpores", _ => "gasPoison" }), Glow: 0.3));
         foreach (var h in g.Hazards)
             list.Add(new SpriteInstance(h.Cell.X + 0.5, h.Cell.Y + 0.5, 0, 0.5, 0.5, art.Bolt(h.Type == Rules.DamageType.Acid ? "acid" : "fire"), SelfLit: true));
         foreach (var c in g.Level.Chests)

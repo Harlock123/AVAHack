@@ -61,6 +61,8 @@ public sealed class Level
     public Dictionary<Cell, string> Stations { get; } = new();
     /// <summary>Wall cells lined with bookshelves (the Ossuary Stacks): drawn as shelves, and searched with Use.</summary>
     public HashSet<Cell> Shelves { get; } = new();
+    /// <summary>Wall cells overgrown with roots (the Rootdark): only the look.</summary>
+    public HashSet<Cell> RootWalls { get; } = new();
     /// <summary>The Unmade Heart, the Delve's last level.</summary>
     public bool Final { get; internal set; }
 

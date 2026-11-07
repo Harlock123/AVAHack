@@ -33,6 +33,7 @@ public sealed partial class GameEngine
 
     private readonly List<Boulder> _boulders = new();
     private readonly List<GasCloud> _gas = new();
+    private bool _igniting;
 
     public IReadOnlyList<Boulder> Boulders => _boulders;
     public IReadOnlyList<GasCloud> Gas => _gas;
@@ -253,6 +254,7 @@ public sealed partial class GameEngine
     private void HurtHero(Character c, int dmg, DamageType type)
     {
         if (dmg <= 0 || c.IsDown) return;
+        if (type == DamageType.Fire && !_igniting) { _igniting = true; FireAt(PartyCell); _igniting = false; }
         c.TakeDamage(dmg);
         c.HurtFlash = 0.3;
         HeroHurt = 0.3;

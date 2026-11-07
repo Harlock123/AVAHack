@@ -203,6 +203,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             double cycle = cyc.Kind == TrapKind.SpikeFloor ? GameEngine.SpikeCycle : GameEngine.BladeCycle;
             if (cyc.Timer % cycle > (cyc.Kind == TrapKind.SpikeFloor ? 0.5 : 0.6)) return;
         }
+        // A root tangle: hack through it. A whole pod ahead bursts as the party comes up to it; wait for the cloud.
+        if (g.RootsStand(next)) { g.Press(GameAction.Use); return; }
+        if (g.PodWhole(next)) return;
         if (g.Level.DoorAt(next) is { Kind: DoorKind.Hand, IsPassable: false } door)
         {
             // Open it with the key or pick it (Use does both); keep trying.
@@ -427,7 +430,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         if (kind == CellKind.Wall) return false;
         if (g.Level.PitAt(c) is { Spotted: true }) return false;
         if (g.Level.ChestAt(c) is not null || g.Level.TrapAt(c) is { Kind: TrapKind.CursedAltar }) return false;
-        if (g.Level.Waystone == c || g.Level.Stations.ContainsKey(c)) return false;
+        if (g.Level.Waystone == c || (g.Level.Stations.TryGetValue(c, out var st) && st is not ("roots" or "pod") && g.StationBlocks(c))) return false;
         if (g.Level.IsStairsUp(c)) return false; // the bot only goes down
         if (!braveTraps && g.Level.Traps.Any(t => t.Cell == c && t.Spotted && t.Armed && t.Kind is not (TrapKind.AntiMagic or TrapKind.FloodingRoom))) return false;
         if (g.Level.PlateAt(c) is { Mode: PlateMode.Toggle } plate && c != g.PartyCell && !WantsPress(plate) && !braveTraps) return false; // round it, unless it's the only way

@@ -132,8 +132,9 @@ The town sends delvers down to silence it.
 - **The Ossuary Stacks (levels 13–16).** The buried archive and tomb-library of Harrowgate's dead. The Inkbound,
   the Mourners and the restless dead. Noise wakes them, candles show you to them, and the shelves hold books. Its
   boss is the Archivist. (Section 37.)
-- **The Rootdark (levels 17–20).** Giant roots and fungus beneath the Works. *Placeholder:* spore-kin, vermin, oozes
-  and deep folk until its own families and boss are made.
+- **The Rootdark (levels 17–20).** Giant roots and fungus beneath the Works. The Burrowers, the spore-thralls and
+  the spore-kin. Spore pods burst in choking clouds that fire sets alight, root tangles choke the passages, and
+  burrowers come up out of the earth behind you. Its boss is the Mycel Crown. (Section 38.)
 - **The Glass Roads (levels 21–24).** Halls of fused black glass where the Unmade first broke through.
   *Placeholder:* the Unmade, aberrations, elementals and constructs.
 - **The Unmade Heart (final level).** Below the last level of any Delve of 12 levels or more. It leads to the
@@ -2111,8 +2112,8 @@ The user asked for a deeper dungeon with more kinds of creature: the structure f
   - the Glass Roads: whistling wind and settling glass.
 - **Progression.** Every second level past 20 gives attribute points, as well as every fourth. This keeps a long
   Delve's levels worth having once the skills near their cap.
-- **The Rootdark and the Glass Roads** are placeholders, made of existing families with no boss yet. They are next
-  in line.
+- **The Rootdark and the Glass Roads** were placeholders, made of existing families with no boss yet. The Rootdark
+  now has its own (section 38); the Glass Roads are next in line.
 
 ### The Ossuary Stacks (levels 13–16)
 
@@ -2183,3 +2184,76 @@ The user asked for a deeper dungeon with more kinds of creature: the structure f
     and the Archivist's candle shield and summons.
   - A golden of a Stacks hall, and `Images/AVAHack-stacks.png`.
   - The deep report runs with `AVAHACK_BALANCE_DEEP=1`.
+
+## 38. Implementation decisions (the Rootdark)
+
+The second new region, levels 17–20, after the Stacks. Where deep runs used to die, it now has rules of its own.
+
+- **Two new families**, six creatures each:
+  - **The Burrowers**, things that live in the earth between the roots:
+    - the Tunnel Grub: an ambusher, and it burrows;
+    - the Rootback Beetle: a tough, unyielding guard;
+    - the Sapsucker: a flying pack hunter;
+    - the Root Wyrm: an unyielding ambusher that burrows;
+    - the Burrow Matron: a summoner that calls up tunnel grubs;
+    - the Gnawing: a great worm that burrows and splits when cut.
+  - **The spore-thralls**, delvers and beasts the fungus took:
+    - the Thralled Delver: mindless, and it bursts when it dies;
+    - the Capped Goblin: a pack archer;
+    - the Mossback Warg: a pack hunter;
+    - the Spore Carrier: a walking pod that bursts;
+    - the Mycel Knight: unyielding armour that opens doors;
+    - the Bloomheart: a ranged caster that raises the fallen.
+
+  The spore-kin of the Drowned Choir live here too. A new drawer makes the worms: a ringed body reared out of a
+  heap of earth, with a round maw of teeth. The thralls are people with caps grown through their skulls. The rest
+  use the bug, beast, floater and fungus drawers. Each family has its own cry.
+- **The Rootdark loot table**: reagents, ingredients, gear and potions.
+- **The region's switches** in `regions.json`: `pods` (6 a level), `roots` (4 tangles) and `rootWalls` (30% of
+  room walls).
+- **Spore pods.**
+  - **Bursting.** A pod is a station. It bursts when the party, or any creature but a thrall or spore-kin, comes
+    within a cell. The cloud is 3×3 of choking spores for 12 seconds. Like a gas trap's cloud, it poisons
+    whoever fails a CON save (against 14 + depth / 3) every 2 seconds.
+  - **Fire.** Fire reaching a cloud sets it off: a bolt that lands in it, a burning blow, a fire trap or a burning
+    hero. The cloud goes up and is gone. Everything in it takes 4d6 + depth fire, and heroes get a DEX save for
+    half. So a spore cloud is a weapon, but only from outside it.
+  - **Saves.** A burst pod is kept in the level's flags.
+- **Root tangles.**
+  - **Placing.** Tangles are stations in corridor cells (two open neighbours, not in a room), at least 4 cells
+    apart and away from the start and the stairs. They block the way.
+  - **Cutting.** Use hacks at one: d20 + Survival / 5 + STR against 15, and the third try always gets through.
+    Either way it trains Survival.
+  - **Fire.** Fire burns one away at once, and so does a cloud going up over it.
+  - **The check.** `Check` counts tangles and pods as open, since both can always be got past, so every level stays
+    finishable.
+- **Root walls.** Some room walls are grown over with roots, for the look only: a texture drawn over the region's
+  stone.
+- **Burrowers** (a new `burrower` behaviour). An aware burrower more than a cell away, and no more than 14 steps
+  along the passages, waits 7 seconds. Then it comes up out of the earth behind the party, or beside it if that
+  cell is taken. It can do this mid-step.
+- **Rooted** (a new behaviour) creatures never move. They turn to face the party, and the spawn tables never
+  place them.
+- **The Mycel Crown** (level 20):
+  - **Its nodes.** Three Nodes of the Crown, rooted, stand in other rooms of its level. While any one lives, nothing
+    hurts the Crown.
+  - **Regrowth.** A node cut down grows back in 40 seconds while the Crown lives, without dropping loot again. A
+    node killed by fire stays dead.
+  - **Its script.** Every 15 seconds it calls up two thralled delvers and breathes a spore cloud round itself, a
+    cloud a careless fire bolt sets off in the party's face.
+
+  The fight is to burn the nodes, or to cut them all down and reach the Crown inside 40 seconds.
+- **The bot**:
+  - it hacks through a tangle in its way;
+  - it waits for a pod ahead to burst;
+  - it treats tangles and pods as open when finding its way.
+- **Results**: the 24-level deep report is still to be read for this region; the 4- and 12-level Delves are
+  unaffected (their reports pass).
+- **Tests.**
+  - Rootdark levels with their families, pods, tangles, root walls, the Crown and its three nodes.
+  - A pod bursting for the party, and for a creature but not a thrall. Fire setting a cloud off, burning a creature
+    and the party.
+  - Tangles blocking, hacked through by the third try, and burned.
+  - A burrower coming up beside the party.
+  - The Crown's shield, nodes growing back unless burned, and its summons.
+  - A golden of a Rootdark cavern, and `Images/AVAHack-rootdark.png`.

@@ -48,6 +48,7 @@ public static class TextureFactory
             Portcullis = Bars(),
             LeverUp = WithLever(wall, down: false),
             Shelf = Bookshelf(wall, seed + 12),
+            RootWall = Rootwall(wall, seed + 13),
             LeverDown = WithLever(wall, down: true),
             Pit = PitHole(seed + 5),
             Plate = PressurePlate(seed + 6, floorRgb),
@@ -379,6 +380,46 @@ public static class TextureFactory
                     Dot(t, x, y, y == baseY - height + 2 && x > bx ? Rgb(200, 170, 90) : x == bx ? Shade((int)(c & 0xFFFFFF), 24) : c);
                 bx += width;
             }
+        }
+        return t;
+    }
+
+    /// <summary>
+    /// A wall the roots have broken through: thick roots winding down the stone from the ceiling, thinner ones
+    /// branching off them, and pale threads of fungus in the cracks. Drawn over the wall at its size.
+    /// </summary>
+    public static Texture Rootwall(Texture wall, int seed)
+    {
+        var t = wall.Clone();
+        uint[] bark = [Rgb(74, 56, 38), Rgb(92, 70, 46), Rgb(60, 44, 30)];
+        for (int r = 0; r < 4; r++)
+        {
+            int h = Hash(seed, r, 7);
+            double x = 6 + r * 15 + h % 7, width = 2.5 + h / 16 % 3;
+            for (int y = 0; y < 64; y++)
+            {
+                x += Math.Sin((y + h % 40) * 0.17) * 0.6;
+                double w = width * (1 - y / 110.0);
+                for (int dx = (int)-w; dx <= (int)w; dx++)
+                {
+                    int px = (int)x + dx;
+                    if (px < 0 || px > 63) continue;
+                    uint c = bark[(Hash(seed, px, y) >> 3) % 3];
+                    Dot(t, px, y, dx == (int)-w ? Shade((int)(c & 0xFFFFFF), 26) : c);
+                }
+                // A side root now and then.
+                if (Hash(seed + r, y, 3) % 19 == 0)
+                    for (int i = 0; i < 9; i++)
+                    {
+                        int px = (int)x + (h % 2 == 0 ? i : -i), py = y + i / 2;
+                        if (px is >= 0 and < 64 && py < 64) Dot(t, px, py, bark[1]);
+                    }
+            }
+        }
+        for (int i = 0; i < 26; i++)
+        {
+            int h = Hash(seed, i, 99);
+            Dot(t, h % 64, Hash(seed, i, 98) % 64, Rgb(200, 196, 170));
         }
         return t;
     }

@@ -70,4 +70,6 @@ public sealed class TextureSet
     public Texture? Rubble { get; init; }
     /// <summary>A wall lined with bookshelves (the Ossuary Stacks).</summary>
     public Texture? Shelf { get; init; }
+    /// <summary>A wall grown over with roots (the Rootdark).</summary>
+    public Texture? RootWall { get; init; }
 }

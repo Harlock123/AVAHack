@@ -257,6 +257,7 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             var tex = lever is not null ? (lever.Down ? _tex.LeverDown : _tex.LeverUp)
                     : level.KindAt(from) == CellKind.Door ? _tex.DoorFrame
                     : level.Shelves.Contains(from.Step(face)) && _tex.Shelf is { } shelf ? shelf
+                    : level.RootWalls.Contains(from.Step(face)) && _tex.RootWall is { } roots ? roots
                     : _tex.Wall;
             double hit = side == 0 ? py + dist * rdy : px + dist * rdx;
             double u = hit - Math.Floor(hit);

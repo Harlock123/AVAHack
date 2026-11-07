@@ -18,7 +18,7 @@ public static class SpawnTables
             Tier.Greater => depth >= 7,
             _ => depth >= 11,
         };
-        var list = db.Creatures.Where(c => fams.Contains(c.Family) && Fits(c) && !c.Has("boss") && c.Family != "summoned" && c.Id != "mimic")
+        var list = db.Creatures.Where(c => fams.Contains(c.Family) && Fits(c) && !c.Has("boss") && !c.Has("rooted") && c.Family != "summoned" && c.Id != "mimic")
                                .OrderBy(c => c.Id, StringComparer.Ordinal)
                                .Select(c => (c.Id, c.Tier == Tier.Lesser && depth > 4 ? 0.5 : 1.0)).ToList();
         if (list.Count < 3)

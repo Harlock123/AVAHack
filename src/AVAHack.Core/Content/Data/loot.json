@@ -212,5 +212,6 @@
    }
   ]
  },
- {"id": "archive", "rolls": "1", "entries": [{"nothing": true, "weight": 5}, {"gold": "3d10", "weight": 2}, {"category": "book", "weight": 1.5}, {"category": "scroll", "weight": 1.5}, {"category": "tome", "weight": 0.6}, {"item": "scrollIdentify", "weight": 1}, {"category": "reagent", "weight": 1}]}
+ {"id": "archive", "rolls": "1", "entries": [{"nothing": true, "weight": 5}, {"gold": "3d10", "weight": 2}, {"category": "book", "weight": 1.5}, {"category": "scroll", "weight": 1.5}, {"category": "tome", "weight": 0.6}, {"item": "scrollIdentify", "weight": 1}, {"category": "reagent", "weight": 1}]},
+ {"id": "rootdark", "rolls": "1", "entries": [{"nothing": true, "weight": 5}, {"gold": "4d10", "weight": 2}, {"category": "reagent", "weight": 3}, {"category": "ingredient", "weight": 1.5}, {"category": "gear", "weight": 0.8}, {"item": "potionGreaterHealing", "weight": 0.6}, {"item": "antidote", "weight": 1}]}
 ]

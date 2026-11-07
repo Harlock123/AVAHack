@@ -85,7 +85,7 @@ public sealed partial class GameEngine
         if (_sanctuary.ContainsKey(c) && !m.Ally) return false;
         var kind = Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
-        if (Level.Waystone == c || Level.Stations.ContainsKey(c)) return false;
+        if (Level.Waystone == c || StationBlocks(c)) return false;
         if (Level.TrapAt(c) is { } trap && (trap.Kind == TrapKind.CursedAltar || (trap.Armed && !m.Def.Has("mindless") && !m.Ally && trap.Kind != TrapKind.AntiMagic))) return false;
         if (kind == CellKind.Door)
         {
@@ -104,6 +104,7 @@ public sealed partial class GameEngine
     {
         bool anyAware = false;
         BestiaryLevelTick();
+        RegrowNodes();
         foreach (var m in _monsters.ToList())
         {
             if (m.HurtFlash > 0) m.HurtFlash = Math.Max(0, m.HurtFlash - TickSeconds);
@@ -380,6 +381,7 @@ public sealed partial class GameEngine
 
     private void StepTo(Monster m, Dir d)
     {
+        if (m.Def.Has("rooted")) { m.Facing = d; return; } // it grows where it stands
         var target = m.Cell.Step(d);
         if (Level.DoorAt(target) is { IsPassable: false } door)
         {

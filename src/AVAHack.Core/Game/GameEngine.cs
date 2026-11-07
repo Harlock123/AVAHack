@@ -152,6 +152,7 @@ public sealed partial class GameEngine
         TickCasting();
         TickLight();
         TickTraps();
+        TickPods();
         TickDeathSaves();
     }
 
@@ -248,7 +249,7 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Whether the party may step into a cell: open floor or an open door, with no creature in it.</summary>
-    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && Level.Waystone != c && !Level.Stations.ContainsKey(c) && Level.TrapAt(c) is not { Kind: TrapKind.CursedAltar }
+    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && Level.Waystone != c && !StationBlocks(c) && Level.TrapAt(c) is not { Kind: TrapKind.CursedAltar }
         && !Monsters.Any(m => m.IsAlive && m.Cell == c);
 
     private void StartNext()
@@ -351,6 +352,7 @@ public sealed partial class GameEngine
         if (Level.TrapAt(ahead) is { Kind: TrapKind.CursedAltar } altar) { TakeOffering(altar); return; }
         if (Level.Waystone == ahead) { TouchWaystone(); return; }
         if (TouchCandle(ahead)) return;
+        if (CutRoots(ahead)) return;
         if (TouchStation(ahead)) return;
         if (Level.KindAt(ahead) == CellKind.Wall && !SearchShelf(ahead)) SearchWall(ahead);
     }

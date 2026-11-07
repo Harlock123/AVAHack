@@ -338,6 +338,7 @@ public sealed partial class GameEngine
         m.Hp -= dmg;
         m.HurtFlash = 0.2;
         m.LastHitType = type;
+        if (type == DamageType.Fire) FireAt(m.Cell);
         m.Conditions.Cure(ConditionId.Asleep);
         Alert(m);
         if (m.Hp > 0) return;
@@ -360,7 +361,7 @@ public sealed partial class GameEngine
         Cue(DeathSoundFor(m), m.Cell);
         if (m.Boss is not null && m.Def.Id == Level.Boss) CueHere("sting.victory");
         AwardKill(m);
-        if (!(m.Boss == "choir" && m.Raised)) DropLoot(m);
+        if (!(m.Boss is "choir" or "crownNode" && m.Raised)) DropLoot(m);
         MonsterDied?.Invoke(m);
         BestiaryDeath(m);
         Event?.Invoke(GameEvent.MonsterDied);
@@ -557,6 +558,7 @@ public sealed partial class GameEngine
             {
                 _projectiles.Remove(p);
                 Cue(ImpactFor(p.Look, null), p.LastCell.Step(p.Dir.Opposite()), 0.7);
+                if (p.Look == "fire") FireAt(p.LastCell.Step(p.Dir.Opposite()));
                 p.OnExpire?.Invoke(p.LastCell.Step(p.Dir.Opposite()));
                 continue;
             }

@@ -6,12 +6,18 @@ public enum SpriteFrame { Idle, Windup, Strike, Dead }
 
 /// <summary>
 /// The monsters' placeholder pictures, drawn in code: each creature from the front, the side (facing right; the
-/// left side is the mirror) and the back, standing, winding up an attack, striking and dead. Pictures are
-/// 64×64 with the feet on the bottom row. Made once and cached.
+/// left side is the mirror) and the back, standing, winding up an attack, striking and dead. Drawers work on a
+/// 64-unit grid; pictures are <see cref="Size"/> (128) across, with the feet on the bottom row, and are shaded as
+/// pixel art by <see cref="Paint.Finish"/>. Made once and cached.
 /// </summary>
 public sealed partial class SpriteFactory
 {
-    public const int Size = 64;
+    /// <summary>The drawing grid a creature is drawn on.</summary>
+    public const int Grid = 64;
+    /// <summary>Picture pixels per grid unit.</summary>
+    public const double Scale = 2;
+    /// <summary>A creature's picture, in pixels.</summary>
+    public const int Size = (int)(Grid * Scale);
 
     private readonly Dictionary<(string, SpriteView, SpriteFrame, bool), SpriteImage> _cache = new();
 
@@ -33,8 +39,8 @@ public sealed partial class SpriteFactory
     {
         var key = ("bolt-" + look, SpriteView.Front, SpriteFrame.Idle, false);
         if (_cache.TryGetValue(key, out var img)) return img;
-        img = new SpriteImage(24, 24);
-        var p = new Paint(img);
+        img = new SpriteImage(48, 48);
+        var p = new Paint(img, Scale);
         (uint outer, uint inner) = look switch
         {
             "fire" => (Paint.Rgb(230, 90, 20), Paint.Rgb(255, 230, 120)),
@@ -62,8 +68,8 @@ public sealed partial class SpriteFactory
     {
         var key = ("stone", SpriteView.Front, SpriteFrame.Idle, false);
         if (_cache.TryGetValue(key, out var img)) return img;
-        img = new SpriteImage(16, 16);
-        var p = new Paint(img);
+        img = new SpriteImage(32, 32);
+        var p = new Paint(img, Scale);
         p.Ellipse(8, 8, 5, 4.5, Paint.Rgb(130, 124, 112));
         p.Outline();
         return _cache[key] = img;
@@ -75,7 +81,7 @@ public sealed partial class SpriteFactory
         var key = ("prop-" + kind, SpriteView.Front, SpriteFrame.Idle, false);
         if (_cache.TryGetValue(key, out var img)) return img;
         img = new SpriteImage(Size, Size);
-        var p = new Paint(img);
+        var p = new Paint(img, Scale);
         switch (kind)
         {
             case "altar":
@@ -116,6 +122,7 @@ public sealed partial class SpriteFactory
             {
                 uint c = kind == "gasPoison" ? Paint.Rgb(90, 160, 60) : Paint.Rgb(200, 170, 220);
                 for (int i = 0; i < 9; i++) p.Ellipse(10 + i * 6 % 44, 26 + i * 7 % 30, 10, 8, c, false);
+                p.Finish();
                 for (int i = 0; i < img.Pixels.Length; i++) if (img.Pixels[i] >> 24 != 0) img.Pixels[i] = img.Pixels[i] & 0x00FFFFFF | 0xFF000000;
                 return _cache[key] = img;
             }
@@ -130,7 +137,7 @@ public sealed partial class SpriteFactory
         var key = (open ? "chest-open" : "chest", SpriteView.Front, SpriteFrame.Idle, false);
         if (_cache.TryGetValue(key, out var img)) return img;
         img = new SpriteImage(Size, Size);
-        var p = new Paint(img);
+        var p = new Paint(img, Scale);
         uint wood = Paint.Rgb(118, 78, 40), band = Paint.Rgb(70, 66, 70), dark = Paint.Rgb(30, 18, 10);
         p.Rect(10, 36, 54, 63, wood);
         if (open)
@@ -156,8 +163,8 @@ public sealed partial class SpriteFactory
     {
         var key = ("item-" + kind, SpriteView.Front, SpriteFrame.Idle, false);
         if (_cache.TryGetValue(key, out var img)) return img;
-        img = new SpriteImage(32, 32);
-        var p = new Paint(img);
+        img = new SpriteImage(64, 64);
+        var p = new Paint(img, Scale);
         switch (kind)
         {
             case "weapon":
@@ -197,7 +204,7 @@ public sealed partial class SpriteFactory
     private static SpriteImage Draw(string sprite, SpriteView view, SpriteFrame frame)
     {
         var img = new SpriteImage(Size, Size);
-        var p = new Paint(img);
+        var p = new Paint(img, Scale);
         switch (sprite)
         {
             case "rat": Rat(p, view, frame); break;
@@ -215,91 +222,6 @@ public sealed partial class SpriteFactory
         return img;
     }
 
-    // ---- Rats ----
-
-    private static void Rat(Paint p, SpriteView v, SpriteFrame f)
-    {
-        uint fur = Paint.Rgb(104, 88, 76), dark = Paint.Rgb(70, 58, 50), pink = Paint.Rgb(200, 130, 130), eye = Paint.Rgb(230, 40, 30);
-        if (f == SpriteFrame.Dead)
-        {
-            p.Line(14, 58, 4, 50, 2, pink);
-            p.Ellipse(30, 56, 18, 7, fur);
-            for (int i = 0; i < 4; i++) p.Line(20 + i * 7, 52, 18 + i * 7, 44, 2, pink);
-            p.Ellipse(50, 56, 7, 5, fur);
-            return;
-        }
-        double rear = f == SpriteFrame.Windup ? -6 : 0, lunge = f == SpriteFrame.Strike ? 4 : 0;
-        switch (v)
-        {
-            case SpriteView.Front:
-                p.Ellipse(32, 50, 17, 12, fur);
-                p.Ellipse(20, 34 + rear, 5, 5, pink);
-                p.Ellipse(44, 34 + rear, 5, 5, pink);
-                p.Ellipse(32, 42 + rear, 10 + lunge, 9 + lunge, fur);
-                p.Ellipse(32, 48 + rear, 3, 2, pink, false);
-                p.Dot(28, 40 + rear, eye); p.Dot(29, 40 + rear, eye);
-                p.Dot(35, 40 + rear, eye); p.Dot(36, 40 + rear, eye);
-                if (f != SpriteFrame.Idle) p.Rect(30, 50 + rear, 34, 53 + rear, Paint.Rgb(40, 10, 10), false);
-                p.Line(24, 47 + rear, 12, 45 + rear, 1, dark);
-                p.Line(40, 47 + rear, 52, 45 + rear, 1, dark);
-                break;
-            case SpriteView.Side:
-                p.Line(12, 52, 2, 40, 2, pink);
-                p.Ellipse(28, 50, 19, 11, fur);
-                p.Ellipse(48 + lunge, 46 + rear, 10, 7, fur);
-                p.Ellipse(44 + lunge, 39 + rear, 4, 4, pink);
-                p.Dot(51 + lunge, 44 + rear, eye); p.Dot(52 + lunge, 44 + rear, eye);
-                p.Dot(58 + lunge, 47 + rear, pink);
-                p.Rect(20, 58, 23, 63, dark); p.Rect(36, 58, 39, 63, dark);
-                break;
-            default:
-                p.Ellipse(32, 50, 17, 12, fur);
-                p.Ellipse(20, 38, 5, 5, pink); p.Ellipse(44, 38, 5, 5, pink);
-                p.Line(32, 58, 34, 63, 3, pink);
-                break;
-        }
-    }
-
-    // ---- Spiders ----
-
-    private static void Spider(Paint p, SpriteView v, SpriteFrame f)
-    {
-        uint shell = Paint.Rgb(60, 48, 40), leg = Paint.Rgb(46, 36, 30), mark = Paint.Rgb(150, 60, 40), eye = Paint.Rgb(240, 60, 40);
-        if (f == SpriteFrame.Dead)
-        {
-            p.Ellipse(32, 56, 14, 7, shell);
-            for (int i = 0; i < 4; i++) { p.Line(22 + i * 6, 52, 20 + i * 7, 42 - i % 2 * 3, 2, leg); }
-            return;
-        }
-        double raise = f == SpriteFrame.Windup ? -10 : f == SpriteFrame.Strike ? -4 : 0;
-        if (v == SpriteView.Side)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                double bx = 30 + i * 5;
-                p.Line(bx, 48, bx + 6 + i * 2, 36 + (i == 3 ? raise : 0), 2, leg);
-                p.Line(bx + 6 + i * 2, 36 + (i == 3 ? raise : 0), bx + 10 + i * 3, 63, 2, leg);
-            }
-            p.Ellipse(20, 44, 16, 12, shell);
-            p.Ellipse(20, 42, 6, 4, mark);
-            p.Ellipse(42, 48, 9, 7, shell);
-            p.Dot(49, 46, eye); p.Dot(50, 46, eye);
-            return;
-        }
-        // Front and back: legs fanned out either side.
-        for (int i = 0; i < 4; i++)
-        {
-            double knee = 30 - i * 3 + (i == 0 ? raise : 0);
-            p.Line(26, 48, 12 - i * 2, knee, 2, leg); p.Line(12 - i * 2, knee, 4 + i * 3, 63, 2, leg);
-            p.Line(38, 48, 52 + i * 2, knee, 2, leg); p.Line(52 + i * 2, knee, 60 - i * 3, 63, 2, leg);
-        }
-        p.Ellipse(32, 40, 15, 12, shell);
-        if (v == SpriteView.Back) { p.Ellipse(32, 38, 6, 5, mark); return; }
-        p.Ellipse(32, 50, 9, 7, shell);
-        foreach (var (x, y) in new[] { (28, 47), (36, 47), (30, 50), (34, 50), (26, 50), (38, 50) }) p.Dot(x, y, eye);
-        p.Line(29, 55, 28, 59, 2, Paint.Rgb(20, 14, 10)); p.Line(35, 55, 36, 59, 2, Paint.Rgb(20, 14, 10));
-    }
-
     // ---- Things that walk on two legs ----
 
     private sealed record Look(uint Skin, uint Clothes, uint Trim, double Height, bool Ears, string Weapon, bool Bones, bool Hood, uint Eye);
@@ -311,152 +233,348 @@ public sealed partial class SpriteFactory
 
     private static void Humanoid(Paint p, SpriteView v, SpriteFrame f, Look k)
     {
+        uint skinDark = Paint.Shade(k.Skin, -34), cloth = k.Clothes, trim = k.Trim, boot = Paint.Shade(k.Trim, -30);
+        uint socket = C(22, 14, 16), mouth = C(46, 16, 18);
         if (f == SpriteFrame.Dead)
         {
             if (k.Bones)
             {
                 // A heap of bones with the skull on top.
-                for (int i = 0; i < 6; i++) p.Line(14 + i * 6, 60 - i % 3 * 2, 24 + i * 5, 54 + i % 2 * 4, 3, k.Skin);
-                p.Ellipse(30, 52, 6, 5, k.Skin);
-                p.Dot(28, 52, Paint.Rgb(30, 20, 20)); p.Dot(32, 52, Paint.Rgb(30, 20, 20));
+                p.Mat = Material.Bone;
+                for (int i = 0; i < 7; i++) p.Taper(10 + i * 6, 61 - i % 3 * 2, 1.6, 20 + i * 5, 56 + i % 2 * 4, 1.2, k.Skin);
+                p.Ellipse(24, 58, 6, 3, k.Skin);
+                p.Ellipse(36, 53, 6, 5.5, k.Skin);
+                p.Rect(33, 56, 39, 59, k.Skin);
+                p.Ellipse(34, 53, 1.6, 1.6, socket, false); p.Ellipse(38.5, 53, 1.4, 1.6, socket, false);
+                p.Mat = Material.Matte;
                 return;
             }
-            p.Ellipse(32, 58, 22, 5, k.Clothes);
-            p.Ellipse(52, 56, 6, 5, k.Skin);
-            p.Line(18, 56, 8, 60, 3, k.Skin);
+            p.Mat = Material.Cloth;
+            p.Ellipse(30, 58, 18, 4.5, cloth);
+            p.Mat = Material.Matte;
+            p.Taper(14, 59, 2.4, 4, 61, 2, k.Trim);
+            p.Taper(16, 56, 2.2, 8, 54, 1.8, k.Skin);
+            p.Taper(40, 58, 2.2, 46, 62, 1.8, k.Skin);
+            p.Ellipse(50, 57, 5.5, 4.5, k.Hood ? cloth : k.Skin);
+            if (k.Ears) p.Triangle(48, 54, 56, 50, 52, 57, k.Skin);
+            p.Dot(51, 56, socket);
             return;
         }
 
-        double s = k.Height;
-        double top = 64 - 60 * s;                     // top of the head
-        double headY = top + 7 * s, neck = top + 14 * s, hip = top + 36 * s;
-        double cx = 32;
-        double torsoW = (v == SpriteView.Side ? 6 : 9) * s;
-        uint eye = f == SpriteFrame.Windup ? Paint.Rgb(255, 255, 200) : k.Eye;
+        double s = k.Height, cx = 32;
+        double top = 63 - 58 * s;
+        double headY = top + 6.5 * s, neck = top + 13 * s, shoulderY = top + 16 * s, waist = top + 31 * s, hip = top + 33 * s;
+        bool side = v == SpriteView.Side, back = v == SpriteView.Back, front = v == SpriteView.Front;
+        bool shamble = k.Weapon == "none" && !k.Bones && k.Hood == false && k.Skin == Shambler.Skin;
+        if (shamble) { headY += 2; neck += 1; } // it slumps
+        double hw = (side ? 6.5 : 10) * s;    // half the shoulders
+        double ww = (side ? 5.5 : 7) * s;     // half the waist
+        double headX = cx + (side ? 2.5 * s : 0);
 
-        // Legs.
-        double stride = f == SpriteFrame.Strike ? 5 : 2;
-        p.Line(cx - (v == SpriteView.Side ? stride : 4 * s), hip, cx - (v == SpriteView.Side ? stride + 2 : 6 * s), 63, 4 * s, k.Bones ? k.Skin : k.Trim);
-        p.Line(cx + (v == SpriteView.Side ? stride : 4 * s), hip, cx + (v == SpriteView.Side ? stride + 2 : 6 * s), 63, 4 * s, k.Bones ? k.Skin : k.Trim);
-
-        // Body.
-        if (k.Bones)
+        // Where the weapon hand goes: low at rest, up and back in the tell, out in the blow.
+        var (ex, ey, hx, hy) = f switch
         {
-            p.Line(cx, neck, cx, hip, 3, k.Skin);
-            for (int i = 0; i < 4; i++) p.Line(cx - torsoW, neck + 4 + i * 4, cx + torsoW, neck + 4 + i * 4, 2, k.Skin);
-            p.Line(cx - torsoW, hip, cx + torsoW, hip, 3, k.Skin);
-        }
-        else
-        {
-            p.Rect(cx - torsoW, neck, cx + torsoW, hip + 2, k.Clothes);
-            p.Rect(cx - torsoW, hip - 2, cx + torsoW, hip + 2, k.Trim, false);
-        }
-
-        // Arms: down at rest, raised in the tell, thrust forward in the blow.
-        double shoulder = neck + 3;
-        var (hx, hy) = f switch
-        {
-            SpriteFrame.Windup => (v == SpriteView.Side ? cx - 4 : cx + 14 * s, top - 2),
-            SpriteFrame.Strike => (v == SpriteView.Side ? cx + 22 : cx + 10 * s, neck + 10),
-            _ => (v == SpriteView.Side ? cx + 6 : cx + 13 * s, hip + (k.Weapon == "none" ? -6 : 2)),
+            SpriteFrame.Windup => side ? (cx - 3 * s, top + 10 * s, cx - 6 * s, top - 2 * s) : (cx + 15 * s, top + 11 * s, cx + 12 * s, top - 1 * s),
+            SpriteFrame.Strike => side ? (cx + 10 * s, top + 20 * s, cx + 19 * s, top + 22 * s) : (cx + 13 * s, top + 22 * s, cx + 7 * s, top + 28 * s),
+            _ => side ? (cx + 2 * s, top + 26 * s, cx + 5 * s, top + 35 * s) : (cx + 12.5 * s, top + 26 * s, cx + 13 * s, top + 35 * s),
         };
-        uint arm = k.Bones ? k.Skin : k.Skin;
-        if (v != SpriteView.Side) p.Line(cx - torsoW - 1, shoulder, cx - 13 * s, hip + (k.Weapon == "none" && f == SpriteFrame.Idle ? -6 : 2), 3 * s, arm);
-        if (k.Weapon == "none" && v == SpriteView.Front && f == SpriteFrame.Idle)
-        {
-            // A shambler's arms reach for you.
-            p.Line(cx - torsoW, shoulder, cx - 6, shoulder + 14, 3, arm);
-            p.Line(cx + torsoW, shoulder, cx + 6, shoulder + 14, 3, arm);
-        }
-        else p.Line(cx + torsoW + 1, shoulder, hx, hy, 3 * s, arm);
-        Weapon(p, k, hx, hy, f, v);
 
-        // Head.
-        if (k.Ears && v != SpriteView.Back)
+        // ---- Legs and feet ----
+        double stride = side ? (f == SpriteFrame.Strike ? 6 : 3) * s : 0;
+        void Leg(double sign, double fwd)
         {
-            p.Triangle(cx - 6 * s, headY - 1, cx - 18 * s, headY - 6, cx - 5 * s, headY + 3, k.Skin);
-            p.Triangle(cx + 6 * s, headY - 1, cx + 18 * s, headY - 6, cx + 5 * s, headY + 3, k.Skin);
+            double lx = cx + (side ? fwd : sign * 4 * s);
+            uint legC = k.Bones ? k.Skin : trim;
+            if (k.Bones)
+            {
+                p.Mat = Material.Bone;
+                p.Limb(lx, hip, lx + fwd * 0.3 + (side ? 0 : sign * 0.5 * s), hip + 12 * s, lx + fwd * 0.6 + (side ? 0 : sign * 1.2 * s), 60.5, 1.6 * s, 1.2 * s, legC);
+                p.Ellipse(lx + fwd * 0.3 + (side ? 0 : sign * 0.5 * s), hip + 12 * s, 2 * s, 1.8 * s, legC);
+                p.Ellipse(lx + fwd * 0.6 + (side ? 1.5 : sign * 1.5) * s, 61.5, 3 * s, 1.6, legC);
+                p.Mat = Material.Matte;
+                return;
+            }
+            p.Limb(lx, hip, lx + fwd * 0.3 + (side ? 0 : sign * 0.6 * s), hip + 12 * s, lx + fwd * 0.6 + (side ? 0 : sign * 1.2 * s), 59, 3.2 * s, 2.4 * s, legC);
+            p.Ellipse(lx + fwd * 0.6 + (side ? 2 : sign * 1.5) * s, 61, 3.6 * s, 2.2, boot);
         }
-        p.Ellipse(cx + (v == SpriteView.Side ? 2 : 0), headY, 7 * s, 7.5 * s, k.Hood ? k.Clothes : k.Skin);
-        if (k.Hood) p.Ellipse(cx + (v == SpriteView.Side ? 4 : 0), headY + 1.5, 4.5 * s, 4.5 * s, k.Skin);
-        if (v == SpriteView.Back) return;
-        double ey = headY + (k.Hood ? 1 : 0);
-        if (v == SpriteView.Front)
+        if (side) { Leg(-1, -stride); Leg(1, stride); }
+        else { Leg(-1, 0); Leg(1, 0); }
+
+        // ---- The far arm (behind the body) ----
+        void Arm(double sx, double sy, double elx, double ely, double hdx, double hdy)
         {
             if (k.Bones)
             {
-                p.Ellipse(cx - 3, ey, 2, 2, Paint.Rgb(30, 20, 20), false);
-                p.Ellipse(cx + 3, ey, 2, 2, Paint.Rgb(30, 20, 20), false);
-                if (f == SpriteFrame.Windup) { p.Dot(cx - 3, ey, eye); p.Dot(cx + 3, ey, eye); }
-                p.Rect(cx - 3, ey + 4, cx + 3, ey + 5, Paint.Rgb(60, 50, 40), false);
+                p.Mat = Material.Bone;
+                p.Limb(sx, sy, elx, ely, hdx, hdy, 1.5 * s, 1.1 * s, k.Skin);
+                p.Ellipse(elx, ely, 1.7 * s, 1.7 * s, k.Skin);
+                p.Ellipse(hdx, hdy, 2 * s, 1.8 * s, k.Skin);
+                p.Mat = Material.Matte;
+                return;
             }
-            else
+            p.Limb(sx, sy, elx, ely, hdx, hdy, 2.8 * s, 2.1 * s, k.Skin);
+            p.Mat = Material.Cloth;
+            p.Taper(sx, sy, 3.2 * s, (sx + elx) / 2, (sy + ely) / 2, 2.8 * s, cloth); // the sleeve
+            p.Mat = Material.Matte;
+            p.Ellipse(hdx, hdy, 2.4 * s, 2.4 * s, k.Skin);
+        }
+        if (side) Arm(cx - 1 * s, shoulderY + 1, cx - 3 * s, top + 26 * s, cx - 2 * s, top + 34 * s);
+
+        // ---- The body ----
+        if (k.Bones)
+        {
+            p.Mat = Material.Bone;
+            p.Taper(cx, neck, 1.6 * s, cx, hip, 1.4 * s, k.Skin);                              // the spine
+            for (int i = 0; i < 4; i++)
             {
-                p.Dot(cx - 3, ey, eye); p.Dot(cx - 2, ey, eye);
-                p.Dot(cx + 2, ey, eye); p.Dot(cx + 3, ey, eye);
-                p.Rect(cx - 2, ey + 3, cx + 2, ey + 4, Paint.Rgb(40, 20, 20), false);
+                double ry = neck + 4 * s + i * 3.6 * s, span = hw - 1 - i * 0.8 * s;
+                if (side) p.Taper(cx, ry, 1.2 * s, cx + 4 * s, ry + 2.5 * s, 0.9 * s, k.Skin);
+                else
+                {
+                    p.Taper(cx, ry, 1.2 * s, cx - span, ry + 2.5 * s, 0.9 * s, k.Skin);
+                    p.Taper(cx, ry, 1.2 * s, cx + span, ry + 2.5 * s, 0.9 * s, k.Skin);
+                }
             }
+            p.Ellipse(cx, hip, (side ? 4 : 7) * s, 2.6 * s, k.Skin);                           // the pelvis
+            p.Taper(cx - hw, shoulderY, 1.3 * s, cx + hw, shoulderY, 1.3 * s, k.Skin);         // the collarbones
+            if (k.Clothes != k.Skin)
+            {
+                // A king's mantle over the bones.
+                p.Mat = Material.Cloth;
+                p.Poly(k.Clothes, (cx - hw - 1, shoulderY - 1), (cx + hw + 1, shoulderY - 1), (cx + hw + 4 * s, 58), (cx - hw - 4 * s, 58));
+                p.Mat = Material.Matte;
+                if (front) p.Poly(C(20, 14, 18), false, (cx - 4 * s, shoulderY), (cx + 4 * s, shoulderY), (cx + 6 * s, 58), (cx - 6 * s, 58));
+                if (front) for (int i = 0; i < 3; i++) p.Taper(cx - 3 * s, shoulderY + 4 * s + i * 3.6 * s, 1 * s, cx + 3 * s, shoulderY + 4 * s + i * 3.6 * s, 1 * s, k.Skin);
+            }
+            p.Mat = Material.Matte;
         }
         else
         {
-            p.Dot(cx + 6, ey, k.Bones ? Paint.Rgb(30, 20, 20) : eye);
-            p.Dot(cx + 9 * s, ey + 2, k.Skin);
+            p.Ellipse(cx, neck, 2.6 * s, 2.4 * s, k.Skin);                                     // the neck
+            p.Mat = Material.Cloth;
+            double hem = k.Hood ? 57 : top + 41 * s;                                             // robes run to the floor
+            p.Poly(cloth, (cx - hw, shoulderY), (cx + hw, shoulderY), (cx + ww + 1.5 * s, waist), (cx + ww + (k.Hood ? 5 : 2.5) * s, hem), (cx - ww - (k.Hood ? 5 : 2.5) * s, hem), (cx - ww - 1.5 * s, waist));
+            p.Ellipse(cx - hw + 1.5 * s, shoulderY + 1.5 * s, 3.2 * s, 2.8 * s, cloth);
+            p.Ellipse(cx + hw - 1.5 * s, shoulderY + 1.5 * s, 3.2 * s, 2.8 * s, cloth);
+            p.Mat = Material.Matte;
+            if (!back)
+            {
+                // A collar or neckline, a belt and its buckle.
+                if (front) p.Triangle(cx - 3 * s, shoulderY - 0.5, cx + 3 * s, shoulderY - 0.5, cx, shoulderY + 4 * s, Paint.Shade(k.Skin, -12));
+                p.Rect(cx - ww - 1.5 * s, waist - 1.2 * s, cx + ww + 1.5 * s, waist + 1.4 * s, trim);
+                if (front) p.Rect(cx - 1.4 * s, waist - 1.2 * s, cx + 1.4 * s, waist + 1.4 * s, C(190, 160, 80));
+                if (front && k.Hood) p.Taper(cx, waist + 2 * s, 0.8 * s, cx, hem - 1, 1.2 * s, Paint.Shade(cloth, -26)); // the robe's fold
+            }
+            if (shamble && front)
+            {
+                // Rents in the rags.
+                p.Poly(Paint.Shade(k.Skin, -10), (cx - 6 * s, top + 22 * s), (cx - 2 * s, top + 25 * s), (cx - 5 * s, top + 29 * s));
+                p.Poly(Paint.Shade(k.Skin, -10), (cx + 3 * s, top + 33 * s), (cx + 7 * s, top + 34 * s), (cx + 5 * s, top + 39 * s));
+            }
         }
+
+        // ---- The near arm or arms ----
+        if (front || back)
+        {
+            if (shamble && front && f == SpriteFrame.Idle)
+            {
+                // A shambler's arms reach for you.
+                Arm(cx - hw + 1, shoulderY + 1, cx - 9 * s, top + 22 * s, cx - 5 * s, top + 24 * s);
+                Arm(cx + hw - 1, shoulderY + 1, cx + 9 * s, top + 22 * s, cx + 5 * s, top + 24 * s);
+            }
+            else
+            {
+                Arm(cx - hw + 1, shoulderY + 1, cx - 12.5 * s, top + 26 * s, cx - 13 * s, top + 35 * s);
+                Arm(cx + hw - 1, shoulderY + 1, ex, ey, hx, hy);
+            }
+        }
+        else Arm(cx + 1 * s, shoulderY + 1, ex, ey, hx, hy);
+        if (!(shamble && f == SpriteFrame.Idle && front)) Weapon(p, k, hx, hy, f, v);
+
+        // ---- The head ----
+        if (k.Ears && !back)
+        {
+            if (side) p.Taper(headX - 2 * s, headY - 1 * s, 2.4 * s, headX - 12 * s, headY - 6 * s, 0.6 * s, k.Skin);
+            else
+            {
+                p.Taper(cx - 5 * s, headY, 2.6 * s, cx - 15 * s, headY - 5.5 * s, 0.6 * s, k.Skin);
+                p.Taper(cx + 5 * s, headY, 2.6 * s, cx + 15 * s, headY - 5.5 * s, 0.6 * s, k.Skin);
+            }
+        }
+        if (k.Hood)
+        {
+            p.Mat = Material.Cloth;
+            p.Poly(cloth, (headX - 7.5 * s, headY + 2 * s), (headX + 7.5 * s, headY + 2 * s), (headX + 9 * s, shoulderY + 3 * s), (headX - 9 * s, shoulderY + 3 * s)); // the cowl
+            p.Ellipse(headX, headY - 0.5 * s, 7.6 * s, 8.2 * s, cloth);
+            p.Mat = Material.Matte;
+            if (back) return;
+            // The face in the hood's shadow.
+            double fx = headX + (side ? 3 * s : 0);
+            p.Ellipse(fx, headY + 1 * s, (side ? 3.6 : 4.8) * s, 5 * s, Paint.Shade(k.Skin, -48), false);
+            uint glow = f == SpriteFrame.Windup ? C(255, 255, 220) : k.Eye;
+            if (side) p.Ellipse(fx + 1.5 * s, headY + 0.5 * s, 1.1 * s, 0.9 * s, glow, false);
+            else { p.Ellipse(fx - 2 * s, headY + 0.5 * s, 1.1 * s, 0.9 * s, glow, false); p.Ellipse(fx + 2 * s, headY + 0.5 * s, 1.1 * s, 0.9 * s, glow, false); }
+            return;
+        }
+
+        if (k.Bones)
+        {
+            p.Mat = Material.Bone;
+            p.Ellipse(headX, headY - 0.5 * s, 6 * s, 6.2 * s, k.Skin);
+            p.Rect(headX - 3.5 * s + (side ? 2 * s : 0), headY + 3 * s, headX + 3.5 * s + (side ? 1.5 * s : 0), headY + 7 * s, k.Skin); // the jaw
+            p.Mat = Material.Matte;
+            if (back) return;
+            uint glow = f == SpriteFrame.Windup ? C(255, 255, 210) : k.Eye;
+            if (side)
+            {
+                p.Ellipse(headX + 3 * s, headY, 1.6 * s, 1.8 * s, socket, false);
+                p.Dot(headX + 3 * s, headY, glow);
+                p.Ellipse(headX + 5.5 * s, headY + 2.5 * s, 0.7 * s, 1 * s, socket, false);
+            }
+            else
+            {
+                p.Ellipse(headX - 2.6 * s, headY - 0.2 * s, 2 * s, 2.2 * s, socket, false);
+                p.Ellipse(headX + 2.6 * s, headY - 0.2 * s, 2 * s, 2.2 * s, socket, false);
+                p.Dot(headX - 2.6 * s, headY, glow); p.Dot(headX + 2.6 * s, headY, glow);
+                p.Triangle(headX - 0.9 * s, headY + 3.2 * s, headX + 0.9 * s, headY + 3.2 * s, headX, headY + 1.6 * s, socket);
+            }
+            for (int i = 0; i < 4; i++) p.Rect(headX - 3 * s + i * 1.6 * s + (side ? 2 * s : 0), headY + 4.6 * s, headX - 2.2 * s + i * 1.6 * s + (side ? 2 * s : 0), headY + 6 * s, socket, false); // teeth gaps
+            return;
+        }
+
+        p.Ellipse(headX, headY, 6.2 * s, 6.8 * s, k.Skin);
+        if (back) { p.Ellipse(headX, headY - 1.5 * s, 6 * s, 5.5 * s, skinDark); return; } // the back of the head, in its hair
+        uint eyeC = f == SpriteFrame.Windup ? C(255, 255, 220) : k.Eye;
+        if (side)
+        {
+            p.Ellipse(headX + 5 * s, headY + 1.5 * s, 2 * s, 1.6 * s, k.Skin);                  // the nose
+            p.Ellipse(headX + 2.6 * s, headY - 0.6 * s, 1.3 * s, 1 * s, socket, false);
+            p.Dot(headX + 2.8 * s, headY - 0.6 * s, eyeC);
+            p.Taper(headX + 1.5 * s, headY - 2.4 * s, 0.7 * s, headX + 4 * s, headY - 2 * s, 0.6 * s, skinDark); // the brow
+            p.Taper(headX + 2.5 * s, headY + 3.6 * s, 0.5 * s, headX + 5 * s, headY + 3.4 * s, 0.5 * s, mouth, false);
+            p.Ellipse(headX - 3 * s, headY - 2.5 * s, 4.5 * s, 4 * s, skinDark);              // the hair
+            return;
+        }
+        // The face, from the front.
+        p.Ellipse(headX - 2.5 * s, headY - 0.6 * s, 1.6 * s, 1.2 * s, socket, false);
+        p.Ellipse(headX + 2.5 * s, headY - 0.6 * s, 1.6 * s, 1.2 * s, socket, false);
+        p.Dot(headX - 2.5 * s, headY - 0.6 * s, eyeC); p.Dot(headX + 2.5 * s, headY - 0.6 * s, eyeC);
+        p.Taper(headX - 4.2 * s, headY - 2.6 * s, 0.7 * s, headX - 1.2 * s, headY - 2 * s, 0.6 * s, skinDark); // brows, set in a scowl
+        p.Taper(headX + 4.2 * s, headY - 2.6 * s, 0.7 * s, headX + 1.2 * s, headY - 2 * s, 0.6 * s, skinDark);
+        p.Taper(headX, headY - 0.6 * s, 0.6 * s, headX, headY + 2 * s, 1.1 * s, Paint.Shade(k.Skin, -14)); // the nose
+        if (f == SpriteFrame.Idle) p.Taper(headX - 2 * s, headY + 3.8 * s, 0.5 * s, headX + 2 * s, headY + 3.8 * s, 0.5 * s, mouth, false);
+        else p.Ellipse(headX, headY + 3.9 * s, 2 * s, 1.4 * s, mouth, false);
+        if (k.Ears) for (int i = -1; i <= 1; i += 2) p.Triangle(headX + i * 1.4 * s, headY + 3.2 * s, headX + i * 0.4 * s, headY + 3.2 * s, headX + i * 0.9 * s, headY + 4.6 * s, C(236, 230, 210)); // goblin fangs
     }
 
     private static void Weapon(Paint p, Look k, double hx, double hy, SpriteFrame f, SpriteView v)
     {
+        uint steel = C(176, 180, 190), wood = C(112, 80, 48), dark = C(60, 44, 30);
+        bool raised = f == SpriteFrame.Windup, swing = f == SpriteFrame.Strike;
+        // Most weapons point up from the hand; in the blow they lie out towards the target.
+        double ang = raised ? -0.35 : swing ? (v == SpriteView.Side ? 1.35 : 0.55) : -0.08;
+        (double, double) Along(double len) => (hx + Math.Sin(ang) * len, hy - Math.Cos(ang) * len);
         switch (k.Weapon)
         {
             case "sword":
             {
-                uint rust = Paint.Rgb(150, 112, 84), hilt = Paint.Rgb(70, 50, 30);
-                double tipX = f == SpriteFrame.Strike ? hx + (v == SpriteView.Side ? 14 : 4) : hx + 2, tipY = f == SpriteFrame.Windup ? hy - 18 : f == SpriteFrame.Strike ? hy + 2 : hy - 20;
-                p.Line(hx, hy, tipX, tipY, 2.5, rust);
-                p.Line(hx - 4, hy, hx + 4, hy, 2, hilt);
+                uint blade = k.Bones || k.Skin == C(200, 196, 180) ? C(150, 118, 92) : steel; // the dead carry rusted iron
+                var (tx, ty) = Along(22);
+                var (gx, gy) = Along(2.5);
+                p.Mat = Material.Metal;
+                p.Taper(gx, gy, 1.6, tx, ty, 0.5, blade);
+                p.Mat = Material.Matte;
+                var (px2, py2) = (Math.Cos(ang) * 4.5, Math.Sin(ang) * 4.5);
+                p.Taper(gx - px2, gy - py2, 1, gx + px2, gy + py2, 1, C(150, 120, 60));         // the guard
+                var (bx, by) = Along(-3);
+                p.Taper(hx, hy, 1, bx, by, 1, dark);                                         // the grip
+                p.Ellipse(bx, by, 1.4, 1.4, C(150, 120, 60));
                 break;
             }
             case "knife":
-                p.Line(hx, hy, hx + (f == SpriteFrame.Strike ? 8 : 2), hy - (f == SpriteFrame.Strike ? 2 : 8), 2, Paint.Rgb(170, 170, 176));
+            {
+                var (tx, ty) = Along(9);
+                p.Mat = Material.Metal;
+                p.Taper(hx, hy, 1.3, tx, ty, 0.4, steel);
+                p.Mat = Material.Matte;
                 break;
+            }
             case "pick":
-                p.Line(hx, hy, hx + 2, hy - 16, 2, Paint.Rgb(110, 80, 50));
-                p.Line(hx - 6, hy - 16, hx + 10, hy - 14, 2.5, Paint.Rgb(150, 150, 156));
+            {
+                var (tx, ty) = Along(17);
+                p.Taper(hx, hy + 3, 1.1, tx, ty, 1, wood);
+                p.Mat = Material.Metal;
+                double cx = Math.Cos(ang), sy = Math.Sin(ang);
+                p.Taper(tx - cx * 8, ty - sy * 8 + 2, 0.5, tx, ty, 1.6, C(140, 140, 148));
+                p.Taper(tx, ty, 1.6, tx + cx * 9, ty + sy * 9 + 2, 0.5, C(140, 140, 148));
+                p.Mat = Material.Matte;
                 break;
+            }
             case "axe":
-                p.Line(hx, hy, hx + 2, hy - 18, 2, Paint.Rgb(110, 80, 50));
-                p.Triangle(hx + 2, hy - 20, hx + 12, hy - 22, hx + 10, hy - 10, Paint.Rgb(170, 170, 176));
+            {
+                var (tx, ty) = Along(19);
+                p.Taper(hx, hy + 3, 1.1, tx, ty, 1, wood);
+                p.Mat = Material.Metal;
+                double cx = Math.Cos(ang), sy = Math.Sin(ang);
+                p.Poly(steel, (tx - sy * 1, ty + 1), (tx + cx * 10, ty + sy * 10 - 5), (tx + cx * 11 + sy * 6, ty + sy * 11 + 4), (tx + sy * 5, ty + 6));
+                p.Mat = Material.Matte;
                 break;
+            }
             case "club":
-                p.Line(hx, hy, hx + 3, hy - 16, 4, Paint.Rgb(110, 80, 50));
+            {
+                var (tx, ty) = Along(17);
+                p.Taper(hx, hy + 2, 1.4, tx, ty, 3.4, wood);
+                for (int i = 0; i < 3; i++) { var (nx, ny) = Along(9 + i * 3.5); p.Dot(nx + (i % 2 == 0 ? 2 : -2), ny, C(200, 200, 200)); }
                 break;
+            }
             case "spear":
-                p.Line(hx, hy + 8, hx + 2, hy - 24, 2, Paint.Rgb(110, 80, 50));
-                p.Triangle(hx - 1, hy - 24, hx + 2, hy - 31, hx + 5, hy - 24, Paint.Rgb(190, 190, 200));
+            {
+                var (bx, by) = Along(-9);
+                var (tx, ty) = Along(26);
+                p.Taper(bx, by, 0.9, tx, ty, 0.9, wood);
+                var (hx2, hy2) = Along(32);
+                p.Mat = Material.Metal;
+                p.Taper(tx, ty, 2, hx2, hy2, 0.3, steel);
+                p.Mat = Material.Matte;
                 break;
+            }
             case "staff":
-                p.Line(hx, hy + 10, hx + 1, hy - 22, 2, Paint.Rgb(90, 70, 50));
-                p.Ellipse(hx + 1, hy - 23, 3, 3, f == SpriteFrame.Windup ? Paint.Rgb(255, 255, 200) : Paint.Rgb(150, 200, 255), false);
+            {
+                var (bx, by) = Along(-11);
+                var (tx, ty) = Along(22);
+                p.Taper(bx, by, 1, tx, ty, 1.2, C(92, 70, 48));
+                uint orb = raised ? C(255, 255, 210) : C(150, 210, 255);
+                p.Ellipse(tx, ty - 2, 3.2, 3.2, Paint.Shade(orb, -60));
+                p.Ellipse(tx, ty - 2, 2, 2, orb, false);
                 break;
+            }
             case "whip":
-                p.Line(hx, hy, hx + (f == SpriteFrame.Strike ? 18 : 6), hy + (f == SpriteFrame.Strike ? -4 : 14), 1, Paint.Rgb(70, 50, 30));
+                if (swing) p.Taper(hx, hy, 0.9, hx + 20, hy - 5, 0.4, C(80, 56, 34));
+                else { p.Taper(hx, hy, 0.9, hx + 4, hy + 10, 0.6, C(80, 56, 34)); p.Taper(hx + 4, hy + 10, 0.6, hx - 2, hy + 16, 0.4, C(80, 56, 34)); }
                 break;
             case "bow":
-                p.Line(hx, hy - 12, hx + 3, hy, 1.5, Paint.Rgb(120, 90, 60));
-                p.Line(hx + 3, hy, hx, hy + 12, 1.5, Paint.Rgb(120, 90, 60));
-                p.Line(hx, hy - 12, hx, hy + 12, 1, Paint.Rgb(200, 200, 190));
+                p.Taper(hx, hy - 13, 0.7, hx + 4, hy, 1.1, C(130, 96, 60));
+                p.Taper(hx + 4, hy, 1.1, hx, hy + 13, 0.7, C(130, 96, 60));
+                p.Line(hx, hy - 13, raised ? hx - 6 : hx, hy, 0.5, C(220, 214, 200));
+                p.Line(raised ? hx - 6 : hx, hy, hx, hy + 13, 0.5, C(220, 214, 200));
+                if (raised) p.Line(hx - 6, hy, hx + 10, hy, 0.7, C(170, 150, 120));
                 break;
             case "lantern":
-                p.Line(hx, hy, hx, hy + 4, 1, Paint.Rgb(60, 60, 60));
-                p.Rect(hx - 3, hy + 4, hx + 3, hy + 10, Paint.Rgb(120, 255, 160), false);
+                p.Line(hx, hy, hx, hy + 4, 0.6, C(60, 60, 60));
+                p.Mat = Material.Metal;
+                p.Rect(hx - 3.5, hy + 4, hx + 3.5, hy + 12, C(70, 70, 76));
+                p.Mat = Material.Matte;
+                p.Rect(hx - 2.5, hy + 5.5, hx + 2.5, hy + 10.5, raised ? C(220, 255, 220) : C(120, 255, 160), false);
                 break;
             case "sling":
-                if (f == SpriteFrame.Windup)
+                if (raised)
                 {
-                    p.Line(hx, hy, hx - 8, hy - 6, 1, Paint.Rgb(90, 70, 50));
-                    p.Ellipse(hx - 9, hy - 7, 2.5, 2.5, Paint.Rgb(130, 124, 112));
+                    p.Line(hx, hy, hx - 8, hy - 6, 0.6, C(90, 70, 50));
+                    p.Mat = Material.Stone;
+                    p.Ellipse(hx - 9, hy - 7, 2.5, 2.5, C(130, 124, 112));
+                    p.Mat = Material.Matte;
                 }
-                else p.Line(hx, hy, hx + 1, hy + 10, 1, Paint.Rgb(90, 70, 50));
+                else p.Line(hx, hy, hx + 1, hy + 10, 0.6, C(90, 70, 50));
                 break;
         }
     }

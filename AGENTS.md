@@ -80,7 +80,10 @@ implicit usings, invariant globalization and central package versions. Package v
   - `TextureFactory`: each region's textures. Walls, floors and ceilings come from the art in `Assets/Textures`
     (embedded, read by `PngReader`); doors, levers, pits, plates, stairs and markings are drawn in code over them.
     `TextureFactory.Drawn` is the all-code set.
-  - `SpriteFactory` and `SpriteFactory.Bestiary`: code-drawn creatures, props and icons.
+  - `SpriteFactory`, `.Bestiary` and `.Creatures`: code-drawn creatures, props and icons, drawn on a 64-unit grid
+    at 128 px. `Paint` lays down flat shapes (set `Mat` for fur, metal, bone, slime, stone or cloth; unshaded shapes
+    are eyes and glows), then `Paint.Finish` shades, dithers and outlines them as pixel art. Change the look there,
+    not creature by creature.
   - `Scene`: the engine's creatures, missiles and props as sprites, with elite and champion tints.
 - `src/AVAHack.App/`: Avalonia. `Views/GameView*.cs` is one control split by screen:
   - play;

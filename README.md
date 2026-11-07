@@ -74,10 +74,21 @@ you can see through a portcullis. Creatures are camera-facing pictures with fron
 against a depth buffer.
 
 Each region's walls, floors and ceilings come from Screaming Brain Studios' CC0 *Old School Dungeon Crawler Pack*,
-converted by `tools/import-sbs-textures.sh`. The doors, levers, pits, plates, stairs, markings and creatures are
-still drawn in code. Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
+converted by `tools/import-sbs-textures.sh`. The doors, levers, pits, plates, stairs and markings are drawn in
+code.
+
+The creatures are drawn in code too, all 62, on a 64-unit grid at 128 pixels. A finishing pass shades them as
+pixel art:
+- each patch of colour is lit as a rounded surface from the upper left, with a five-step ramp of cool shadows and
+  warm highlights;
+- tones are ordered-dithered between steps;
+- overlapping parts cast contact shadows;
+- fur, metal, bone, slime, stone and cloth get their own grain or shine;
+- outlines take a deep shade of the colour they border.
+
+![The bestiary](Images/AVAHack-bestiary.png) Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
 made from it by `tools/build_credits.py`. Because there is no GPU in the path, the
-tests render real frames and compare them with golden images. A frame takes about 2.3 ms on an 8-core ARM
+tests render real frames and compare them with golden images. A frame takes about 1–3 ms on an 8-core ARM
 machine.
 
 ## Building and testing

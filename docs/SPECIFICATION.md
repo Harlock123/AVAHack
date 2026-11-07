@@ -41,6 +41,7 @@
 30. Implementation decisions (M8)
 31. Implementation decisions (the balance pass)
 32. Implementation decisions (M9: textures from an art pack)
+33. Implementation decisions (M9: the creatures redrawn)
 
 ---
 
@@ -926,6 +927,8 @@ the game.
 - **Placeholders (M0–M2).** Flat-coloured procedural textures and silhouette sprites, so the game can be played
   before any art is chosen.
 - **First pack (M9).** Walls, floors and ceilings come from Screaming Brain Studios' CC0 pack (section 32).
+- **Creatures (M9).** No free pack covers the bestiary, so the creatures are drawn in code as shaded pixel art
+  (section 33).
 
 ---
 
@@ -1872,3 +1875,68 @@ The first piece of M9's "art from the manifest": real textures for walls, floors
 - **Goldens rewritten.** Every view changed, and three new goldens show the works, choir and heart regions.
 - **Next:** creatures, items and icons. No free pack covers 58 creatures in one style, so those need their own
   choice (spec 15.3's gaps rule).
+
+## 33. Implementation decisions (M9: the creatures redrawn)
+
+- **Why in code.** The user chose this. No CC0 or CC-BY pack covers 58 creatures and 4 summons in one style. The
+  best, 0x72's *DungeonTileset II* (CC0), has about 22 tiny top-down monsters and no vermin, constructs, fungi,
+  serpent-folk, aberrations or Unmade. Mixing packs would clash. So every creature stays original and in code, in
+  one style.
+- **Twice the resolution.** Drawers still work on the 64-unit grid with the feet on row 63. `Paint.Scale` maps it
+  to 128 px: creatures, props and chests are 128, item icons 64, bolts 48.
+- **New shapes in `Paint`:**
+  - `Taper`: a round-ended segment that narrows, for limbs, tails, horns and blades;
+  - `Limb`: two tapers bent at a joint, shaded as one;
+  - `Poly`: filled polygons for torsos, robes, wings, plates and flames;
+  - lines now have round ends.
+- **The finishing pass** (`Paint.Finish`, replacing the black outline):
+  - **Parts.** A patch of one colour is a part, and its own rounded surface: the distance to its edge (a chamfer
+    transform) gives a circular height profile, and the normal comes from that. Flat marks painted on a part
+    (spots, eyes, bubbles) don't break its surface.
+  - **Light.** From the upper left and a little in front. The tone is quantised to six steps of a ramp whose dark
+    end leans cool violet and light end warm, with a 4×4 Bayer dither between steps.
+  - **Depth.** A part with a later shape over it takes a contact shadow within 1.5 units; the front part gets a
+    darker inner line where it overlaps.
+  - **Materials** (`Paint.Mat`):
+    - fur: vertical strands;
+    - stone: speckle;
+    - cloth: diagonal folds;
+    - bone: low contrast;
+    - metal: hard contrast and a sharp highlight;
+    - gloss, for slime and shells: a sharp highlight.
+  - **Outlines.** A deep, cool shade of the colour they border.
+  - **Flat shapes** (eyes, mouths, glows, staff orbs) keep their colour, as does baked art (a swarm's members are
+    finished pictures copied in).
+- **The drawers, rebuilt.**
+  - **People** (25 creatures):
+    - jointed arms and legs, sleeves, boots, a tapered tunic or floor-length robe, a belt and buckle;
+    - faces with sockets, brows, nose and mouth;
+    - cowls with shadowed faces for the hooded, goblin ears and fangs;
+    - skeletons with skull, jaw, ribs, spine and pelvis;
+    - a king's mantle, a crown, a knight's helm with visor and plume, a chieftain's band and feather;
+    - weapons in metal, held at an angle that follows the tell and the blow.
+  - **Vermin:** rats with ears, muzzle, whiskers, paws and tail; jointed-leg spiders with an abdomen, eye cluster
+    and fangs; beetles with split wing cases.
+  - **Beasts:** four jointed legs with paws and claws, chest ruff, muzzle, ears and tail; bony ribs on the grave
+    hound, and a spear-carrying goblin on the warg.
+  - **Oozes:** glossy domes with a foot, sheen, suspended specks and drips; the cube is drawn in three faces with
+    what it has swallowed.
+  - **Floaters:**
+    - layered flames with a white-hot core;
+    - an imp with membrane wings, horns and tail;
+    - tattered ghosts with reaching arms;
+    - a bat with finger-boned wings;
+    - eyed moths;
+    - a brain trailing nerves;
+    - the Unmaker, a ring of eyes round a void, with orbiting shards.
+  - **Fungi:** gilled, spotted caps on fibrous stalks with root-legs and arms; the colossus, a heap sprouting
+    caps.
+  - **Machines:** riveted brass and iron with piston limbs, a gauge or furnace heart and a visor slit; magma
+    golems in cracked stone; the rail juggernaut with headlamps, grille, wheels and ram; the Bellwright Engine as
+    a bell over a boiler with hammer arms.
+  - **Serpents and others:** naga with coils, belly scales, arms, hood markings and a forked tongue; the queen's
+    crown; tentacles with suckers round a toothed maw; the mimic with planks, iron bands, teeth, tongue and eyes.
+  - Flying things now cast a shadow on the floor instead of trailing a wisp.
+- **Tests and art.** The sprite-sheet test still checks every creature, view and frame. The two creature goldens
+  were rewritten after looking at them. `Images/AVAHack-bestiary.png` shows every creature from the front. A
+  frame still takes 1–3 ms: sprites are drawn once and cached.

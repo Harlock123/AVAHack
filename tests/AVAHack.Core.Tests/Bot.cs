@@ -36,20 +36,30 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         foreach (var p in other._pressed)
             if (g.Level.PlateAt(p.Cell) is { } mine) _pressed.Add(mine);
         _resting = other._resting;
+        _level = g.Level; // this level's memory is the other bot's, not a fresh start
         _blockAt = other._blockAt;
         _swingDelay = other._swingDelay;
         var (st, inc) = other._r.GetState();
         _r.SetState(st, inc);
     }
 
+    private Level? _level;
+
     public void Think()
     {
         if (g.Mode != GameMode.Playing) return;
+        if (_level != g.Level)
+        {
+            // A new level: what the bot knew of the last one is no use here.
+            _level = g.Level;
+            _pulled.Clear();
+            _pressed.Clear();
+        }
         CastSpells();
         foreach (var p in g.Level.Plates.Where(p => p.Pressed)) _pressed.Add(p);
 
         // Fight anything adjacent.
-        var foe = Enum.GetValues<Dir>().Select(d => (Dir: d, M: g.MonstersAt(g.PartyCell.Step(d)).FirstOrDefault()))
+        var foe = Enum.GetValues<Dir>().Select(d => (Dir: d, M: g.MonstersAt(g.PartyCell.Step(d)).FirstOrDefault(m => !m.Ally)))
                       .Where(x => x.M is not null).OrderBy(x => x.Dir == g.Facing ? 0 : 1).FirstOrDefault();
         if (foe.M is { } m)
         {
@@ -116,12 +126,22 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         {
             if (face is { } f && f != g.Facing) { g.Press(TurnToward(g.Facing, f)); return; }
             if (use is { } lever) { g.Press(GameAction.Use); _pulled.Add(lever); }
+            if (Goal == "key") g.Press(GameAction.PickUp);
             return;
         }
-        var step = PathStep(t);
+        var step = PathStep(t) ?? PathStep(t, braveTraps: true);
         if (step is not { } dir) return;
         var next = g.PartyCell.Step(dir);
         if (dir != g.Facing) { g.Press(TurnToward(g.Facing, dir)); return; }
+        // A spotted trap in the only way through: try to disarm it a few times, then go through anyway.
+        if (g.Level.Traps.Any(tr => tr.Cell == next && tr.Spotted && tr.Armed && !tr.Cyclic && tr.Kind is not (TrapKind.AntiMagic or TrapKind.FloodingRoom))
+            && _disarms < 3)
+        {
+            _disarms++;
+            g.Press(GameAction.Use);
+            return;
+        }
+        _disarms = 0;
         if (g.Level.DoorAt(next) is { Kind: DoorKind.Hand, IsPassable: false } door)
         {
             if (!door.Opening) g.Press(GameAction.Use);
@@ -164,8 +184,12 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         return c;
     }
 
+    private bool HasKey(string? key) => key is not null && g.Party.Members.Any(h => h.Backpack.Any(i => i?.KeyId == key));
+
     private (Cell? Cell, Dir? Face, Lever? Use) NextObjective()
     {
+        foreach (var (cell, items) in g.Level.Piles)
+            if (items.Any(i => i.KeyId is not null) && Reachable(cell)) { Goal = "key"; return (cell, null, null); }
         foreach (var lever in g.Level.Levers)
             if (!_pulled.Contains(lever) && Reachable(lever.Cell)) { Goal = "lever"; return (lever.Cell, lever.Face, lever); }
         foreach (var plate in g.Level.Plates)
@@ -174,18 +198,28 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         return g.Level.Stairs.Any() ? (g.Level.Stairs.First(), null, null) : (null, null, null);
     }
 
-    private bool Reachable(Cell c) => c == g.PartyCell || PathStep(c) is not null;
+    private bool Reachable(Cell c) => c == g.PartyCell || PathStep(c) is not null || PathStep(c, braveTraps: true) is not null;
 
-    private bool Walkable(Cell c)
+    private int _disarms;
+
+    private bool Walkable(Cell c, bool braveTraps = false)
     {
         var kind = g.Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
         if (g.Level.PitAt(c) is { Spotted: true }) return false;
-        if (g.Level.DoorAt(c) is { } d && !d.IsPassable && !(d.Kind == DoorKind.Hand) && !d.Opening) return false;
+        if (g.Level.ChestAt(c) is not null || g.Level.TrapAt(c) is { Kind: TrapKind.CursedAltar }) return false;
+        if (g.Level.IsStairsUp(c)) return false; // the bot only goes down
+        if (!braveTraps && g.Level.Traps.Any(t => t.Cell == c && t.Spotted && t.Armed && t.Kind is not (TrapKind.AntiMagic or TrapKind.FloodingRoom))) return false;
+        if (g.Level.PlateAt(c) is { } plate && _pressed.Contains(plate) && plate.Mode == PlateMode.Toggle) return false;
+        if (g.Level.DoorAt(c) is { } d && !d.IsPassable)
+        {
+            if (d.Locked) return HasKey(d.KeyId);
+            if (d.Kind != DoorKind.Hand && !d.Opening) return false;
+        }
         return true; // creatures in the way get fought when the bot bumps into them
     }
 
-    private Dir? PathStep(Cell goal)
+    private Dir? PathStep(Cell goal, bool braveTraps = false)
     {
         var first = new Dictionary<Cell, Dir> { [g.PartyCell] = Dir.North };
         var q = new Queue<Cell>();
@@ -196,7 +230,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             foreach (var d in Enum.GetValues<Dir>())
             {
                 var n = c.Step(d);
-                if (first.ContainsKey(n) || !Walkable(n)) continue;
+                if (first.ContainsKey(n) || !Walkable(n, braveTraps)) continue;
                 first[n] = c == g.PartyCell ? d : first[c];
                 if (n == goal) return first[n];
                 q.Enqueue(n);

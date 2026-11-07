@@ -17,7 +17,7 @@ using AVAHack.World;
 
 namespace AVAHack.App.Views;
 
-public enum Screen { Title, Create, Load, Play }
+public enum Screen { Title, Create, Load, Options, Play }
 
 public enum Overlay { None, Inventory, Menu, Character, Spellbook, Help }
 
@@ -154,6 +154,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     /// <summary>Plays <paramref name="g"/> from now on.</summary>
     public void StartGame(GameEngine g)
     {
+        if (_delve is not null && _delve.Engine != g) _delve = null;
         Engine.Float -= OnFloat;
         Engine = g;
         Hook(g);
@@ -179,6 +180,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     public void QuickSave()
     {
         if (Screen != Screen.Play || Engine.Mode != GameMode.Playing) return;
+        if (_delve?.Options.Ironman == true) { Engine.Say("Ironman: the game saves itself at every stair."); return; }
         Store.Save(SaveStore.QuickSlot, SaveNow());
         Engine.Say("Game saved.");
     }
@@ -189,13 +191,13 @@ public sealed partial class GameView : Control, ICustomHitTest
     public Func<GameEngine, SaveGame>? Saver { get; set; }
     public Func<SaveGame, GameEngine>? Loader { get; set; }
 
-    private SaveGame SaveNow() => Saver?.Invoke(Engine) ?? Engine.ToSave();
+    private SaveGame SaveNow() => Saver?.Invoke(Engine) ?? SaveOf(Engine);
 
     public bool LoadSlot(string slot)
     {
         var save = Store.Load(slot);
         if (save is null) return false;
-        StartGame(Loader?.Invoke(save) ?? GameEngine.FromSave(save, Content));
+        StartGame(Loader?.Invoke(save) ?? LoadOf(save));
         Engine.Say("Game loaded.");
         return true;
     }
@@ -205,6 +207,7 @@ public sealed partial class GameView : Control, ICustomHitTest
         var t0 = _clock.Elapsed;
         double alpha = Engine.Alpha;
         var cam = Engine.Camera(alpha);
+        FitTextures();
         Renderer.TorchStrength = Engine.LightStrength;
         Renderer.Render(Engine.Level, cam, Engine.Time + alpha * GameEngine.TickSeconds, Scene.Build(Engine, cam, _art, alpha));
         using (var fb = _bitmap.Lock())
@@ -260,6 +263,7 @@ public sealed partial class GameView : Control, ICustomHitTest
                 case Screen.Title: DrawTitle(dc); break;
                 case Screen.Create: DrawCreate(dc); break;
                 case Screen.Load: DrawLoad(dc); break;
+                case Screen.Options: DrawOptions(dc); break;
                 default:
                     DrawViewArea(dc);
                     DrawSidePanel(dc);
@@ -314,6 +318,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     {
         e.Handled = true;
         if (Screen == Screen.Create && CreateKey(e)) return;
+        if (Screen == Screen.Options && OptionsKey(e)) return;
         if (Screen != Screen.Play) return;
         bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
         switch (e.PhysicalKey)
@@ -332,6 +337,7 @@ public sealed partial class GameView : Control, ICustomHitTest
                 return;
             case PhysicalKey.Space:
                 Engine.TogglePause();
+                if (!Engine.PauseAllowed && !Engine.Paused) Engine.Say("This Delve doesn't allow pausing.");
                 return;
             case PhysicalKey.Enter or PhysicalKey.NumPadEnter when Engine.Mode != GameMode.Playing:
                 Restart();
@@ -373,6 +379,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     protected override void OnTextInput(TextInputEventArgs e)
     {
         if (Screen == Screen.Create && e.Text is { } t) CreateText(t);
+        if (Screen == Screen.Options && e.Text is { } o) OptionsText(o);
         e.Handled = true;
     }
 

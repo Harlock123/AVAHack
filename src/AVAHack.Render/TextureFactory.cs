@@ -6,20 +6,106 @@ namespace AVAHack.Render;
 /// </summary>
 public static class TextureFactory
 {
-    public static TextureSet Cellar(int seed = 1) => new()
+    public static TextureSet Cellar(int seed = 1) => Themed(seed, 0x6E6A62, 0x57524A, 0x3F3B36, 0x625D56);
+
+    /// <summary>The textures for a region: cellar (grey stone), works (rust-stained brick) or choir (green, damp stone).</summary>
+    public static TextureSet ForTheme(string theme) => theme switch
     {
-        Wall = StoneBlocks(seed, 0x6E6A62),
-        Floor = Flagstones(seed + 1, 0x57524A),
-        Ceiling = RoughStone(seed + 2, 0x3F3B36),
-        DoorFrame = DressedFrame(seed + 3, 0x625D56),
+        "works" => Themed(11, 0x74604E, 0x4E4640, 0x3A322C, 0x6A584A),
+        "choir" => Themed(21, 0x566A5E, 0x46524A, 0x2E3A34, 0x5A6A60),
+        _ => Cellar(),
+    };
+
+    private static TextureSet Themed(int seed, int wall, int floor, int ceiling, int frame) => new()
+    {
+        Wall = StoneBlocks(seed, wall),
+        Floor = Flagstones(seed + 1, floor),
+        Ceiling = RoughStone(seed + 2, ceiling),
+        DoorFrame = DressedFrame(seed + 3, frame),
         Door = Planks(seed + 4),
         Portcullis = Bars(),
-        LeverUp = WithLever(StoneBlocks(seed, 0x6E6A62), down: false),
-        LeverDown = WithLever(StoneBlocks(seed, 0x6E6A62), down: true),
+        LeverUp = WithLever(StoneBlocks(seed, wall), down: false),
+        LeverDown = WithLever(StoneBlocks(seed, wall), down: true),
         Pit = PitHole(seed + 5),
-        Plate = PressurePlate(seed + 6, 0x57524A),
+        Plate = PressurePlate(seed + 6, floor),
         Stairs = StairsDown(seed + 7),
+        StairsUp = StairsUpward(seed + 8),
+        TrapMark = Marked(Flagstones(seed + 1, floor), 0xA03020),
+        Spikes = SpikeBed(seed + 9, floor),
+        Glyph = Sigil(Flagstones(seed + 1, floor), 0x60B0FF),
+        Rune = Sigil(Flagstones(seed + 1, floor), 0xF0D040),
+        Teleporter = Sigil(Flagstones(seed + 1, floor), 0xB060F0),
+        Rubble = Broken(seed + 10, floor),
     };
+
+    private static Texture StairsUpward(int seed)
+    {
+        var t = StairsDown(seed);
+        var u = new Texture();
+        for (int y = 0; y < Texture.Size; y++)
+        for (int x = 0; x < Texture.Size; x++)
+            u[x, y] = Shade((int)(t[x, 63 - y] & 0xFFFFFF), 30);
+        return u;
+    }
+
+    /// <summary>A floor with a warning scratched into it: a spotted trap.</summary>
+    private static Texture Marked(Texture floor, int colour)
+    {
+        var t = new Texture();
+        Array.Copy(floor.Pixels, t.Pixels, t.Pixels.Length);
+        uint c = Rgb(colour >> 16 & 0xFF, colour >> 8 & 0xFF, colour & 0xFF);
+        for (int i = 14; i < 50; i++)
+            for (int k = -1; k <= 1; k++) { t[i + k, i] = c; t[63 - i + k, i] = c; }
+        return t;
+    }
+
+    private static Texture SpikeBed(int seed, int floor)
+    {
+        var t = Flagstones(seed, floor);
+        for (int sy = 6; sy < 64; sy += 12)
+        for (int sx = 6; sx < 64; sx += 12)
+            for (int r = 0; r < 4; r++)
+            for (int k = -r; k <= r; k++)
+                t[sx + k, sy + 4 - r] = Rgb(150 + r * 20, 150 + r * 20, 160 + r * 20);
+        return t;
+    }
+
+    private static Texture Sigil(Texture floor, int colour)
+    {
+        var t = new Texture();
+        Array.Copy(floor.Pixels, t.Pixels, t.Pixels.Length);
+        uint c = Rgb(colour >> 16 & 0xFF, colour >> 8 & 0xFF, colour & 0xFF);
+        // A circle drawn with integer steps (a fixed table, so it's the same everywhere).
+        for (int a = 0; a < 64; a++)
+        {
+            int dx = CircleX[a], dy = CircleX[(a + 16) % 64];
+            t[32 + dx * 22 / 100, 32 + dy * 22 / 100] = c;
+            t[32 + dx * 14 / 100, 32 + dy * 14 / 100] = c;
+        }
+        for (int i = -18; i <= 18; i++) { t[32 + i, 32 + i / 2] = c; t[32 - i / 2, 32 + i] = c; }
+        return t;
+    }
+
+    /// <summary>cos(2πk/64) × 100, rounded: a circle without floating point.</summary>
+    private static readonly int[] CircleX =
+    [
+        100, 100, 98, 96, 92, 88, 83, 77, 71, 63, 56, 47, 38, 29, 20, 10, 0, -10, -20, -29, -38, -47, -56, -63, -71, -77, -83, -88, -92, -96, -98, -100,
+        -100, -100, -98, -96, -92, -88, -83, -77, -71, -63, -56, -47, -38, -29, -20, -10, 0, 10, 20, 29, 38, 47, 56, 63, 71, 77, 83, 88, 92, 96, 98, 100,
+    ];
+
+    private static Texture Broken(int seed, int floor)
+    {
+        var t = new Texture();
+        for (int y = 0; y < Texture.Size; y++)
+        for (int x = 0; x < Texture.Size; x++)
+        {
+            int rock = Hash(seed, x / 8, y / 8);
+            int grain = (Fractal(seed, x, y) - 128) / 4;
+            bool gap = (x % 8 == 0 || y % 8 == 0) && Hash(seed + 3, x, y) > 100;
+            t[x, y] = gap ? Rgb(20, 18, 16) : Shade(floor, rock / 6 - 10 + grain);
+        }
+        return t;
+    }
 
     /// <summary>A square hole with a broken rim, black at the bottom.</summary>
     public static Texture PitHole(int seed)

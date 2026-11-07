@@ -69,6 +69,43 @@ public sealed class SpriteFactory
         return _cache[key] = img;
     }
 
+    /// <summary>Things a trap or the level puts in a cell: altar, boulder, blade, gas.</summary>
+    public SpriteImage Prop(string kind)
+    {
+        var key = ("prop-" + kind, SpriteView.Front, SpriteFrame.Idle, false);
+        if (_cache.TryGetValue(key, out var img)) return img;
+        img = new SpriteImage(Size, Size);
+        var p = new Paint(img);
+        switch (kind)
+        {
+            case "altar":
+                p.Rect(14, 34, 50, 63, Paint.Rgb(90, 84, 80));
+                p.Rect(10, 30, 54, 36, Paint.Rgb(110, 104, 98));
+                p.Ellipse(32, 27, 6, 4, Paint.Rgb(210, 170, 60));
+                p.Ellipse(20, 26, 2, 5, Paint.Rgb(230, 220, 180));
+                p.Ellipse(44, 26, 2, 5, Paint.Rgb(230, 220, 180));
+                break;
+            case "boulder":
+                p.Ellipse(32, 36, 27, 27, Paint.Rgb(110, 100, 90));
+                p.Ellipse(24, 28, 8, 6, Paint.Rgb(130, 120, 110));
+                break;
+            case "blade":
+                p.Line(32, 0, 32, 30, 2, Paint.Rgb(80, 76, 72));
+                p.Ellipse(32, 40, 26, 12, Paint.Rgb(190, 194, 202));
+                break;
+            case "gasPoison":
+            case "gasSleep":
+            {
+                uint c = kind == "gasPoison" ? Paint.Rgb(90, 160, 60) : Paint.Rgb(200, 170, 220);
+                for (int i = 0; i < 9; i++) p.Ellipse(10 + i * 6 % 44, 26 + i * 7 % 30, 10, 8, c, false);
+                for (int i = 0; i < img.Pixels.Length; i++) if (img.Pixels[i] >> 24 != 0) img.Pixels[i] = img.Pixels[i] & 0x00FFFFFF | 0xFF000000;
+                return _cache[key] = img;
+            }
+        }
+        p.Outline();
+        return _cache[key] = img;
+    }
+
     /// <summary>A chest, shut or open.</summary>
     public SpriteImage Chest(bool open)
     {

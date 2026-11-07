@@ -36,6 +36,7 @@
 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
 27. Implementation decisions (M5)
+28. Implementation decisions (M6)
 
 ---
 
@@ -1119,7 +1120,7 @@ Each milestone is finished when its exit test passes.
 | **M3** | Party and creation. *Done (2026-11-06)* | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it. *Result:* the quick-start party (bot) gets through The Cellars about 9 times in 12; the creation screens make any party of one to four |
 | **M4** | Progression. *Done (2026-11-06)* | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling. *Revised:* that target didn't fit the level curve; a bot run now shows every calling at level 8 with its best skill at 45 or more and its third-best at 35 or more (section 26) |
 | **M5** | Magic. *Done (2026-11-06)* | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play. *Result:* a test casts every calling's starting spells and checks each one does something; in the progression report the spellblade raises Destruction and the paladin Warding beside their weapons |
-| **M6** | Generator | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable |
+| **M6** | Generator. *Done (2026-11-06)* | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable. *Result:* 1,000 seeds at each of depths 1, 5 and 9 give finishable levels with no fallbacks; the bot's quick-start party gets through a 4-level Delve on 6 seeds of 8 (one fell on level 4, one got stuck) |
 | **M7** | The bestiary | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30 |
 | **M8** | Crafting and survival | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game |
 | **M9** | Polish and release | Art from the manifest, audio, the hall of fame, Ironman, help pages, README and screenshots, portfolio card | The user plays through a Delve; v1.0 tag |
@@ -1172,6 +1173,7 @@ is built.
 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
 27. Implementation decisions (M5)
+28. Implementation decisions (M6)
 
 - **22 skills, not 20.** The table in section 7.1 always listed 22 (Survival and Lore are in the craft group). The
   count elsewhere was corrected to match.
@@ -1242,6 +1244,7 @@ is built.
 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
 27. Implementation decisions (M5)
+28. Implementation decisions (M6)
 
 - **One hero, as a Lone Delver.** M2 plays Brannoc, the quick-start dwarf fighter, alone, so the Lone Delver rules
   of section 4 apply: +50% HP, +2 to saves and twice the skill XP. He has a longsword, a round shield and chain
@@ -1333,6 +1336,7 @@ is built.
 ## 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
 27. Implementation decisions (M5)
+28. Implementation decisions (M6)
 
 - **The party** (`Party`) has four slots: front left, front right, back left and back right. A party of one is a
   Lone Delver.
@@ -1396,6 +1400,7 @@ is built.
 
 ## 26. Implementation decisions (M4)
 27. Implementation decisions (M5)
+28. Implementation decisions (M6)
 
 - **Perk trees for all 22 skills**: 145 perks, with 6–10 per tree and at least one that changes play in every tree.
   Effect kinds: damage, recovery, Mana cost, noise, sneak multiplier, block %, AC by armour, Stamina cost, crit
@@ -1456,6 +1461,7 @@ is built.
 ---
 
 ## 27. Implementation decisions (M5)
+28. Implementation decisions (M6)
 
 - **48 spells** (`spells.json`, checked by the validator): eight in each school, plus cantrips (Minor Mending, Minor
   Ward, Mage Hand, Detect Traps, Unlock, Frost Touch, Guidance and Beacon; Spark and Light are also cantrips). Some
@@ -1502,4 +1508,92 @@ is built.
   - the frame-rate display moved to F12.
 - **The spellbook (B)** lists the selected hero's spells by school, with each one's cost, cast time, quick-slot key
   and text, and casts a spell on a click. Each hero's card shows a casting bar and any ward.
+
+---
+
+## 28. Implementation decisions (M6)
+
+- **The generator** (`World/Generator*.cs`) makes a 32×32 level from the run seed, the depth and the Delve's density
+  and trap options:
+  - up to 3 vaults first, then 8–14 rooms;
+  - joined by the cheapest paths (an A* search that reuses floor and never cuts through a vault) along a
+    spanning tree, plus a fifth more links for loops, 15% of them two cells wide;
+  - doors at about 30% of room mouths;
+  - the start (the stairs up) in the first room, the stairs down in the farthest, and a landing cell for pits
+    from above.
+
+  Each attempt is checked and rerolled if it fails (up to 20 times, then a plain fallback). Generating takes 2–6
+  ms. The same seed, depth and options always give the same level.
+- **Locks.** 1–3 chokepoints on the way from the start to the stairs down become barriers:
+  - a locked door with a key (which can also be picked, at DC 14 + depth);
+  - a portcullis with a lever;
+  - or a portcullis with a toggle plate.
+
+  The key, lever or plate is placed in the part of the level reachable before that barrier, as far from it as
+  possible.
+- **Secrets:**
+  - 2–4 secret doors lead to dead-end treasure rooms with rich chests. Each is a wall until found: by passive
+    Perception within 2 cells (Keen Senses helps), or by Use on the wall (a Perception roll).
+  - One illusory wall hides a niche with loot. It is drawn as wall, but the party walks through it.
+- **The 20 traps** are pits (some spiked) and plates from M2, the illusory wall and the mimic, plus 16 kinds in
+  `TrapKind`:
+  - **Fire when stepped on:** dart walls and tripwires (darts, or an alarm bell), fire spouts, frost glyphs,
+    lightning runes (only if someone wears heavy armour), gas vents (poison or sleep, lingering 10 s), collapsing
+    ceilings (leaving rubble), rolling boulders, teleporters, spinners and alarm plates.
+  - **On a cycle:** spike floors and swinging blades, visible.
+  - **Other triggers:** the cursed altar, when its offering is taken; the flooding room, when the party enters,
+    which seals the door until the drain lever is pulled; and anti-magic zones, where spells fail.
+  - **Placement:** the generator places 2 + 0.8 × depth (scaled by the trap option, at most 14), with kinds
+    unlocked by depth.
+  - **The rule from spec 14.2** holds: more than two deadly traps on the main path each get a warning note in
+    front.
+  - **Spotting** uses passive Perception plus Trap Sense, within 2 cells, or Detect Traps.
+  - **Disarming:** Use, facing the trap: d20 + DEX + Traps / 5 + perks against its DC. A miss by 5 or more sets it
+    off, unless the hero has Saboteur.
+  - **Creatures** know where their traps are: only the mindless step on them.
+  - **Not done:** Rig (setting traps you've picked up) still waits.
+- **Creatures and loot by depth.** Spawn tables by region: the Upper Hollow has vermin, the restless dead and
+  goblin-kin; the Deep Works and the Drowned Choir have their own families, which arrive with M7.
+  - Creatures are scaled to about 1.6 × depth, in groups for packs.
+  - There are 2–3 chests per level (rich from depth 5), a dead delver or two with their pack, and flavour notes.
+- **The 16 vaults** (`Content/Vaults/vaults.txt`) are text maps with directives (levers, plates, chests, monsters,
+  traps, altars, secrets, illusory walls and notes), with connectors on their edges:
+  - The Gatehouse, The Pillared Hall, Plate and Gate, The Pit Gallery, The Defiled Shrine, The Ossuary;
+  - The Armoury, The Hidden Cache, The Hall of Mirrors, The Spike Run, The Blade Gauntlet, The Rune Circle;
+  - The Long Slope, The Cistern Vault, The Shifting Rooms, The Dead Air.
+- **The check:** working keys, levers and plates in order, and counting secret doors as found, everything must be
+  reachable: the stairs, the landing, every creature, chest, floor item and teleporter destination. Chests, pits
+  and altars count as blocked. The test suite checks the same thing over 1,000 seeds at each of depths 1, 5 and 9,
+  with no fallbacks.
+- **The Delve** (`Game/Delve.cs`) owns the engine and swaps levels under it:
+  - the stairs down lead to the next level, arriving on its stairs up;
+  - pits drop the party to the landing of the level below;
+  - the stairs up lead back, arriving beside the stairs down above.
+
+  A visited level keeps everything that happened in it. The deepest stairs end the Delve; the bosses take that over
+  in M7.
+- **Delve options (spec 4):** seed, depth, monster strength, density, traps, magic items, food, pause and Ironman.
+  - The seed is any text (hashed), an 8-letter code (read back exactly; the alphabet leaves out I, O, 0 and 1), or
+    blank for random.
+  - Monster strength scales creatures' HP, damage and to-hit. On Cruel and Brutal the fallen roll a DC 10 death
+    save every 3 s and die after three failures.
+  - Pause can be turned off.
+  - Ironman keeps one save, written at every change of level and on quitting, and deletes it when the party falls.
+
+  The hall of fame and scores wait for M9.
+- **Regions:** levels 1–4 are the Upper Hollow (grey stone), 5–8 the Deep Works (rust-brown) and 9–12 the Drowned
+  Choir (damp green); longer Delves go round again. Each region has its own textures, and the view swaps them on
+  arrival.
+- **The view** draws spotted traps (a warning cross, spikes, glyphs, runes, teleporter sigils), rubble and stairs up
+  on the floor, and shows altars, boulders, swinging blades and gas clouds as sprites.
+- **Saves** keep every visited level's changes and rebuild each level from its source (`gen:seed:depth:options`):
+  locked doors, traps, found secrets and rubble as well as the M3 set. Restoring a level clears the piles it was
+  made with first, so items are not doubled.
+- **The Delve report.** The bot now:
+  - picks up keys;
+  - steers round traps, pits it has seen and plates it has already pressed;
+  - tries to disarm a trap it can't go round, three times, before walking through it;
+  - keeps off the stairs up.
+
+  The quick-start party gets through a 4-level Delve on 6 seeds of 8.
 

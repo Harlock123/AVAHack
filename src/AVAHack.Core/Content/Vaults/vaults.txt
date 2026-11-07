@@ -1,0 +1,245 @@
+# Handmade rooms the generator stitches into its levels (spec 14.3). Each vault is a block of directives, then
+# "map:" and the rows; vaults are separated by a line of three dashes. Coordinates in a vault's own lines count
+# from its top-left corner.
+#
+#   name / tags / themes          what it is, and where it fits (cellar, works, choir)
+#   connectors: N3 S3             where corridors join: an edge (N, E, S, W) and the offset along it
+#   lever: x y face -> x y        a lever on a wall, working a door or portcullis
+#   plate: x y toggle|hold -> x y
+#   chest: x y [rich] [locked dc]
+#   monster: x y                  a creature from the level's own table
+#   trap: kind x y [facing] [-> x y]
+#   altar: x y                    a cursed altar with an offering
+#   secret: x y                   a wall that is really a door
+#   illusory: x y                 a wall you can walk through
+#   note: x y text
+#   map chars: # wall  . floor  + door  P portcullis  ^ pit to the level below
+---
+name: The Gatehouse
+tags: treasure
+themes: cellar, works, choir
+connectors: S3
+lever: 1 4 west -> 3 2
+chest: 3 1 rich
+note: 3 5 A rusted sign: GATE WORKS FROM THE WALL.
+map:
+#######
+#.....#
+###P###
+#.....#
+#.....#
+#.....#
+###.###
+---
+name: The Pillared Hall
+tags: ambush
+themes: cellar, works, choir
+connectors: W3 E3 S4
+monster: 2 2
+monster: 6 4
+monster: 4 1
+chest: 7 1
+map:
+#########
+#.......#
+#.#.#.#.#
+.........
+#.#.#.#.#
+#.......#
+####.####
+---
+name: Plate and Gate
+tags: puzzle, treasure
+themes: cellar, works, choir
+connectors: S2
+plate: 4 3 toggle -> 2 2
+chest: 2 1 rich
+map:
+######
+##.###
+##P###
+#....#
+#....#
+##.###
+---
+name: The Pit Gallery
+tags: trap, treasure
+themes: cellar, works
+connectors: W2
+chest: 7 2
+note: 1 2 The floor here is more hole than floor.
+map:
+#########
+#.......#
+...^.^..#
+#..^....#
+#########
+---
+name: The Defiled Shrine
+tags: shrine
+themes: cellar, choir
+connectors: S3
+altar: 3 1
+monster: 1 3
+monster: 5 3
+note: 3 4 An altar, and on it something left for whatever was worshipped here.
+map:
+#######
+#.....#
+#.....#
+#.....#
+#.....#
+###.###
+---
+name: The Ossuary
+tags: ambush, treasure
+themes: cellar, choir
+connectors: E3
+monster: 2 1
+monster: 2 5
+chest: 1 3
+map:
+######
+#..#.#
+#....#
+#.....
+#....#
+#..#.#
+######
+---
+name: The Armoury
+tags: treasure
+themes: works, cellar
+connectors: S2
+chest: 1 1 locked 15
+chest: 4 1 locked 18
+monster: 2 3
+map:
+######
+#....#
+#....#
+#....#
+##.###
+---
+name: The Hidden Cache
+tags: secret, treasure
+themes: cellar, works, choir
+connectors: S2
+secret: 5 2
+chest: 7 2 rich
+map:
+#########
+#....####
+#........
+#....####
+##.######
+---
+name: The Hall of Mirrors
+tags: secret
+themes: choir, works
+connectors: W2
+illusory: 6 2
+chest: 7 2 rich
+note: 2 2 The far wall looks wrong. Too smooth.
+map:
+#########
+#.....###
+.......##
+#.....###
+#########
+---
+name: The Spike Run
+tags: trap, treasure
+themes: works, cellar
+connectors: W1
+trap: spikeFloor 2 1
+trap: spikeFloor 4 1
+trap: spikeFloor 6 1
+chest: 8 1
+map:
+##########
+.........#
+##########
+---
+name: The Blade Gauntlet
+tags: trap
+themes: works
+connectors: W1 E1
+trap: swingingBlade 3 1
+trap: swingingBlade 6 1
+note: 1 1 The walls are scored with long, regular cuts.
+map:
+#########
+.........
+#########
+---
+name: The Rune Circle
+tags: trap, treasure
+themes: choir, works
+connectors: S3
+trap: frostGlyph 2 2
+trap: lightningRune 4 2
+trap: frostGlyph 3 3
+chest: 3 1 rich
+map:
+#######
+#.....#
+#.....#
+#.....#
+###.###
+---
+name: The Long Slope
+tags: trap
+themes: works, cellar
+connectors: S1 E5
+trap: rollingBoulder 1 5 north -> 1 1
+note: 1 6 The floor slopes, and the stones are worn smooth in a line.
+map:
+#######
+#.#####
+#.#####
+#.#####
+#.#####
+#......
+#.#####
+---
+name: The Cistern Vault
+tags: trap, treasure
+themes: cellar, choir
+connectors: S2
+trap: floodingRoom 2 3 -> 1 1
+lever: 1 1 west -> 2 4
+chest: 3 1 rich
+map:
+#####
+#...#
+#...#
+#...#
+##+##
+---
+name: The Shifting Rooms
+tags: trap, puzzle
+themes: choir, works
+connectors: W2 E2
+trap: teleporter 2 2 -> 6 1
+trap: spinner 5 2
+map:
+#########
+#.......#
+.........
+#.......#
+#########
+---
+name: The Dead Air
+tags: trap, treasure
+themes: choir, works, cellar
+connectors: N2
+trap: antiMagic 2 2
+chest: 2 3
+note: 2 1 The hairs on your arms stand up. Your spells feel very far away.
+map:
+##.##
+#...#
+#...#
+#...#
+#####

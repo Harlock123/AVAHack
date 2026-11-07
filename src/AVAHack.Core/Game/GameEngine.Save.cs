@@ -13,6 +13,13 @@ public sealed partial class GameEngine
     public static Level ResolveLevel(string source)
     {
         if (source.StartsWith("built-in:", StringComparison.Ordinal)) return LevelLoader.LoadBuiltIn(source["built-in:".Length..]);
+        if (source.StartsWith("gen:", StringComparison.Ordinal))
+        {
+            // gen:seed:depth:maxDepth:density:traps
+            var p = source.Split(':');
+            return Generator.Generate(ContentDb.LoadBuiltIn(), ulong.Parse(p[1], System.Globalization.CultureInfo.InvariantCulture),
+                int.Parse(p[2], System.Globalization.CultureInfo.InvariantCulture), GenOptions.FromCode(string.Join(':', p.Skip(3))));
+        }
         return LevelResolver?.Invoke(source) ?? throw new InvalidDataException($"Can't rebuild the level '{source}'.");
     }
 
@@ -46,7 +53,10 @@ public sealed partial class GameEngine
     public LevelStateSave LevelState() => new()
     {
         Source = Level.Source,
-        Doors = Level.Doors.Select(d => new DoorSave(d.Cell.X, d.Cell.Y, d.Open, d.Opening)).ToList(),
+        Doors = Level.Doors.Select(d => new DoorSave(d.Cell.X, d.Cell.Y, d.Open, d.Opening, d.Locked)).ToList(),
+        Traps = Level.Traps.Select(t => new TrapSave(t.Cell.X, t.Cell.Y, t.Kind, t.Spotted, t.Disarmed, t.Sprung)).ToList(),
+        SecretsFound = Level.Secrets.Where(s => s.Found).Select(s => new CellSave(s.Cell.X, s.Cell.Y)).ToList(),
+        Rubble = Level.Rubble.Select(c => new CellSave(c.X, c.Y)).ToList(),
         Levers = Level.Levers.Select(l => new LeverSave(l.Cell.X, l.Cell.Y, l.Face, l.Down)).ToList(),
         PlatesPressed = Level.Plates.Where(p => p.Pressed).Select(p => new CellSave(p.Cell.X, p.Cell.Y)).ToList(),
         PitsSpotted = Level.Pits.Where(p => p.Spotted).Select(p => new CellSave(p.Cell.X, p.Cell.Y)).ToList(),
@@ -121,8 +131,13 @@ public sealed partial class GameEngine
     /// <summary>Puts a level's saved changes back.</summary>
     internal void ApplyLevelState(LevelStateSave st)
     {
+        foreach (var c in st.SecretsFound) if (Level.SecretAt(new Cell(c.X, c.Y)) is { } secret) Level.Reveal(secret);
         foreach (var d in st.Doors)
-            if (Level.DoorAt(d.X, d.Y) is { } door) { door.Open = d.Open; door.Opening = d.Opening; }
+            if (Level.DoorAt(d.X, d.Y) is { } door) { door.Open = d.Open; door.Opening = d.Opening; door.Locked = d.Locked; }
+        foreach (var t in st.Traps)
+            if (Level.Traps.FirstOrDefault(x => x.Cell.X == t.X && x.Cell.Y == t.Y && x.Kind == t.Kind) is { } trap)
+            { trap.Spotted = t.Spotted; trap.Disarmed = t.Disarmed; trap.Sprung = t.Sprung; }
+        foreach (var c in st.Rubble) Level.MakeRubble(new Cell(c.X, c.Y));
         foreach (var l in st.Levers)
             if (Level.LeverAt(new Cell(l.X, l.Y), l.Face) is { } lever) lever.Down = l.Down;
         foreach (var p in Level.Plates) p.Pressed = st.PlatesPressed.Any(c => c.X == p.Cell.X && c.Y == p.Cell.Y);
@@ -136,6 +151,7 @@ public sealed partial class GameEngine
                 chest.Contents.Clear();
                 chest.Contents.AddRange(cs.Contents);
             }
+        Level.ClearPiles(); // the save's piles replace the ones the level was made with
         foreach (var pile in st.Piles) foreach (var it in pile.Items) Level.Drop(new Cell(pile.X, pile.Y), it);
         foreach (var c in st.Explored) _explored.Add(new Cell(c.X, c.Y));
         _monsters.Clear();

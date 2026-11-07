@@ -62,7 +62,12 @@ public sealed class MenuTests
         Assert.Equal(Screen.Title, v.Screen);
         Shot(w, "title");
         Click(w, 640, 344); // Quick start
+        Assert.Equal(Screen.Options, v.Screen);
+        Shot(w, "delve-options");
+        Click(w, 1110, 753); // Begin the Delve
         Assert.Equal(Screen.Play, v.Screen);
+        Assert.NotNull(v.CurrentDelve);
+        Assert.StartsWith("The Upper Hollow", v.Engine.Level.Name);
         Assert.Equal(4, v.Engine.Party.Count);
         Assert.Equal("longsword", v.Engine.Party[Slot.FrontLeft]!.MainHand!.Id);
         Shot(w, "party");
@@ -82,6 +87,8 @@ public sealed class MenuTests
         Click(w, 803, 260); // next ancestry ▶ (on the calling row? the ancestry row is at y 160)
         Shot(w, "create");
         Click(w, 1120, 753); // Begin the descent
+        Assert.Equal(Screen.Options, v.Screen);
+        Click(w, 410, 753); // Practise in The Cellars
         Assert.Equal(Screen.Play, v.Screen);
         Assert.Equal(2, v.Engine.Party.Count);
         Assert.Contains(v.Engine.Party.Members, h => h.Name == "Vessa");
@@ -208,6 +215,34 @@ public sealed class SpellbookTests
         Assert.Equal(Overlay.Spellbook, v.Overlay);
         for (int i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
         var frame = w.CaptureRenderedFrame();
-        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir) frame!.Save(Path.Combine(dir, "AVAHack-spellbook.png"), PngBitmapEncoderOptions.Default);
+        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir) frame?.Save(Path.Combine(dir, "AVAHack-spellbook.png"), PngBitmapEncoderOptions.Default);
+    }
+}
+
+
+public sealed class DelveWindowTests
+{
+    [AvaloniaFact]
+    public void A_delve_in_each_region_and_a_delve_save_loads_back()
+    {
+        var db = ContentDb.LoadBuiltIn();
+        var store = new SaveStore(Path.Combine(Path.GetTempPath(), "avahack-dw-" + Guid.NewGuid().ToString("N")));
+        var v = new GameView(db, startLoop: false, store);
+        var w = new Window { Width = 1280, Height = 800, Content = v };
+        w.Show();
+        v.StartDelve(GameView.DefaultParty(db), new DelveOptions { Seed = "GOODWORK", Depth = 12 });
+        var d = v.CurrentDelve!;
+        foreach (int depth in new[] { 1, 5, 9 })
+        {
+            while (d.Depth < depth) d.Descend();
+            v.Advance(0.1);
+            for (int i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
+            var frame = w.CaptureRenderedFrame();
+            if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir) frame?.Save(Path.Combine(dir, $"AVAHack-delve-{d.Engine.Level.Theme}.png"), PngBitmapEncoderOptions.Default);
+        }
+        Assert.Equal("choir", d.Engine.Level.Theme);
+        store.Save("slot1", d.ToSave());
+        Assert.True(v.LoadSlot("slot1"));
+        Assert.Equal(9, v.CurrentDelve!.Depth);
     }
 }

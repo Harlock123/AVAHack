@@ -28,4 +28,11 @@ public sealed class TextureSet
     public required Texture Pit { get; init; }
     public required Texture Plate { get; init; }
     public required Texture Stairs { get; init; }
+    public Texture? StairsUp { get; init; }
+    public Texture? TrapMark { get; init; }
+    public Texture? Spikes { get; init; }
+    public Texture? Glyph { get; init; }
+    public Texture? Rune { get; init; }
+    public Texture? Teleporter { get; init; }
+    public Texture? Rubble { get; init; }
 }

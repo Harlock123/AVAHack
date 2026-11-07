@@ -7,6 +7,11 @@ namespace AVAHack.World;
 public sealed class Level
 {
     private readonly CellKind[] _cells;
+    private readonly Dictionary<Cell, SecretDoor> _secrets = new();
+    private readonly HashSet<Cell> _illusory = new();
+    private readonly HashSet<Cell> _stairsUp = new();
+    private readonly HashSet<Cell> _rubble = new();
+    private readonly List<Trap> _traps = new();
     private readonly Dictionary<Cell, Door> _doors = new();
     private readonly Dictionary<(Cell, Dir), Lever> _levers = new();
     private readonly Dictionary<Cell, Pit> _pits = new();
@@ -30,15 +35,24 @@ public sealed class Level
     public IEnumerable<Note> Notes => _notes.Values;
     public IEnumerable<Cell> Stairs => _stairs;
     public IReadOnlyList<Spawn> Spawns => _spawns;
+    public IEnumerable<SecretDoor> Secrets => _secrets.Values;
+    public IReadOnlySet<Cell> Illusory => _illusory;
+    public IEnumerable<Cell> StairsUp => _stairsUp;
+    public IReadOnlyList<Trap> Traps => _traps;
+    public IEnumerable<Cell> Rubble => _rubble;
+    /// <summary>Where the party lands when it falls from the level above.</summary>
+    public Cell? Landing { get; internal set; }
+    /// <summary>The look: cellar, works or choir.</summary>
+    public string Theme { get; internal set; } = "cellar";
     public IEnumerable<Chest> Chests => _chests.Values;
     /// <summary>Items lying on the floor, by cell.</summary>
     public IReadOnlyDictionary<Cell, List<Items.Item>> Piles => _piles;
     /// <summary>Where the level came from, for saves: built-in:name, or gen:seed:depth.</summary>
-    public string Source { get; internal set; } = "";
+    public string Source { get; init; } = "";
     /// <summary>How deep it is (1 for the first): the item level and the monsters' tier.</summary>
     public int Depth { get; internal set; } = 1;
 
-    internal Level(string name, int width, int height, CellKind[] cells, Cell start, Dir startFacing)
+    public Level(string name, int width, int height, CellKind[] cells, Cell start, Dir startFacing)
     {
         Name = name;
         Width = width;
@@ -51,6 +65,31 @@ public sealed class Level
     public bool InBounds(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
 
     public CellKind KindAt(int x, int y) => InBounds(x, y) ? _cells[y * Width + x] : CellKind.Wall;
+
+    /// <summary>Whether a cell is drawn as wall: real walls, and illusory ones.</summary>
+    public bool LooksLikeWall(int x, int y) => KindAt(x, y) == CellKind.Wall || _illusory.Contains(new Cell(x, y));
+
+    public SecretDoor? SecretAt(Cell c) => _secrets.GetValueOrDefault(c);
+    public Trap? TrapAt(Cell c) => _traps.FirstOrDefault(t => t.Cell == c && t.Kind != TrapKind.AntiMagic);
+    public bool IsStairsUp(Cell c) => _stairsUp.Contains(c);
+
+    /// <summary>A found secret door becomes an open wooden door.</summary>
+    public void Reveal(SecretDoor s)
+    {
+        if (s.Found) return;
+        s.Found = true;
+        _cells[s.Cell.Y * Width + s.Cell.X] = CellKind.Door;
+        bool alongX = IsWall(s.Cell.X - 1, s.Cell.Y) && IsWall(s.Cell.X + 1, s.Cell.Y);
+        AddDoor(new Door(s.Cell, DoorKind.Hand, alongX, open: true));
+    }
+
+    public void MakeRubble(Cell c) => _rubble.Add(c);
+
+    internal void SetKind(Cell c, CellKind k) => _cells[c.Y * Width + c.X] = k;
+    internal void AddSecret(SecretDoor s) => _secrets[s.Cell] = s;
+    internal void AddIllusory(Cell c) => _illusory.Add(c);
+    internal void AddStairsUp(Cell c) => _stairsUp.Add(c);
+    internal void AddTrap(Trap t) => _traps.Add(t);
     public CellKind KindAt(Cell c) => KindAt(c.X, c.Y);
 
     public bool IsWall(int x, int y) => KindAt(x, y) == CellKind.Wall;
@@ -81,6 +120,9 @@ public sealed class Level
     }
 
     public void ClearPile(Cell c) => _piles.Remove(c);
+
+    /// <summary>Clears every floor pile (before a save's piles are put back).</summary>
+    public void ClearPiles() => _piles.Clear();
     public Plate? PlateAt(Cell c) => _plates.GetValueOrDefault(c);
     public Note? NoteAt(Cell c) => _notes.GetValueOrDefault(c);
     public bool IsStairs(Cell c) => _stairs.Contains(c);
@@ -92,6 +134,22 @@ public sealed class Level
         if (_pits.TryGetValue(c, out var p)) return p.Spotted ? FloorLook.Pit : FloorLook.Plain;
         if (_plates.ContainsKey(c)) return FloorLook.Plate;
         if (_stairs.Contains(c)) return FloorLook.Stairs;
+        if (_stairsUp.Contains(c)) return FloorLook.StairsUp;
+        if (_rubble.Contains(c)) return FloorLook.Rubble;
+        foreach (var t in _traps)
+        {
+            if (t.Cell != c || !(t.Spotted || t.Kind is TrapKind.SwingingBlade or TrapKind.SpikeFloor)) continue;
+            if (t.Disarmed) return FloorLook.Plain;
+            return t.Kind switch
+            {
+                TrapKind.SpikeFloor => FloorLook.Spikes,
+                TrapKind.FrostGlyph => FloorLook.Glyph,
+                TrapKind.LightningRune => FloorLook.Rune,
+                TrapKind.Teleporter => FloorLook.Teleporter,
+                TrapKind.FloodingRoom or TrapKind.AntiMagic or TrapKind.SwingingBlade or TrapKind.Spinner => FloorLook.Plain,
+                _ => FloorLook.Trap,
+            };
+        }
         return FloorLook.Plain;
     }
 

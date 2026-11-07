@@ -22,7 +22,10 @@ public sealed class SoftwareViewRenderer : IViewRenderer
     private const int MaxDoors = 4;
     private const uint FogR = 6, FogG = 6, FogB = 10;
 
-    private readonly TextureSet _tex;
+    private TextureSet _tex;
+
+    /// <summary>The textures drawn with; the view swaps them when the party enters another region.</summary>
+    public TextureSet Textures { get => _tex; set => _tex = value; }
     private readonly double _planeLength;
     private readonly double _focal;
     private readonly ColumnHit[] _columns;
@@ -120,6 +123,13 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             FloorLook.Pit => _tex.Pit,
             FloorLook.Plate => _tex.Plate,
             FloorLook.Stairs => _tex.Stairs,
+            FloorLook.StairsUp => _tex.StairsUp ?? _tex.Stairs,
+            FloorLook.Trap => _tex.TrapMark ?? _tex.Plate,
+            FloorLook.Spikes => _tex.Spikes ?? _tex.Plate,
+            FloorLook.Glyph => _tex.Glyph ?? _tex.Plate,
+            FloorLook.Rune => _tex.Rune ?? _tex.Plate,
+            FloorLook.Teleporter => _tex.Teleporter ?? _tex.Plate,
+            FloorLook.Rubble => _tex.Rubble ?? _tex.Floor,
             _ => _tex.Floor,
         };
     }
@@ -219,7 +229,7 @@ public sealed class SoftwareViewRenderer : IViewRenderer
                 side = 1;
             }
             var kind = level.KindAt(mapX, mapY);
-            if (kind == CellKind.Wall)
+            if (kind == CellKind.Wall || level.LooksLikeWall(mapX, mapY))
             {
                 dist = side == 0 ? sideX - deltaX : sideY - deltaY;
                 hitWall = true;

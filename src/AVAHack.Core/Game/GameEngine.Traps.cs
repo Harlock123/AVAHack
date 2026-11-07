@@ -46,6 +46,13 @@ public sealed partial class GameEngine
     {
         Explore(c);
         SneakPractice();
+        LookForSecrets(c);
+        LookForTraps(c);
+        if (Level.Illusory.Contains(c) && !LevelFlags.ContainsKey($"illusion:{c}"))
+        {
+            LevelFlags[$"illusion:{c}"] = "1";
+            Say("The wall is not there at all: you walk straight through it.");
+        }
         if (Level.NoteAt(c) is { Read: false } note)
         {
             note.Read = true;
@@ -70,13 +77,15 @@ public sealed partial class GameEngine
     /// <summary>The step into a cell has finished: pits and the stairs out act now.</summary>
     private void ArriveInCell()
     {
+        if (TriggerTrapAt(PartyCell)) return;
+        if (Level.IsStairsUp(PartyCell) && StairsUpHook is { } up && up(PartyCell)) return;
         if (Level.PitAt(PartyCell) is { } pit)
         {
             Level.Spot(pit);
             Say("The floor gives way! You fall into the dark below.");
             foreach (var c in Party.Standing.ToList())
             {
-                int dmg = (int)(Dice.Parse("2d6").Roll(Rng.Combat) * Math.Max(0, 1 + c.PerkTotal("fallDamagePct") / 100));
+                int dmg = (int)(Dice.Parse(pit.Spiked ? "4d6" : "2d6").Roll(Rng.Combat) * Math.Max(0, 1 + c.PerkTotal("fallDamagePct") / 100));
                 c.TakeDamage(dmg);
                 FloatAtHero($"-{dmg}", TextKind.HeroHurt);
             }

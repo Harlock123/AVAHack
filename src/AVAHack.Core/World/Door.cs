@@ -29,6 +29,15 @@ public sealed class Door
     public double Open { get; internal set; }
     public bool Opening { get; internal set; }
 
+    /// <summary>A locked door won't open until a key or a lock pick (or, if arcane, Dispel) frees it.</summary>
+    public bool Locked { get; internal set; }
+    /// <summary>The key that opens it, if any.</summary>
+    public string? KeyId { get; init; }
+    /// <summary>The Lockpicking DC; 0 if it can't be picked.</summary>
+    public int LockDc { get; init; }
+    /// <summary>Sealed by magic: Dispel (or Keymaster) opens it.</summary>
+    public bool Arcane { get; init; }
+
     public bool IsPassable => Open >= 1.0;
     public bool IsShut => Open <= 0.0;
 

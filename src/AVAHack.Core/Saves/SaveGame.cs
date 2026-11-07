@@ -108,7 +108,8 @@ public sealed record MonsterSave
 public sealed record HazardSave(int X, int Y, DamageType Type, string Dice, double SecondsLeft, double Power);
 
 public sealed record CellSave(int X, int Y);
-public sealed record DoorSave(int X, int Y, double Open, bool Opening);
+public sealed record DoorSave(int X, int Y, double Open, bool Opening, bool Locked = false);
+public sealed record TrapSave(int X, int Y, TrapKind Kind, bool Spotted, bool Disarmed, bool Sprung);
 public sealed record LeverSave(int X, int Y, Dir Face, bool Down);
 public sealed record ChestSave(int X, int Y, bool Opened, int LockDc, List<Item> Contents);
 public sealed record PileSave(int X, int Y, List<Item> Items);
@@ -125,6 +126,9 @@ public sealed record LevelStateSave
     public List<ChestSave> Chests { get; init; } = [];
     public List<PileSave> Piles { get; init; } = [];
     public List<CellSave> Explored { get; init; } = [];
+    public List<TrapSave> Traps { get; init; } = [];
+    public List<CellSave> SecretsFound { get; init; } = [];
+    public List<CellSave> Rubble { get; init; } = [];
     public List<MonsterSave> Monsters { get; init; } = [];
     /// <summary>Changes the generator's traps and secrets keep (sprung, disarmed, found), by key.</summary>
     public Dictionary<string, string> Flags { get; init; } = [];

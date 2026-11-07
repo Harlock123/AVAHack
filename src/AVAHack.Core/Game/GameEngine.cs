@@ -38,13 +38,15 @@ public sealed partial class GameEngine
     private double _accumulator;
     private Motion? _motion;
 
-    public Level Level { get; }
+    public Level Level { get; private set; }
     public ContentDb Content { get; }
     public Party Party { get; }
     /// <summary>The first hero: the one the single-hero parts of the game (and older tests) talk to.</summary>
     public Character Hero => Party.Leader;
     public LootGenerator Loot { get; }
-    public MagicItems Magic { get; init; } = MagicItems.Normal;
+    public MagicItems Magic { get; set; } = MagicItems.Normal;
+    /// <summary>Food and water count (spec 13.6): the Delve's option.</summary>
+    public bool FoodOn { get; set; }
     public RngStreams Rng { get; }
     public Cell PartyCell { get; private set; }
     public Dir Facing { get; private set; }
@@ -88,6 +90,7 @@ public sealed partial class GameEngine
         PartyCell = level.Start;
         Facing = level.StartFacing;
         InitMagic();
+        InitTraps();
         if (spawn)
         {
             SpawnMonsters();
@@ -145,12 +148,14 @@ public sealed partial class GameEngine
         TickParty();
         TickCasting();
         TickLight();
+        TickTraps();
+        TickDeathSaves();
     }
 
     /// <summary>Freezes or resumes the game (Space). Nothing moves while paused.</summary>
     public void TogglePause()
     {
-        if (Mode == GameMode.Playing) Paused = !Paused;
+        if (Mode == GameMode.Playing && (PauseAllowed || Paused)) Paused = !Paused;
     }
 
     /// <summary>Asks for an action. Movement waits its turn in a short queue; extra presses are dropped.</summary>
@@ -240,7 +245,8 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Whether the party may step into a cell: open floor or an open door, with no creature in it.</summary>
-    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && !Monsters.Any(m => m.IsAlive && m.Cell == c);
+    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && Level.TrapAt(c) is not { Kind: TrapKind.CursedAltar }
+        && !Monsters.Any(m => m.IsAlive && m.Cell == c);
 
     private void StartNext()
     {
@@ -332,13 +338,24 @@ public sealed partial class GameEngine
             Pull(lever);
             return;
         }
-        if (Level.DoorAt(PartyCell.Step(Facing)) is { } door) { TryWorkDoor(door); return; }
-        if (Level.ChestAt(PartyCell.Step(Facing)) is { } chest) OpenChest(chest);
+        var ahead = PartyCell.Step(Facing);
+        if (DisarmAhead(ahead)) return;
+        if (Level.DoorAt(ahead) is { } door) { TryWorkDoor(door); return; }
+        if (Level.ChestAt(ahead) is { } chest) { OpenChest(chest); return; }
+        if (Level.TrapAt(ahead) is { Kind: TrapKind.CursedAltar } altar) { TakeOffering(altar); return; }
+        if (Level.KindAt(ahead) == CellKind.Wall) SearchWall(ahead);
     }
 
     private void Pull(Lever lever)
     {
         lever.Down = !lever.Down;
+        // A flooding room's drain lever: the water goes, and the door unlocks.
+        foreach (var t in Level.Traps.Where(t => t.Kind == TrapKind.FloodingRoom && t.Active && t.Target == lever.Cell))
+        {
+            t.Active = false;
+            foreach (var c in lever.Targets) if (Level.DoorAt(c) is { } dr) { dr.Locked = false; dr.Opening = false; }
+            Say("Somewhere below, a drain opens. The water swirls away.");
+        }
         foreach (var c in lever.Targets)
         {
             var d = Level.DoorAt(c)!;
@@ -350,6 +367,7 @@ public sealed partial class GameEngine
 
     private bool TryWorkDoor(Door door)
     {
+        if (door.Locked && !TryUnlockDoor(door)) return false;
         if (door.Kind == DoorKind.Portcullis)
         {
             Say("The portcullis won't budge. There must be a mechanism.");

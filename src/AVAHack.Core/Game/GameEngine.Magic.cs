@@ -466,6 +466,7 @@ public sealed partial class GameEngine
                 }
                 int lifted = Party.Members.Sum(c => c.LiftCurses() + (c.Conditions.Cure(ConditionId.Cursed) ? 1 : 0));
                 if (lifted > 0) Say("A curse lifts.");
+                if (Level.DoorAt(ahead) is { Arcane: true, Locked: true } sealed_) { sealed_.Locked = false; Say("The seal on the door breaks."); }
                 DispelHook?.Invoke(ahead);
                 break;
             case "sanctuary":
@@ -518,11 +519,13 @@ public sealed partial class GameEngine
             case "detectTraps":
                 Detecting = 30;
                 foreach (var pit in Level.Pits.Where(p => !p.Spotted && p.Cell.Distance(PartyCell) <= 6)) Level.Spot(pit);
+                foreach (var t in Level.Traps.Where(t => !t.Spotted && t.Cell.Distance(PartyCell) <= 6)) t.Spotted = true;
                 DetectHook?.Invoke(PartyCell);
                 Say("Hidden dangers glimmer faintly for a moment.");
                 break;
             case "unlock":
                 if (Level.ChestAt(ahead) is { LockDc: > 0 } chest && chest.LockDc <= s.Amount) { chest.LockDc = 0; Say("The lock clicks open."); }
+                else if (Level.DoorAt(ahead) is { Locked: true, Arcane: false } ld && ld.LockDc > 0 && ld.LockDc <= s.Amount) { ld.Locked = false; Say("The lock clicks open."); }
                 else if (UnlockHook?.Invoke(ahead, s.Amount) != true) Say("Nothing here that simple to open.");
                 break;
             case "beacon":

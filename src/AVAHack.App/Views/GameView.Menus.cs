@@ -26,6 +26,13 @@ public sealed partial class GameView
     private GameEngine Begin(Party party) =>
         NewGame?.Invoke(party) ?? new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), (ulong)Environment.TickCount64, party, Content);
 
+    /// <summary>A new party: to the Delve options, unless a test has said where to go.</summary>
+    private void Start(Party party)
+    {
+        if (NewGame is not null) StartGame(Begin(party));
+        else ChooseOptions(party);
+    }
+
     private void DrawTitle(DrawingContext dc)
     {
         dc.DrawImage(_bitmap, new Rect(0, 0, Renderer.Width, Renderer.Height), new Rect(0, 0, CanvasWidth, CanvasHeight));
@@ -34,7 +41,7 @@ public sealed partial class GameView
         DrawText(dc, "Beneath Harrowgate, the Hollow moves each time the Knell tolls.", 640, 230, 20, Parchment, centre: true);
         double y = 320;
         bool any = Store.List().Count > 0;
-        Button(dc, new Rect(500, y, 280, 48), "Quick start", () => StartGame(Begin(DefaultParty(Content))), size: 20);
+        Button(dc, new Rect(500, y, 280, 48), "Quick start", () => Start(DefaultParty(Content)), size: 20);
         Button(dc, new Rect(500, y += 64, 280, 48), "Make a party", () => { _drafts.Clear(); _drafts.Add(HeroDraft.For(Content, 0)); _editing = 0; Screen = Screen.Create; }, size: 20);
         Button(dc, new Rect(500, y += 64, 280, 48), "Continue", () => ContinueLatest(), enabled: any, size: 20);
         Button(dc, new Rect(500, y += 64, 280, 48), "Load a game", () => Screen = Screen.Load, enabled: any, size: 20);
@@ -183,7 +190,7 @@ public sealed partial class GameView
         {
             var heroes = _drafts.Select(d => d.Build(Content)).ToArray();
             foreach (var h in heroes) StartingKit.Give(Content, h);
-            StartGame(Begin(new Party(heroes)));
+            Start(new Party(heroes));
         }, enabled: _drafts.All(d => Safe(() => d.Build(Content)) is not null), size: 18);
     }
 
@@ -243,7 +250,12 @@ public sealed partial class GameView
         double y = box.Y + 70;
         Button(dc, new Rect(box.X + 40, y, 220, 40), "Resume", () => Overlay = Overlay.None);
         Button(dc, new Rect(box.X + 290, y, 220, 40), "Help (H)", () => Overlay = Overlay.Help);
-        Button(dc, new Rect(box.X + 540, y, 220, 40), "Quit to title", () => { Screen = Screen.Title; Overlay = Overlay.None; });
+        Button(dc, new Rect(box.X + 540, y, 220, 40), "Quit to title", () =>
+        {
+            if (_delve is { Options.Ironman: true } d && Engine.Mode == GameMode.Playing) Store.Save(IronmanSlot, d.ToSave());
+            Screen = Screen.Title;
+            Overlay = Overlay.None;
+        });
         y += 70;
         DrawText(dc, "Save to a slot", box.X + 40, y, 16, Gold, face: Bold);
         y += 28;
@@ -251,9 +263,10 @@ public sealed partial class GameView
         {
             string slot = $"slot{i}";
             var have = Store.List().FirstOrDefault(s => s.Slot == slot);
-            Button(dc, new Rect(box.X + 40, y, 720, 40), have.Slot is null ? $"Slot {i}: empty" : $"Slot {i}: {have.Summary}", () =>
+            bool ironman = _delve?.Options.Ironman == true;
+            Button(dc, new Rect(box.X + 40, y, 720, 40), ironman ? "Ironman: the game saves itself at every stair" : have.Slot is null ? $"Slot {i}: empty" : $"Slot {i}: {have.Summary}", () =>
             {
-                if (Engine.Mode != GameMode.Playing) return;
+                if (Engine.Mode != GameMode.Playing || ironman) return;
                 Store.Save(slot, SaveNow());
                 Engine.Say($"Saved to slot {i}.");
                 Overlay = Overlay.None;

@@ -46,6 +46,20 @@ public static class Scene
             list.Add(p.Look == "stone"
                 ? new SpriteInstance(p.X, p.Y, 0.42, 0.12, 0.12, art.Stone())
                 : new SpriteInstance(p.X, p.Y, 0.36, 0.24, 0.24, art.Bolt(p.Look), SelfLit: true));
+        foreach (var t in g.Level.Traps)
+        {
+            if (t.Kind == World.TrapKind.CursedAltar)
+                list.Add(new SpriteInstance(t.Cell.X + 0.5, t.Cell.Y + 0.5, 0, 0.7, 0.7, art.Prop("altar")));
+            else if (t.Kind == World.TrapKind.SwingingBlade && t.Armed && t.Active)
+                list.Add(new SpriteInstance(t.Cell.X + 0.5, t.Cell.Y + 0.5, 0.25, 0.9, 0.9, art.Prop("blade")));
+        }
+        foreach (var b in g.Boulders)
+            list.Add(new SpriteInstance(b.X, b.Y, 0, 0.85, 0.85, art.Prop("boulder")));
+        foreach (var cloud in g.Gas)
+            foreach (var cell in cloud.Cells.Where(c => !g.Level.LooksLikeWall(c.X, c.Y)))
+                list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.9, 0.9, art.Prop(cloud.Variant == "sleep" ? "gasSleep" : "gasPoison"), Glow: 0.3));
+        foreach (var h in g.Hazards)
+            list.Add(new SpriteInstance(h.Cell.X + 0.5, h.Cell.Y + 0.5, 0, 0.5, 0.5, art.Bolt(h.Type == Rules.DamageType.Acid ? "acid" : "fire"), SelfLit: true));
         foreach (var c in g.Level.Chests)
             list.Add(new SpriteInstance(c.Cell.X + 0.5, c.Cell.Y + 0.5, 0, 0.62, 0.62, art.Chest(c.Opened)));
         foreach (var (cell, items) in g.Level.Piles)

@@ -22,7 +22,9 @@ namespace AVAHack.World;
 /// </summary>
 public static class LevelLoader
 {
-    public static Level Parse(string text)
+    public static Level Parse(string text) => Parse(text, "");
+
+    public static Level Parse(string text, string source)
     {
         string name = "Unnamed";
         Cell? start = null;
@@ -119,7 +121,7 @@ public static class LevelLoader
         }
 
         if (start is not { } s) throw new FormatException("The level has no start.");
-        var level = new Level(name, width, height, cells, s, facing);
+        var level = new Level(name, width, height, cells, s, facing) { Source = source };
         if (level.KindAt(s) != CellKind.Floor) throw new FormatException($"The start {s} is not a floor cell.");
 
         foreach (var (cell, kind, open) in doors)
@@ -262,9 +264,7 @@ public static class LevelLoader
                            ?? asm.GetManifestResourceStream($"AVAHack.Content.Levels\\{name}.txt")
                            ?? throw new FileNotFoundException($"No built-in level '{name}'.");
         using var reader = new StreamReader(stream);
-        var level = Parse(reader.ReadToEnd());
-        level.Source = "built-in:" + name;
-        return level;
+        return Parse(reader.ReadToEnd(), "built-in:" + name);
     }
 
     private static string StripComment(string s)

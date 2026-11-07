@@ -41,6 +41,7 @@ public sealed record ItemBase(string Id, string Name, ItemKind Kind, string Cate
         }
         foreach (var b in db.Books) Add(new(b.Id, b.Title, ItemKind.Book, "book", 1, b.Value, []) { Book = b, Text = b.Text });
         Add(new("gold", "Gold", ItemKind.Gold, "gold", 0.01, 1, []) { Text = "Coins of a dozen kingdoms." });
+        Add(new("key", "Key", ItemKind.Key, "key", 0.1, 0, []) { Text = "An iron key. It opens a door somewhere on this level." });
         if (db.Spells.Count > 0)
         {
             Add(new("tome", "Tome", ItemKind.Tome, "tome", 1.5, 60, []) { Text = "Read it to learn the spell, if your school is good enough." });

@@ -26,7 +26,27 @@ public sealed partial class GameEngine
 
     private void SpawnMonsters()
     {
-        foreach (var s in Level.Spawns) AddMonster(s.Creature, s.Cell, s.Facing);
+        foreach (var s in Level.Spawns)
+        {
+            var def = Content.Creature(s.Creature);
+            if (s.Level is { } lvl && lvl > def.Level) def = Bestiary.Scale(def, lvl);
+            var m = AddMonster(def, s.Cell, s.Facing);
+            ApplyDifficulty(m);
+            SpawnHook?.Invoke(m);
+        }
+    }
+
+    /// <summary>Champions and bosses dress up a fresh creature here.</summary>
+    internal Action<Monster>? SpawnHook;
+
+    /// <summary>The Delve's monster strength: more HP and damage, better aim.</summary>
+    internal void ApplyDifficulty(Monster m)
+    {
+        if (m.Ally || Difficulty == Difficulty.Standard) return;
+        m.MaxHp = Math.Max(1, (int)(m.MaxHp * Difficulty.Hp));
+        m.Hp = m.MaxHp;
+        m.DamageFactor *= Difficulty.Damage;
+        m.ToHitBonus += Difficulty.ToHit;
     }
 
     /// <summary>Places a creature (for levels and tests). Its HP is rolled from its hit dice.</summary>
@@ -63,10 +83,11 @@ public sealed partial class GameEngine
         if (_sanctuary.ContainsKey(c) && !m.Ally) return false;
         var kind = Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
+        if (Level.TrapAt(c) is { } trap && (trap.Kind == TrapKind.CursedAltar || (trap.Armed && !m.Def.Has("mindless") && !m.Ally && trap.Kind != TrapKind.AntiMagic))) return false;
         if (kind == CellKind.Door)
         {
             var d = Level.DoorAt(c)!;
-            bool canOpen = m.Def.Has("opener") && d.Kind == DoorKind.Hand;
+            bool canOpen = m.Def.Has("opener") && d.Kind == DoorKind.Hand && !d.Locked;
             if (!d.IsPassable && !(forPath && canOpen)) return false;
         }
         // Creatures know their own cellars: only the mindless blunder into pits.
@@ -157,6 +178,8 @@ public sealed partial class GameEngine
             if (done == MonsterAction.Stepping)
             {
                 m.From = m.Cell;
+                MonsterTrap(m);
+                if (!m.IsAlive) return;
                 if (Level.PitAt(m.Cell) is { } pit)
                 {
                     m.FellInPit = true;

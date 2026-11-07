@@ -7,17 +7,10 @@ namespace AVAHack.World;
 /// <summary>Which creatures live in which region (spec 3 and 12.3).</summary>
 public static class SpawnTables
 {
-    private static readonly Dictionary<string, string[]> Families = new()
-    {
-        ["cellar"] = ["vermin", "restlessDead", "goblinKin"],
-        ["works"] = ["oozes", "deepFolk", "constructs", "elementals", "goblinKin", "vermin"],
-        ["choir"] = ["sporeKin", "serpentCult", "aberrations", "restlessDead", "oozes"],
-        ["heart"] = ["unmade", "aberrations"],
-    };
-
+    /// <summary>The creatures a region sends at a depth, by its families in regions.json.</summary>
     public static IReadOnlyList<(string Id, double Weight)> For(ContentDb db, string theme, int depth)
     {
-        var fams = Families.GetValueOrDefault(theme, Families["cellar"]);
+        var fams = (db.Regions.FirstOrDefault(r => r.Id == theme) ?? db.Regions[0]).Families;
         bool Fits(CreatureDef c) => c.Tier switch
         {
             Tier.Lesser => depth <= 8,

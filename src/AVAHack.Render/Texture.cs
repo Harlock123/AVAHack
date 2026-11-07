@@ -68,4 +68,6 @@ public sealed class TextureSet
     public Texture? Rune { get; init; }
     public Texture? Teleporter { get; init; }
     public Texture? Rubble { get; init; }
+    /// <summary>A wall lined with bookshelves (the Ossuary Stacks).</summary>
+    public Texture? Shelf { get; init; }
 }

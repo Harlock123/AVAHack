@@ -45,6 +45,7 @@
 34. Implementation decisions (M9: item icons)
 35. Implementation decisions (M9: hero portraits)
 36. Implementation decisions (M9: audio)
+37. Implementation decisions (a deeper Delve: six regions, and the Ossuary Stacks)
 
 ---
 
@@ -128,12 +129,21 @@ The town sends delvers down to silence it.
   fire.
 - **The Drowned Choir (levels 9–12).** A sunken temple and fungal caverns. Spore-kin, serpent cults and
   aberrations.
-- **The Unmade Heart (final level).** Handmade, not generated. It leads to the Unmaker.
+- **The Ossuary Stacks (levels 13–16).** The buried archive and tomb-library of Harrowgate's dead. The Inkbound,
+  the Mourners and the restless dead. Noise wakes them, candles show you to them, and the shelves hold books. Its
+  boss is the Archivist. (Section 37.)
+- **The Rootdark (levels 17–20).** Giant roots and fungus beneath the Works. *Placeholder:* spore-kin, vermin, oozes
+  and deep folk until its own families and boss are made.
+- **The Glass Roads (levels 21–24).** Halls of fused black glass where the Unmade first broke through.
+  *Placeholder:* the Unmade, aberrations, elementals and constructs.
+- **The Unmade Heart (final level).** Below the last level of any Delve of 12 levels or more. It leads to the
+  Unmaker.
 
 ### Bosses
 
 There is one boss at the bottom of each region, on a handmade arena level. They are covered in section 12.
-If the dungeon is set longer than 12 levels, the regions repeat in order, but the monster tiers keep rising.
+The regions come in the order of `regions.json`, four levels each; a Delve longer than all of them stays in the
+deepest. (Section 37.)
 
 ### Story delivery
 
@@ -2068,3 +2078,108 @@ The first piece of M9's "art from the manifest": real textures for walls, floors
       It passed on this machine.
 - **Not done.** No music beyond the stings, as the spec asks. Nobody has listened to the sounds yet: they were
   designed by ear-less numbers (lengths, levels, onsets), so a listening pass by the user is the real test.
+
+## 37. Implementation decisions (a deeper Delve: six regions, and the Ossuary Stacks)
+
+The user asked for a deeper dungeon with more kinds of creature: the structure first, then the first new region.
+
+### The structure
+
+- **Regions are data.** `regions.json` lists them top to bottom. Each has:
+  - its id and name;
+  - its creature families;
+  - its boss;
+  - `wanderers`, which scales wandering monsters during a rest;
+  - `forgeOneIn`;
+  - the Stacks' switches: `hush`, `candles` and `shelves`.
+
+  One region is `final`: the Unmade Heart. `ContentDb.Validate` checks that ids are unique, that exactly one region
+  is final, and that every family and boss exists. The generator's hard-coded region switch, spawn table and boss
+  list are gone.
+- **Six regions of four levels:** the Upper Hollow, the Deep Works, the Drowned Choir, the Ossuary Stacks, the
+  Rootdark and the Glass Roads. Then the Unmade Heart, below the last level of any Delve of 12 or more (25 for the
+  24-level Delve). A Delve past them all stays in the deepest. The Delve options already offered 6, 12, 18 and
+  24 levels; past 12 they now mean something.
+- **Bosses and Waystones.**
+  - A boss stands on each region's last level, if the region has one.
+  - A Waystone waits at the start of every region below the first, boss or no boss. Without that, a 24-level party
+    had no rest, shrine or trainer after level 12.
+- **Textures and ambience.** The Stacks, the Rootdark and the Glass Roads use the art pack's unused Sandstone,
+  Copper and Marble cave sets. Each has its own synthesised ambience loop:
+  - the Stacks: rustling pages, guttering candles and a far chime;
+  - the Rootdark: creaking roots, seeping water and chittering;
+  - the Glass Roads: whistling wind and settling glass.
+- **Progression.** Every second level past 20 gives attribute points, as well as every fourth. This keeps a long
+  Delve's levels worth having once the skills near their cap.
+- **The Rootdark and the Glass Roads** are placeholders, made of existing families with no boss yet. They are next
+  in line.
+
+### The Ossuary Stacks (levels 13–16)
+
+- **Two new families**, six creatures each:
+  - **The Inkbound**, what the archive's writing became:
+    - the Page Swarm: razor-edged pages that make you bleed, and burn in a breath;
+    - the Inkling: spilled ink that blinds, and splits when cut;
+    - the Quill Sentinel: a clockwork scribe with a quill spear and ink darts;
+    - the Wax Warden: wax over iron with a burning wick, weak to fire;
+    - the Lettered Scholar: a reciting caster that calls up page swarms;
+    - the Errata: struck-out writing given shape, unseen until close, and it curses.
+  - **The Mourners**, keepers of the archive's dead:
+    - the Candlewight: it carries a candle, and is a herald;
+    - the Weeping Bell: its toll is an area blow that stuns, and it is a herald;
+    - the Veiled Mourner: a frightening phaser;
+    - the Keener: an area keen that frightens;
+    - the Shroud Bearer: its wrap paralyses;
+    - the Hush: an unseen stalker that weakens.
+
+  Their art goes through the generic drawers:
+  - people for the scholar, candlewight and shroud bearer, with a held tome, a candle and a hook;
+  - floaters for the pages, bell, Errata, veil, keener and Hush;
+  - a blob for the inkling;
+  - machines for the sentinel and the wax warden (drips and a lit wick).
+
+  Each family has its own cry, and paper has its own death.
+- **The archive loot table**: books, scrolls, tomes and reagents.
+- **The hush** (`hush`):
+  - **Noise.** A loud sound the party makes wakes unaware creatures within 8 steps along the passages, with a shut
+    door counting as three. Loud sounds are swings, blows, misses, blocks, doors, levers, chests, falls, traps and
+    Destruction spells.
+  - **Range.** That reaches further than a blow's ordinary noise (4 cells), and round corners, through the hearing
+    model of section 36.
+- **Candles** (`candles`, six a level):
+  - **Placing.** They stand as stations, blocking their cell.
+  - **Light.** Within 2 cells of a lit one, creatures notice the party from 3 cells further, and sneaking stops
+    working.
+  - **Snuffing.** Use pinches one out (and lights it again). It's kept in the level's flags, so saves keep it.
+- **Shelves** (`shelves`, 35% of room walls):
+  - **Look.** Drawn as bookcases of coloured spines over the region's stone, never on a door, a secret or the
+    edge.
+  - **Searching.** Use searches one once. The party's best reader makes a Lore check (d20 + Lore / 5 + INT
+    against 14); success turns up something from the archive table, and either way it trains Lore.
+- **Heralds** (a new `herald` behaviour): when one notices the party, everything within 8 cells wakes.
+- **The Archivist** (level 16):
+  - **His candles.** He reads by four candles round him: each one still lit turns aside a fifth of every blow.
+  - **His script.**
+    - every 16 seconds he files a hero away (a WIS save, or paralysed for 5 seconds);
+    - he calls up page swarms (three at most);
+    - at half health he reads aloud from the ledger of the dead (frightened) if any candle still burns.
+
+  Snuffing the candles is the fight. The bot learned it, as it learned the Bellwright's valves.
+- **Level files can name their region**: a `theme:` directive in the text level format.
+- **The bot**: it snuffs the Archivist's candles before fighting him. It crosses a toggle plate when that's the only
+  way on, which fixed a run stuck on level 17.
+- **Results** (6 seeds, 24-level Delves, clearing bot):
+  - average depth 16.8, best 21, heroes at level 23–38;
+  - of the parties that reach the Archivist, about half beat him;
+  - the placeholder Rootdark is where the rest fall.
+
+  The 12-level Delve is unaffected: 6 of 8 seeds won, heroes at level 22. So are the 4-level Delve (7 of 8) and
+  the Cellars. Nothing gets stuck.
+- **Tests.**
+  - The six-region structure, the Heart and the Waystones.
+  - Region validation and the late attribute levels.
+  - Stacks levels with their families, candles, shelves and the Archivist.
+  - The hush against an ordinary region, candles and snuffing, a shelf searched once, a herald waking the hall,
+    and the Archivist's candle shield and summons.
+  - A golden of a Stacks hall, and `Images/AVAHack-stacks.png`.
+  - The deep report runs with `AVAHACK_BALANCE_DEEP=1`.

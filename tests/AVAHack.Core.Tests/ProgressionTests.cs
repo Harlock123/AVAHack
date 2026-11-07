@@ -44,6 +44,15 @@ public sealed class ProgressionTests
     [InlineData(40, 100)]
     public void Skill_ceiling(int level, int ceiling) => Assert.Equal(ceiling, Progression.SkillCeiling(level));
 
+    [Theory]
+    [InlineData(4, true)]
+    [InlineData(6, false)]
+    [InlineData(20, true)]
+    [InlineData(21, false)]
+    [InlineData(22, true)]   // past level 20, every second level
+    [InlineData(26, true)]
+    public void Attribute_levels(int level, bool gives) => Assert.Equal(gives, Progression.IsAttributeLevel(level));
+
     [Fact]
     public void Costs()
     {

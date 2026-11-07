@@ -253,12 +253,18 @@ def make_all(rng, only):
     S("bark.serpentCult", mix((env(highpass(noise(0.9, rng), 2800), 0.08, 0.5, 2.5, hold=0.25), 0.8), (env(bandpass(noise(0.9, rng), lambda t: 4000 + 1500 * math.sin(TAU * 25 * t), 6), 0.1, 0.5, 2.5, hold=0.2), 0.6)), 0.55)
     S("bark.aberrations", reverb(env([a * b for a, b in zip(osc(lambda t: 300 + 120 * math.sin(TAU * 2 * t), 1.0), osc(173, 1.0))], 0.1, 0.5, 2.5, hold=0.3), 0.35, 1.2, 0.7), 0.55)
     S("bark.unmade", reverb(mix(*[(env(osc(f, 1.6, "saw"), 0.3, 0.8, 2.5, hold=0.4), 0.25) for f in (41, 43.5, 61.7, 87)]), 0.4, 1.5, 1.2), 0.7)
+    S("bark.inkbound", mix(*[(env(bandpass(noise(0.12, rng), rng.uniform(2500, 5000), 1.5), 0.02, 0.05), rng.uniform(0.4, 0.9), i * 0.07) for i in range(9)],
+                           (env(bandpass(noise(0.5, rng), lambda t: 6000 - 3000 * t, 8), 0.05, 0.2), 0.4, 0.15)), 0.55)
+    S("bark.mourners", reverb(env(mix(*[(voice(lambda t, k=k: (330 + k * 40) * (1 - 0.25 * t / 1.4) * (1 + 0.04 * math.sin(TAU * 5 * t)), 1.4, OH if k else EE, rng, rough=0.05), 0.5) for k in range(2)]),
+                              0.2, 0.7, 2.5, hold=0.4), 0.5, 1.5, 1.0), 0.6)
     S("bark.beast", mix((env(voice(lambda t: 120 - 30 * t, 0.5, AH, rng, rough=0.5, jitter=0.06), 0.03, 0.2, 2.5, hold=0.1), 1.0),), 0.65)
     S("bark.vermin.big", env(voice(lambda t: 200 + 40 * math.sin(TAU * 12 * t), 0.4, EE, rng, rough=0.3), 0.02, 0.15, 3, hold=0.1), 0.6)
     S("die.flesh", mix((env(voice(lambda t: 130 * (1 - 0.5 * t / 0.7), 0.7, AH, rng, rough=0.3), 0.02, 0.3, 2.5, hold=0.1), 0.8), (env(lowpass(noise(0.3, rng), 250), 0.005, 0.1), 1.0, 0.45)), 0.75)
     S("die.bones", mix(*[(env(bandpass(noise(0.06, rng), rng.uniform(1800, 4200), 3), 0.001, 0.02), rng.uniform(0.4, 1), i * 0.045 + rng.uniform(0, 0.02)) for i in range(14)]), 0.75)
     S("die.slime", lowpass(mix((env(noise(0.4, rng), 0.005, 0.15), 1.0), (env(osc(lambda t: 220 - 180 * t, 0.4), 0.005, 0.15), 0.8)), 1200), 0.75)
     S("die.machine", reverb(mix((partials(150, [1, 2.2, 3.7, 5.1], [0.6, 0.4, 0.25, 0.15], 1.0), 1.0), (env(highpass(noise(1.2, rng), 1800), 0.05, 0.6, 2.5, hold=0.3), 0.5, 0.2), (env(lowpass(noise(0.3, rng), 200), 0.002, 0.1), 1.0, 0.5)), 0.3, 1.2, 0.6), 0.8)
+    S("die.paper", mix((env(bandpass(noise(0.5, rng), lambda t: 4500 - 2500 * t, 1.2), 0.005, 0.2), 1.0),
+                       *[(env(bandpass(noise(0.08, rng), rng.uniform(2000, 4000), 1.5), 0.01, 0.04), 0.5, 0.1 + i * 0.09) for i in range(4)]), 0.7)
     S("die.spirit", reverb(env(mix(*[(osc(lambda t, f=f: f * (1 + 0.6 * t), 1.2), 0.3) for f in (440, 554, 659, 880)]), 0.05, 0.6, 3), 0.5, 1.4, 1.0), 0.6)
 
     # Doors, mechanisms and traps.
@@ -292,6 +298,9 @@ def make_all(rng, only):
     S("read", mix(*[(env(bandpass(noise(0.25, rng), 3500, 1.0), 0.05, 0.08), 0.6, i * 0.18) for i in range(2)]), 0.4)
     S("equip", mix((env(bandpass(noise(0.2, rng), 1400, 1.5), 0.01, 0.06), 0.7), (partials(900, [1, 2.7], [0.06, 0.03], 0.15), 0.4, 0.08)), 0.5)
     S("torch", env(lowpass(noise(0.6, rng), lambda t: 500 + 2500 * t), 0.15, 0.25, 2.5), 0.55)
+    S("snuff", mix((env(lowpass(noise(0.25, rng), lambda t: 2500 - 2000 * t / 0.25), 0.005, 0.08), 0.8), (env(highpass(noise(0.4, rng), 3000), 0.05, 0.2), 0.25, 0.08)), 0.45)
+    S("archive", reverb(mix((env(lowpass(noise(0.3, rng), 300), 0.002, 0.1), 1.0), (env(bandpass(noise(0.4, rng), lambda t: 900 - 600 * t, 4), 0.05, 0.2), 0.6),
+                            (partials(240, [1, 2.3], [0.2, 0.1], 0.4), 0.5, 0.05)), 0.35, 1.2, 0.6), 0.8)
 
     # Magic, by school, and where a bolt lands.
     S("cast.destruction", env(lowpass(mix((noise(0.6, rng), 1.0), (brown(0.6, rng, 0.1), 1.5)), lambda t: 600 + 4000 * t), 0.08, 0.25, 3, hold=0.1), 0.7)
@@ -370,7 +379,61 @@ def make_all(rng, only):
             t += 1.6
         whisper = bandpass(noise(seconds, r), lambda u: 1800 + 600 * math.sin(TAU * 0.2 * u), 3)
         return mix((drone, 1.0), (beats, 0.9), (whisper, 0.12))
-    for name, f, secs in (("amb.cellar", cellar, 20), ("amb.works", works, 20), ("amb.choir", choir, 18), ("amb.heart", heart, 16)):
+    def stacks(seconds):
+        # A hushed archive: paper stirring, candles guttering, a far-off chime, and a held breath of a hum.
+        r = random.Random(904)
+        hum = lowpass(mix((osc(73.4, seconds), 0.25), (osc(110, seconds), 0.12), (brown(seconds, r, 0.01), 0.8)), 260)
+        rustle = [0.0] * n(seconds)
+        t = 0.4
+        while t < seconds - 0.6:
+            p = env(bandpass(noise(0.35, r), r.uniform(2500, 4500), 1.2), 0.08, 0.15)
+            for i, x in enumerate(p):
+                if n(t) + i < len(rustle): rustle[n(t) + i] += x * r.uniform(0.15, 0.4)
+            t += r.uniform(0.9, 2.6)
+        crackle = [0.0] * n(seconds)
+        for _ in range(int(seconds * 3)):
+            at = n(r.uniform(0, seconds - 0.05))
+            for i, x in enumerate(env(highpass(noise(0.015, r), 3000), 0.001, 0.004)):
+                if at + i < len(crackle): crackle[at + i] += x * r.uniform(0.1, 0.3)
+        chime = partials(660, [1, 2.4, 3.9], [1.5, 0.9, 0.6], 3.0)
+        return mix((hum, 1.0), (rustle, 0.6), (crackle, 0.5), (reverb(chime, 0.7, 1.6, 0.0)[: n(3.0)], 0.08, seconds * 0.45))
+    def rootdark(seconds):
+        # Roots creaking under the weight of the world, water through soil, things chittering.
+        r = random.Random(905)
+        rumble = lowpass(brown(seconds, r, 0.02), 140)
+        creaks = [0.0] * n(seconds)
+        t = 0.5
+        while t < seconds - 1.2:
+            c = env(bandpass(noise(1.0, r), lambda u, f=r.uniform(180, 320): f + 60 * math.sin(TAU * 3 * u), 10), 0.2, 0.5, 2, hold=0.3)
+            for i, x in enumerate(c):
+                if n(t) + i < len(creaks): creaks[n(t) + i] += x * r.uniform(0.3, 0.6)
+            t += r.uniform(2.0, 4.5)
+        chitter = [0.0] * n(seconds)
+        t = 1.0
+        while t < seconds - 0.4:
+            for k in range(r.randint(3, 7)):
+                b = env(bandpass(noise(0.02, r), r.uniform(4000, 6000), 6), 0.001, 0.006)
+                at = n(t + k * 0.035)
+                for i, x in enumerate(b):
+                    if at + i < len(chitter): chitter[at + i] += x * 0.4
+            t += r.uniform(1.5, 3.5)
+        seep = lowpass(noise(seconds, r), 700)
+        return mix((rumble, 1.4), (creaks, 0.8), (chitter, 0.5), (seep, 0.08))
+    def glass(seconds):
+        # Halls of fused glass: a wind that whistles through cracks, and the glass ringing faintly as it settles.
+        r = random.Random(906)
+        wind = bandpass(noise(seconds, r), lambda u: 900 + 400 * math.sin(TAU * 0.13 * u) + 200 * math.sin(TAU * 0.31 * u), 8)
+        tone = mix(*[(osc(f * (1 + 0.002 * math.sin(TAU * 0.2 * k)), seconds), 0.05) for k, f in enumerate((523.3, 784, 1046.5))])
+        pings = [0.0] * n(seconds)
+        t = 0.3
+        while t < seconds - 1.6:
+            pg = partials(r.uniform(1800, 3600), [1, 2.76, 5.4], [1.2, 0.6, 0.3], 1.5)
+            for i, x in enumerate(pg):
+                if n(t) + i < len(pings): pings[n(t) + i] += x * r.uniform(0.1, 0.3)
+            t += r.uniform(0.8, 2.4)
+        return mix((wind, 0.9), (tone, 1.0), (reverb(pings, 0.6, 1.7, 0.0)[: n(seconds)], 0.7))
+    for name, f, secs in (("amb.cellar", cellar, 20), ("amb.works", works, 20), ("amb.choir", choir, 18), ("amb.heart", heart, 16),
+                          ("amb.stacks", stacks, 20), ("amb.rootdark", rootdark, 20), ("amb.glass", glass, 18)):
         if want(name):
             save(name, loop(f, secs), rms_db=-24)
             print(name)

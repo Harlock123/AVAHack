@@ -23,6 +23,9 @@ declare -A sets=(
   [works]="Brick 1"           # warm brick: the Deep Works
   [choir]="Brick 2"           # mossy brick: the Drowned Choir
   [heart]="Shale Cave"        # bare violet stone: the Unmade Heart
+  [stacks]="Sandstone Cave"   # pale, bone-coloured stone: the Ossuary Stacks
+  [rootdark]="Copper Cave"    # mottled green and rust: the Rootdark
+  [glass]="Marble Cave"       # pale, glassy veined stone: the Glass Roads
 )
 
 piece() { # set, part (Center|Bottom|Top) -> the Layer 1 file of that part
@@ -33,7 +36,7 @@ piece() { # set, part (Center|Bottom|Top) -> the Layer 1 file of that part
 # (its brick pattern repeats every 16 px, so a 64 px quarter still tiles) at twice the size. The cave sets are
 # coarse already. Every texture is then brought to the brightness the code-drawn set had (wall, floor, ceiling),
 # since the packs range from near-black to near-white and the view lights them all alike.
-declare -A coarse=([cellar]=0 [works]=0 [choir]=0 [heart]=1)
+declare -A coarse=([cellar]=0 [works]=0 [choir]=0 [heart]=1 [stacks]=1 [rootdark]=1 [glass]=1)
 declare -A bright=([wall]=0.43 [floor]=0.34 [ceiling]=0.25)
 
 finish() { # in, kind, theme -> the 128×128 PNG

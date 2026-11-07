@@ -27,6 +27,11 @@ public sealed partial class SpriteFactory
         ["bishop"] = new(C(140, 170, 160), C(40, 70, 90), C(200, 200, 220), 1.0, false, "staff", false, true, C(140, 220, 255)),
         ["saint"] = new(C(30, 24, 34), C(220, 214, 200), C(230, 200, 90), 1.0, false, "none", false, true, C(255, 255, 255)),
         ["singer"] = new(C(210, 190, 200), C(120, 70, 120), C(200, 160, 200), 0.95, false, "none", false, true, C(255, 220, 255)),
+        // The Ossuary Stacks.
+        ["scholar"] = new(C(200, 190, 160), C(150, 130, 96), C(40, 34, 46), 1.0, false, "book", false, true, C(120, 200, 255)),
+        ["candlewight"] = new(C(150, 146, 140), C(36, 32, 34), C(110, 90, 70), 1.0, false, "candle", false, true, C(255, 210, 120)),
+        ["shrouder"] = new(C(170, 172, 168), C(206, 200, 184), C(120, 110, 96), 1.05, false, "hook", false, true, C(200, 220, 230)),
+        ["archivist"] = new(C(190, 180, 150), C(70, 52, 40), C(200, 166, 70), 1.0, false, "book", false, true, C(255, 200, 90)),
     };
 
     private static readonly IReadOnlyList<string> MoreKnown =
@@ -35,6 +40,7 @@ public sealed partial class SpriteFactory
         "slimeGrey", "slimeAcid", "slimeMirror", "slimeGlutton", "cube", "wisp", "imp", "ghost", "ghostFrost", "moths",
         "brain", "unborn", "unmaker", "mushroom", "walker", "walkerTall", "colossus", "sentinel", "crawler", "golem",
         "golemMagma", "juggernaut", "engine", "naga", "nagaQueen", "tentacles", "stalker", "mimic",
+        "pages", "slimeInk", "quill", "waxGolem", "errata", "bell", "veil", "keener", "hush",
     ];
 
     /// <summary>Draws the M7 creatures. False if the id isn't one of them.</summary>
@@ -84,6 +90,15 @@ public sealed partial class SpriteFactory
             case "tentacles": Tentacles(p, f); return true;
             case "stalker": Beast(p, v, f, C(36, 40, 44), C(140, 255, 140), false, lean: true); return true;
             case "mimic": Mimic(p, f); return true;
+            case "pages": Floater(p, f, C(222, 212, 184), C(40, 30, 30), "pages"); return true;
+            case "slimeInk": Blob(p, f, C(30, 32, 54), C(150, 130, 230), 22, 15, false); return true;
+            case "quill": Machine(p, v, f, C(196, 166, 110), C(60, 140, 255), 0.95, false); return true;
+            case "waxGolem": Machine(p, v, f, C(160, 40, 36), C(255, 200, 90), 1.05, true, wick: true); return true;
+            case "errata": Floater(p, f, C(30, 26, 34), C(220, 40, 40), "errata"); return true;
+            case "bell": Floater(p, f, C(150, 112, 56), C(120, 220, 180), "bell"); return true;
+            case "veil": Floater(p, f, C(34, 30, 36), C(200, 200, 230), "veil"); return true;
+            case "keener": Floater(p, f, C(196, 200, 210), C(170, 220, 255), "keener"); return true;
+            case "hush": Floater(p, f, C(58, 58, 64), C(230, 230, 240), "hush"); return true;
         }
         return false;
     }

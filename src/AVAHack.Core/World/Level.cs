@@ -59,6 +59,8 @@ public sealed class Level
     public List<Cell> Valves { get; } = new();
     /// <summary>Crafting stations by cell: "anvil" (a forge) or "altar" (an enchanting altar). Each blocks its cell.</summary>
     public Dictionary<Cell, string> Stations { get; } = new();
+    /// <summary>Wall cells lined with bookshelves (the Ossuary Stacks): drawn as shelves, and searched with Use.</summary>
+    public HashSet<Cell> Shelves { get; } = new();
     /// <summary>The Unmade Heart, the Delve's last level.</summary>
     public bool Final { get; internal set; }
 

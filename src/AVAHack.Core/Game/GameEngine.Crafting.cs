@@ -106,7 +106,7 @@ public sealed partial class GameEngine
         double density = 1;
         var parts = Level.Source.Split(':');
         if (parts.Length >= 6 && parts[0] == "gen" && double.TryParse(parts[4], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d)) density = d;
-        double region = Level.Theme switch { "works" => 1.2, "choir" => 1.4, "heart" => 2, _ => 1 };
+        double region = Content.Regions.FirstOrDefault(r => r.Id == Level.Theme)?.Wanderers ?? 1;
         double chance = EncounterChance * density * region;
         return sealedIn || TouchesClosedDoor(cells) ? chance / 2 : chance;
     }

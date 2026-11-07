@@ -59,7 +59,8 @@ public static class Progression
     /// <summary>Levels at which the best weapon skill recovers 10% faster (the "extra attack").</summary>
     public static readonly IReadOnlyList<int> RecoveryLevels = [5, 11, 17];
 
-    public static bool IsAttributeLevel(int level) => level % 4 == 0;
+    /// <summary>Every 4th level gives attribute points; past level 20 (a long Delve's depths), every 2nd does.</summary>
+    public static bool IsAttributeLevel(int level) => level % 4 == 0 || level > 20 && level % 2 == 0;
 
     public static readonly IReadOnlyList<SkillId> WeaponSkills =
         [SkillId.Blade, SkillId.Blunt, SkillId.TwoHanded, SkillId.Archery, SkillId.Unarmed];

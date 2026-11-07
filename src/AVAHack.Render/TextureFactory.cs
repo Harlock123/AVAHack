@@ -17,7 +17,7 @@ public static class TextureFactory
     /// </summary>
     public static TextureSet ForTheme(string theme, int seed = 1)
     {
-        int s = theme switch { "works" => 11, "choir" => 21, "heart" => 31, _ => seed };
+        int s = theme switch { "works" => 11, "choir" => 21, "heart" => 31, "stacks" => 41, "rootdark" => 51, "glass" => 61, _ => seed };
         if (Asset($"{theme}-wall") is { } wall && Asset($"{theme}-floor") is { } floor && Asset($"{theme}-ceiling") is { } ceiling)
             return Build(s, wall, floor, ceiling);
         return Drawn(theme, seed);
@@ -47,6 +47,7 @@ public static class TextureFactory
             Door = Planks(seed + 4),
             Portcullis = Bars(),
             LeverUp = WithLever(wall, down: false),
+            Shelf = Bookshelf(wall, seed + 12),
             LeverDown = WithLever(wall, down: true),
             Pit = PitHole(seed + 5),
             Plate = PressurePlate(seed + 6, floorRgb),
@@ -346,6 +347,38 @@ public static class TextureFactory
             int light = upright ? (bx == 1 ? 40 : bx == 3 ? -20 : 0) : (by == 0 ? 30 : -10);
             bool spike = upright && y >= 58;
             t[x, y] = Rgb(70 + light + (spike ? 12 : 0), 68 + light + (spike ? 12 : 0), 66 + light + (spike ? 12 : 0));
+        }
+        return t;
+    }
+
+    /// <summary>
+    /// A bookshelf set into a wall: a dark wooden case of four shelves packed with spines of every colour and height,
+    /// a few leaning or missing, drawn over the wall's own stone at its size.
+    /// </summary>
+    public static Texture Bookshelf(Texture wall, int seed)
+    {
+        var t = wall.Clone();
+        uint frame = Rgb(58, 38, 24), shelf = Rgb(84, 56, 34), back = Rgb(30, 20, 14);
+        for (int y = 4; y < 62; y++)
+        for (int x = 4; x < 60; x++)
+            Dot(t, x, y, x < 7 || x > 56 || y < 7 ? frame : back);
+        uint[] spines = [Rgb(120, 40, 34), Rgb(46, 70, 110), Rgb(60, 90, 50), Rgb(150, 120, 60), Rgb(90, 50, 90), Rgb(130, 110, 90), Rgb(40, 40, 46)];
+        for (int row = 0; row < 4; row++)
+        {
+            int baseY = 20 + row * 14;
+            for (int x = 7; x < 57; x++) for (int y = baseY; y < baseY + 2; y++) Dot(t, x, y, shelf);
+            int bx = 8;
+            while (bx < 55)
+            {
+                int h = Hash(seed, bx, row);
+                int width = 2 + h % 3, height = 7 + h / 32 % 5;
+                if (h % 11 == 0) { bx += width + 1; continue; } // a gap where a book was taken
+                uint c = spines[h / 7 % spines.Length];
+                for (int x = bx; x < Math.Min(56, bx + width); x++)
+                for (int y = baseY - height; y < baseY; y++)
+                    Dot(t, x, y, y == baseY - height + 2 && x > bx ? Rgb(200, 170, 90) : x == bx ? Shade((int)(c & 0xFFFFFF), 24) : c);
+                bx += width;
+            }
         }
         return t;
     }

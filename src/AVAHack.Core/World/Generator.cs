@@ -38,34 +38,47 @@ public static partial class Generator
 {
     public const int Size = 32;
 
-    public static string ThemeFor(int depth) => ((depth - 1) / 4 % 3) switch { 0 => "cellar", 1 => "works", _ => "choir" };
+    /// <summary>How many levels each region spans.</summary>
+    public const int RegionLevels = 4;
+
+    /// <summary>The regions above the final one, top to bottom (regions.json).</summary>
+    public static IReadOnlyList<RegionDef> Regions(ContentDb db) => db.Regions.Where(r => !r.Final).ToList();
+
+    /// <summary>The final region, below a long Delve's last level.</summary>
+    public static RegionDef FinalRegion(ContentDb db) => db.Regions.First(r => r.Final);
 
     /// <summary>
-    /// The boss guarding a level's stairs down (spec 12.5): the Hollow King on level 4, the Bellwright Engine on 8,
-    /// Mother of Coils on 12, and the Unmaker in the Unmade Heart, the level after a 12-level Delve's last.
+    /// The region a level is in (spec 14.1): four levels each in regions.json's order, the deepest going on if a
+    /// Delve runs past them all, and the final region (the Unmade Heart) below the last level of a long Delve.
     /// </summary>
-    public static string? BossFor(int depth, int maxDepth) => depth switch
+    public static string ThemeFor(ContentDb db, int depth, int maxDepth = 12)
     {
-        _ when depth > maxDepth => maxDepth >= 12 && depth == maxDepth + 1 ? "unmaker" : null,
-        4 => "hollowKing",
-        8 => "bellwrightEngine",
-        12 => "motherOfCoils",
-        _ => null,
-    };
+        if (depth > maxDepth) return FinalRegion(db).Id;
+        var above = Regions(db);
+        return above[Math.Min((depth - 1) / RegionLevels, above.Count - 1)].Id;
+    }
 
-    /// <summary>A Waystone waits at the start of the level after each boss.</summary>
-    public static bool HasWaystone(int depth, int maxDepth) => depth > 1 && BossFor(depth - 1, maxDepth) is not null;
+    /// <summary>
+    /// The boss guarding a level's stairs down (spec 12.5): each region's on its last level (the Hollow King on 4,
+    /// the Bellwright Engine on 8, Mother of Coils on 12 ...), and the final region's (the Unmaker) in the Unmade
+    /// Heart, the level after a 12-level-or-longer Delve's last.
+    /// </summary>
+    public static string? BossFor(ContentDb db, int depth, int maxDepth)
+    {
+        if (depth > maxDepth) return HasHeart(maxDepth) && depth == maxDepth + 1 ? FinalRegion(db).Boss : null;
+        var above = Regions(db);
+        int index = (depth - 1) / RegionLevels;
+        return depth % RegionLevels == 0 && index < above.Count ? above[index].Boss : null;
+    }
+
+    /// <summary>A Waystone waits at the start of each region below the first, and after every boss.</summary>
+    public static bool HasWaystone(ContentDb db, int depth, int maxDepth) =>
+        depth > 1 && ((depth - 1) % RegionLevels == 0 || BossFor(db, depth - 1, maxDepth) is not null);
 
     /// <summary>Whether a Delve this deep ends in the Unmade Heart.</summary>
     public static bool HasHeart(int maxDepth) => maxDepth >= 12;
 
-    public static string RegionName(string theme) => theme switch
-    {
-        "heart" => "The Unmade Heart",
-        "cellar" => "The Upper Hollow",
-        "works" => "The Deep Works",
-        _ => "The Drowned Choir",
-    };
+    public static string RegionName(ContentDb db, string theme) => db.Regions.FirstOrDefault(r => r.Id == theme)?.Name ?? theme;
 
     public static Level Generate(ContentDb db, ulong seed, int depth, GenOptions? options = null)
     {

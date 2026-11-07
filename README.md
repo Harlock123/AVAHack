@@ -9,12 +9,18 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 
 **Status: milestone M8, plus a balance pass.** What's in so far:
 
-- **The Delve.** A seeded, generated descent of up to 12 levels across three regions, ending in the Unmade Heart.
+- **The Delve.** A seeded, generated descent of up to 24 levels across six regions of four, each with its own
+  creatures and boss, ending in the Unmade Heart. The newest region is the Ossuary Stacks (levels 13–16), a buried
+  archive:
+  - noise wakes its dead;
+  - candlelight gives you away;
+  - its shelves hold books;
+  - the many-handed Archivist reads by his candles.
   Choose the seed, depth, monster strength, density, traps, magic items, food and Ironman before you start.
 - **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Skills grow with use and
   kills bring experience, with level-ups and perk trees.
-- **The bestiary.** 58 creatures in ten families, plus wanderers, each drawn in code. Elites and named champions
-  carry the 16 affixes, and five bosses guard the way down.
+- **The bestiary.** 71 creatures in twelve families, plus wanderers, each drawn in code. Elites and named champions
+  carry the 16 affixes, and six bosses guard the way down.
 - **Magic and loot.** 48 spells, and items with rarity, affixes, sets and uniques.
 - **Crafting.** Alchemy with hidden reagent effects, cooking, Smithing and Enchanting.
 - **Survival.** Food and water, and rests that can be interrupted.
@@ -88,6 +94,8 @@ pixel art:
 
 ![The bestiary](Images/AVAHack-bestiary.png)
 
+![A hall of the Ossuary Stacks](Images/AVAHack-stacks.png)
+
 Every item has its own icon, drawn and finished the same way:
 - 18 weapons, 8 armours, 3 shields and 12 pieces of gear;
 - potions, scrolls, books by skill, tomes and wands;
@@ -117,7 +125,9 @@ and an ambience loop for each region:
 - dripping cellars;
 - the Works' machinery;
 - the Drowned Choir's hum;
-- the Unmade Heart's drone and heartbeat.
+- the Unmade Heart's drone and heartbeat;
+- the Ossuary Stacks' rustling pages and guttering candles, the Rootdark's creaking roots, and the Glass Roads'
+  wind and settling glass.
 
 Sound is positional and travels along the passages:
 - it fades with the steps it has to go, and a shut door muffles it;

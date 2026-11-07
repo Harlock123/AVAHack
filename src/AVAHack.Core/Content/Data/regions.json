@@ -1,0 +1,14 @@
+// The Delve's regions (spec 14.1), top to bottom: four levels each, the boss on the fourth, a Waystone after it.
+// A Delve of 12 levels or more ends in the region marked "final". "families" says who lives there;
+// "wanderers" scales the chance of a wandering monster during a rest; "forgeOneIn" puts a forge in one level in N.
+// "hush": noise wakes the dead along the passages. "candles": lit candles in each level (they show you to things;
+// Use snuffs one). "shelves": the share of room walls lined with bookshelves (Use searches one for a book).
+[
+ { "id": "cellar", "name": "The Upper Hollow", "families": ["vermin", "restlessDead", "goblinKin"], "boss": "hollowKing", "wanderers": 1.0 },
+ { "id": "works", "name": "The Deep Works", "families": ["oozes", "deepFolk", "constructs", "elementals", "goblinKin", "vermin"], "boss": "bellwrightEngine", "wanderers": 1.2, "forgeOneIn": 2 },
+ { "id": "choir", "name": "The Drowned Choir", "families": ["sporeKin", "serpentCult", "aberrations", "restlessDead", "oozes"], "boss": "motherOfCoils", "wanderers": 1.4 },
+ { "id": "stacks", "name": "The Ossuary Stacks", "families": ["inkbound", "mourners", "restlessDead"], "boss": "archivist", "wanderers": 1.5, "hush": true, "candles": 6, "shelves": 0.35 },
+ { "id": "rootdark", "name": "The Rootdark", "families": ["sporeKin", "vermin", "oozes", "deepFolk"], "wanderers": 1.7 },
+ { "id": "glass", "name": "The Glass Roads", "families": ["unmade", "aberrations", "elementals", "constructs"], "wanderers": 1.9 },
+ { "id": "heart", "name": "The Unmade Heart", "families": ["unmade", "aberrations"], "boss": "unmaker", "wanderers": 2.0, "final": true }
+]

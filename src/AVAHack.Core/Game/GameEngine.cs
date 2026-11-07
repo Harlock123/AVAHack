@@ -350,8 +350,9 @@ public sealed partial class GameEngine
         if (Level.ChestAt(ahead) is { } chest) { OpenChest(chest); return; }
         if (Level.TrapAt(ahead) is { Kind: TrapKind.CursedAltar } altar) { TakeOffering(altar); return; }
         if (Level.Waystone == ahead) { TouchWaystone(); return; }
+        if (TouchCandle(ahead)) return;
         if (TouchStation(ahead)) return;
-        if (Level.KindAt(ahead) == CellKind.Wall) SearchWall(ahead);
+        if (Level.KindAt(ahead) == CellKind.Wall && !SearchShelf(ahead)) SearchWall(ahead);
     }
 
     private void Pull(Lever lever)

@@ -6,6 +6,7 @@ namespace AVAHack.World;
 /// Reads a handmade level from text. Directives come first, then <c>map:</c> and the rows:
 /// <code>
 /// name: Test Hall
+/// theme: stacks                   # the region it belongs to (regions.json); cellar if left out
 /// start: 2 2 east                 # x y facing
 /// lever: 6 4 west -> 7 6          # lever on the west wall of floor cell (6,4), linked to the door at (7,6)
 /// pit: 5 2 -> 5 9 hidden 13       # a pit at (5,2) that drops to (5,9); hidden until Perception 13 finds it
@@ -27,6 +28,7 @@ public static class LevelLoader
     public static Level Parse(string text, string source)
     {
         string name = "Unnamed";
+        string? theme = null;
         Cell? start = null;
         Dir facing = Dir.North;
         var leverLines = new List<(int Line, string Text)>();
@@ -66,6 +68,9 @@ public static class LevelLoader
             {
                 case "name":
                     name = value;
+                    break;
+                case "theme":
+                    theme = value;
                     break;
                 case "start":
                     var p = Split(value);
@@ -122,6 +127,7 @@ public static class LevelLoader
 
         if (start is not { } s) throw new FormatException("The level has no start.");
         var level = new Level(name, width, height, cells, s, facing) { Source = source };
+        if (theme is not null) level.Theme = theme;
         if (level.KindAt(s) != CellKind.Floor) throw new FormatException($"The start {s} is not a floor cell.");
 
         foreach (var (cell, kind, open) in doors)

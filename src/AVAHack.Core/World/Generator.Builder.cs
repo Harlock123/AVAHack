@@ -34,7 +34,8 @@ public static partial class Generator
         private Cell _start, _down;
         private Cell? _landing;
         private Dir _facing = Dir.East;
-        private readonly string _theme = depth > o.MaxDepth ? "heart" : ThemeFor(depth);
+        private readonly string _theme = ThemeFor(db, depth, o.MaxDepth);
+        private RegionDef Region => db.Region(_theme);
         private string? _boss;
         private Cell? _waystone;
         private readonly List<Cell> _valves = new();
@@ -607,14 +608,14 @@ public static partial class Generator
 
         private void Specials()
         {
-            if (HasWaystone(depth, o.MaxDepth))
+            if (HasWaystone(db, depth, o.MaxDepth))
             {
                 // Next to the start (so the party can face it), never in the way it faces on arrival.
                 var spot = Enum.GetValues<Dir>().Where(d => d != _facing).Select(d => _start.Step(d))
                                .FirstOrDefault(c => At(c) == CellKind.Floor && !_taken.Contains(c) && _rooms.Any(r => r.Contains(c) && r.Contains(_start)));
                 if (spot != default) { _waystone = spot; _taken.Add(spot); }
             }
-            _boss = BossFor(depth, o.MaxDepth);
+            _boss = BossFor(db, depth, o.MaxDepth);
             if (_boss is not null)
             {
                 var room = _rooms.FirstOrDefault(r => r.Contains(_down));
@@ -643,14 +644,17 @@ public static partial class Generator
                         _taken.Add(cell);
                     }
                 }
+                if (_boss == "archivist")
+                    foreach (var c in near.Skip(1).Where(c => c.Distance(at) >= 2).Take(4)) { _stations[c] = "candle"; _taken.Add(c); } // his reading candles
                 if (_boss == "motherOfCoils")
                     foreach (var c in near.Skip(1).Take(2)) { _spawns.Add(new Spawn("coilGuard", c, Dir.South) { Level = MonsterLevel() }); _taken.Add(c); }
             }
             // Crafting stations (spec 13.5): a forge in half the Deep Works' levels, an enchanting altar in a quarter from level 3.
             if (!Plain)
             {
-                if (_theme == "works" && Roll(2) == 0) PlaceStation("anvil");
+                if (Region.ForgeOneIn > 0 && Roll(Region.ForgeOneIn) == 0) PlaceStation("anvil");
                 if (depth >= 3 && Roll(4) == 0) PlaceStation("altar");
+                for (int i = 0; i < Region.Candles; i++) PlaceStation("candle");
             }
             // The Hollow Choir: five singers in a hall on level 6 (an optional fight; the stairs don't need it).
             if (depth == 6 && o.MaxDepth >= 6 && !Plain)
@@ -683,6 +687,20 @@ public static partial class Generator
             var at = spots[Roll(spots.Count)];
             _stations[at] = kind;
             _taken.Add(at);
+        }
+
+        /// <summary>Bookshelves along room walls (the Ossuary Stacks): never a door, a secret or the level's edge.</summary>
+        private void PlaceShelves(Level level)
+        {
+            var secrets = _secrets.Select(s => s.Cell).ToHashSet();
+            foreach (var room in _rooms.Where(r => r.Vault is null))
+                foreach (var c in RoomCells(room))
+                    foreach (var d in Enum.GetValues<Dir>())
+                    {
+                        var w = c.Step(d);
+                        if (At(w) != CellKind.Wall || secrets.Contains(w) || w.X <= 0 || w.Y <= 0 || w.X >= Size - 1 || w.Y >= Size - 1 || level.Shelves.Contains(w)) continue;
+                        if (Roll(100) < Region.Shelves * 100) level.Shelves.Add(w);
+                    }
         }
 
         private int MonsterLevel() => Math.Max(1, (int)(depth * 1.6)) + Roll(2);
@@ -820,7 +838,7 @@ public static partial class Generator
 
         public Level Finish(ulong seed, int attempt)
         {
-            var level = new Level(_theme == "heart" ? RegionName(_theme) : $"{RegionName(_theme)}, level {depth}", Size, Size, (CellKind[])_cells.Clone(), _start, _facing)
+            var level = new Level(Region.Final ? Region.Name : $"{Region.Name}, level {depth}", Size, Size, (CellKind[])_cells.Clone(), _start, _facing)
             {
                 Source = $"gen:{seed}:{depth}:{o.Code}",
             };
@@ -831,7 +849,8 @@ public static partial class Generator
             level.Waystone = _waystone;
             level.Valves.AddRange(_valves);
             foreach (var (c, k) in _stations) level.Stations[c] = k;
-            level.Final = _theme == "heart";
+            if (Region.Shelves > 0 && !Plain) PlaceShelves(level);
+            level.Final = Region.Final;
             level.AddStairs(_down);
             if (depth > 1) level.AddStairsUp(_start);
             foreach (var d in _doors.GroupBy(d => d.Cell).Select(g => g.Last()))

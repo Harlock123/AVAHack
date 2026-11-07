@@ -76,7 +76,7 @@ public sealed record CreatureDef
     public string? Loot { get; init; }
     /// <summary>What a summoner calls up every so often.</summary>
     public string? Summons { get; init; }
-    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir or unmaker.</summary>
+    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir, archivist or unmaker.</summary>
     public string? Boss { get; init; }
     public required string Sprite { get; init; }
     public required string Text { get; init; }
@@ -90,6 +90,7 @@ public static class Behaviours
     {
         "wander", "guard", "ambush", "patrol", "chase", "melee", "ranged", "flee", "opener", "pack", "mindless",
         "flier", "swimmer", "phaser", "unyielding", "caster", "summoner", "splits", "explodes", "invisible", "raises", "boss",
+        "herald",
     };
 }
 
@@ -145,4 +146,30 @@ public sealed record ArmourDef
     public double WeightKg { get; init; }
     public int Value { get; init; } = 10;
     public required string Text { get; init; }
+}
+
+/// <summary>
+/// A region of the Delve (spec 14.1, regions.json): four levels of one look and one set of creature families, with
+/// a boss on its last level. Regions follow each other down in file order; the one marked final is the Unmade
+/// Heart, below the last level of a long Delve.
+/// </summary>
+public sealed record RegionDef
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    /// <summary>The creature families that live here.</summary>
+    public required string[] Families { get; init; }
+    /// <summary>The boss on the region's last level, if it has one yet.</summary>
+    public string? Boss { get; init; }
+    /// <summary>How much likelier a wandering monster is during a rest here.</summary>
+    public double Wanderers { get; init; } = 1;
+    /// <summary>A forge in one level in this many (0: none beyond the Waystones').</summary>
+    public int ForgeOneIn { get; init; }
+    /// <summary>Noise wakes the dead: the party's loud sounds rouse unaware creatures along the passages.</summary>
+    public bool Hush { get; init; }
+    /// <summary>Lit candles in each level: they show the party to things, and Use snuffs one.</summary>
+    public int Candles { get; init; }
+    /// <summary>The share of room walls lined with bookshelves, which Use searches for a book.</summary>
+    public double Shelves { get; init; }
+    public bool Final { get; init; }
 }

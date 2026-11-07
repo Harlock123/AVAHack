@@ -211,5 +211,6 @@
     "weight": 0.3
    }
   ]
- }
+ },
+ {"id": "archive", "rolls": "1", "entries": [{"nothing": true, "weight": 5}, {"gold": "3d10", "weight": 2}, {"category": "book", "weight": 1.5}, {"category": "scroll", "weight": 1.5}, {"category": "tome", "weight": 0.6}, {"item": "scrollIdentify", "weight": 1}, {"category": "reagent", "weight": 1}]}
 ]

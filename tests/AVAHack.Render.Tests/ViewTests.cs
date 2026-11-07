@@ -124,6 +124,9 @@ public sealed class ViewTests(ITestOutputHelper output)
     [InlineData("works")]
     [InlineData("choir")]
     [InlineData("heart")]
+    [InlineData("stacks")]
+    [InlineData("rootdark")]
+    [InlineData("glass")]
     public void Each_region_draws_with_its_own_art(string theme)
     {
         var (g, _) = Make();
@@ -138,6 +141,9 @@ public sealed class ViewTests(ITestOutputHelper output)
     [InlineData("works")]
     [InlineData("choir")]
     [InlineData("heart")]
+    [InlineData("stacks")]
+    [InlineData("rootdark")]
+    [InlineData("glass")]
     public void The_art_pack_gives_every_region_its_walls_floors_and_ceilings(string theme)
     {
         var set = TextureFactory.ForTheme(theme);
@@ -150,6 +156,41 @@ public sealed class ViewTests(ITestOutputHelper output)
         Assert.Equal(128, set.TrapMark!.Side);
         Assert.Equal(128, set.LeverUp.Side);
         Assert.NotEqual(set.Wall.Pixels, set.LeverUp.Pixels);
+    }
+
+    [Fact]
+    public void A_hall_of_the_Ossuary_Stacks()
+    {
+        var db = AVAHack.Content.ContentDb.LoadBuiltIn();
+        var level = LevelLoader.Parse("""
+            start: 2 3 east
+            theme: stacks
+            map:
+            ##########
+            #........#
+            #........#
+            #........#
+            #........#
+            #........#
+            ##########
+            """);
+        for (int x = 1; x < 9; x++) { level.Shelves.Add(new Cell(x, 0)); level.Shelves.Add(new Cell(x, 6)); }
+        for (int y = 1; y < 6; y++) level.Shelves.Add(new Cell(9, y));
+        level.Stations[new Cell(5, 1)] = "candle";
+        level.Stations[new Cell(7, 5)] = "candle";
+        var g = new GameEngine(level, 1, new AVAHack.Characters.Party(AVAHack.Characters.CharacterBuilder.QuickStartParty(db).ToArray()), db);
+        g.AddMonster("candlewight", new Cell(6, 3), Dir.West);
+        g.AddMonster("pageSwarm", new Cell(8, 2), Dir.West);
+        var r = new SoftwareViewRenderer(TextureFactory.ForTheme("stacks"));
+        r.Render(level, g.Camera(), 0, Scene.Build(g, g.Camera(), new SpriteFactory()));
+        GoldenImage.Check("stacks-hall", r);
+    }
+
+    [Fact]
+    public void Every_region_in_the_content_has_its_art()
+    {
+        foreach (var r in AVAHack.Content.ContentDb.LoadBuiltIn().Regions)
+            Assert.NotNull(TextureFactory.Asset($"{r.Id}-wall"));
     }
 
     [Fact]

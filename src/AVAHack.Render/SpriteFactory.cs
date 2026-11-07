@@ -109,6 +109,27 @@ public sealed partial class SpriteFactory
                 p.Triangle(22, 14, 32, 2, 42, 14, Paint.Rgb(120, 126, 140));
                 for (int i = 0; i < 4; i++) p.Rect(28, 20 + i * 10, 36, 23 + i * 10, Paint.Rgb(140, 220, 255), false);
                 break;
+            case "candle":
+            case "candle-out":
+            {
+                // A tall iron candlestand with three candles: lit, or pinched out and smoking.
+                p.Mat = Material.Metal;
+                p.Taper(32, 63, 1.4, 32, 26, 1.2, C(60, 58, 62));
+                p.Ellipse(32, 62, 9, 2, C(60, 58, 62));
+                p.Taper(20, 26, 1, 44, 26, 1, C(70, 68, 72));
+                p.Mat = Material.Matte;
+                foreach (int x in new[] { 21, 32, 43 })
+                {
+                    p.Rect(x - 1.6, x == 32 ? 12 : 16, x + 1.6, 26, C(226, 216, 186));
+                    if (kind == "candle")
+                    {
+                        p.Ellipse(x, (x == 32 ? 12 : 16) - 3, 2, 3.2, C(255, 180, 60), false);
+                        p.Ellipse(x, (x == 32 ? 12 : 16) - 2.4, 0.9, 1.6, C(255, 250, 220), false);
+                    }
+                    else p.Taper(x, (x == 32 ? 12 : 16) - 1, 0.5, x + 2, (x == 32 ? 12 : 16) - 9, 0.4, C(120, 116, 112), false);
+                }
+                break;
+            }
             case "boulder":
                 p.Ellipse(32, 36, 27, 27, Paint.Rgb(110, 100, 90));
                 p.Ellipse(24, 28, 8, 6, Paint.Rgb(130, 120, 110));
@@ -516,6 +537,30 @@ public sealed partial class SpriteFactory
                 p.Line(raised ? hx - 6 : hx, hy, hx, hy + 13, 0.5, C(220, 214, 200));
                 if (raised) p.Line(hx - 6, hy, hx + 10, hy, 0.7, C(170, 150, 120));
                 break;
+            case "book":
+            {
+                // A heavy tome held open, its pages lit.
+                double open = raised ? 6 : 4;
+                p.Rect(hx - open, hy - 4, hx + open, hy + 4, C(70, 40, 30));
+                p.Rect(hx - open + 1, hy - 3, hx + open - 1, hy + 3, C(230, 220, 190));
+                p.Taper(hx, hy - 3, 0.3, hx, hy + 3, 0.3, C(120, 90, 60), false);
+                if (raised) for (int i = 0; i < 3; i++) p.Dot(hx - 3 + i * 3, hy - 7 - i % 2 * 2, k.Eye);
+                break;
+            }
+            case "candle":
+                p.Line(hx, hy, hx, hy + 3, 0.6, C(60, 50, 40));
+                p.Rect(hx - 1.6, hy - 8, hx + 1.6, hy, C(230, 220, 190));
+                p.Ellipse(hx, hy - 10.5, 1.6, 2.6, raised ? C(255, 250, 220) : C(255, 190, 80), false);
+                break;
+            case "hook":
+            {
+                var (tx, ty) = Along(22);
+                p.Taper(hx, hy + 6, 0.9, tx, ty, 0.9, C(100, 80, 56));
+                p.Mat = Material.Metal;
+                p.Limb(tx, ty, tx + 6, ty - 2, tx + 6, ty + 5, 1.1, 0.5, C(170, 172, 180));
+                p.Mat = Material.Matte;
+                break;
+            }
             case "lantern":
                 p.Line(hx, hy, hx, hy + 4, 0.6, C(60, 60, 60));
                 p.Mat = Material.Metal;

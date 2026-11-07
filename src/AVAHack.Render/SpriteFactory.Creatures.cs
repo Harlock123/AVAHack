@@ -394,7 +394,7 @@ public sealed partial class SpriteFactory
             return;
         }
         // The trail to the floor.
-        if (kind is "wings" or "moth") p.Ellipse(32, 61.5, 7, 1.4, C(24, 20, 18), false); // its shadow on the floor
+        if (kind is "wings" or "moth" or "pages" or "bell") p.Ellipse(32, 61.5, 7, 1.4, C(24, 20, 18), false); // its shadow on the floor
         else
             for (int i = 0; i < 5; i++) p.Ellipse(32 + (i % 2 == 0 ? -2 : 2), 47 + i * 3.6, 6 - i, 2.6, Paint.Shade(body, -14 - i * 9), false);
         switch (kind)
@@ -498,6 +498,81 @@ public sealed partial class SpriteFactory
                 if (f == SpriteFrame.Windup) p.Ellipse(32, 30 + bob, 17, 13.5, body);
                 break;
             }
+            case "pages":
+            {
+                // A storm of loose pages, edges catching the light.
+                double spin = f == SpriteFrame.Windup ? 0.5 : f == SpriteFrame.Strike ? -0.4 : 0;
+                for (int i = 0; i < 11; i++)
+                {
+                    double a = i * 2.39996 + spin, r = 6 + i * 1.7;
+                    double cx = 32 + Math.Cos(a) * r, cy = 30 + bob + Math.Sin(a) * r * 0.75;
+                    double tilt = (i % 3 - 1) * 2.2;
+                    p.Poly(i % 2 == 0 ? body : Paint.Shade(body, -18), (cx - 4, cy - 3 + tilt), (cx + 4, cy - 3 - tilt), (cx + 4, cy + 3 - tilt), (cx - 4, cy + 3 + tilt));
+                    for (int l = 0; l < 3; l++) p.Taper(cx - 2.6, cy - 1.4 + l * 1.4, 0.2, cx + 2.6, cy - 1.4 + l * 1.4 - tilt / 3, 0.2, glow, false); // the writing
+                }
+                break;
+            }
+            case "errata":
+            {
+                // Struck-out writing given a shape: lines of script, each crossed through in red, round a dark core.
+                p.Ellipse(32, 30 + bob, 11, 15, body);
+                for (int i = 0; i < 9; i++)
+                {
+                    double y = 12 + i * 4.2 + bob, half = 15 - Math.Abs(i - 4) * 1.8;
+                    p.Taper(32 - half, y, 0.6, 32 + half, y + (i % 2 == 0 ? 1 : -1), 0.6, C(220, 210, 190), false);
+                    p.Taper(32 - half - 1, y + 0.6, 0.4, 32 + half + 1, y - 0.6, 0.4, glow, false);
+                }
+                p.Ellipse(28, 24 + bob, 1.6, 1.6, glow, false); p.Ellipse(36, 24 + bob, 1.6, 1.6, glow, false);
+                if (f != SpriteFrame.Idle) p.Limb(40, 30 + bob, 50, 26 + bob, 56, f == SpriteFrame.Windup ? 16 + bob : 30 + bob, 1.6, 0.6, C(220, 210, 190));
+                break;
+            }
+            case "bell":
+            {
+                // A drifting bronze bell weeping verdigris, its clapper swinging with the toll.
+                p.Mat = Material.Metal;
+                p.Poly(body, (22, 40 + bob), (24, 22 + bob), (28, 14 + bob), (36, 14 + bob), (40, 22 + bob), (42, 40 + bob));
+                p.Rect(19, 39 + bob, 45, 43 + bob, Paint.Shade(body, 16));
+                p.Rect(30, 9 + bob, 34, 14 + bob, body);
+                p.Mat = Material.Matte;
+                double swing = f == SpriteFrame.Windup ? -5 : f == SpriteFrame.Strike ? 5 : 0;
+                p.Ellipse(32 + swing, 44 + bob, 3, 3, Paint.Shade(body, -50));
+                for (int i = 0; i < 4; i++) p.Taper(25 + i * 4.6, 18 + bob + i % 2 * 4, 0.8, 25.5 + i * 4.6, 32 + bob + i % 2 * 5, 0.5, glow, false); // verdigris tears
+                if (f == SpriteFrame.Strike) // the toll, as rings of struck air either side
+                    for (int i = 0; i < 3; i++) { p.Taper(16 - i * 4, 30 + bob - i * 3, 0.5, 14 - i * 4, 44 + bob + i * 3, 0.5, Paint.Shade(glow, -i * 30), false); p.Taper(48 + i * 4, 30 + bob - i * 3, 0.5, 50 + i * 4, 44 + bob + i * 3, 0.5, Paint.Shade(glow, -i * 30), false); }
+                break;
+            }
+            case "veil":
+            case "keener":
+            case "hush":
+            {
+                // A tall shrouded mourner. The veil hides its face; the keener's face is all mouth; the Hush has no
+                // face at all, only a finger at its lips.
+                p.Mat = Material.Cloth;
+                p.Poly(body, (24, 14 + bob), (32, 6 + bob), (40, 14 + bob), (44, 50 + bob), (39, 46 + bob), (35, 52 + bob), (32, 47 + bob), (28, 52 + bob), (25, 46 + bob), (20, 50 + bob));
+                p.Mat = Material.Matte;
+                if (kind == "veil")
+                {
+                    p.Poly(Paint.Shade(body, 30), false, (25, 12 + bob), (32, 7 + bob), (39, 12 + bob), (41, 30 + bob), (23, 30 + bob));
+                    p.Ellipse(29, 18 + bob, 1.2, 1.2, glow, false); p.Ellipse(35, 18 + bob, 1.2, 1.2, glow, false);
+                }
+                else if (kind == "keener")
+                {
+                    if (f != SpriteFrame.Idle) // the keen, as lines spreading from its mouth
+                        for (int i = 0; i < 3; i++) { p.Taper(26 - i * 4, 18 + bob - i * 2, 0.5, 24 - i * 4, 24 + bob + i * 2, 0.5, Paint.Shade(glow, -i * 30), false); p.Taper(38 + i * 4, 18 + bob - i * 2, 0.5, 40 + i * 4, 24 + bob + i * 2, 0.5, Paint.Shade(glow, -i * 30), false); }
+                    p.Ellipse(32, 16 + bob, 6, 7, Paint.Shade(body, 10));
+                    p.Ellipse(29, 14 + bob, 1.6, 2, Socket, false); p.Ellipse(35, 14 + bob, 1.6, 2, Socket, false);
+                    p.Ellipse(32, 20 + bob, 2.6, f == SpriteFrame.Idle ? 3 : 5, Socket, false);
+                }
+                else
+                {
+                    p.Ellipse(32, 15 + bob, 5.5, 7, Paint.Shade(body, 14));                                   // a blank face
+                    p.Limb(38, 26 + bob, 36, 21 + bob, 32.5, 18 + bob, 1.3, 0.7, Paint.Shade(body, 20)); // the finger at its lips
+                }
+                double reach = f == SpriteFrame.Strike ? 7 : 0;
+                p.Limb(24, 24 + bob, 18 - reach / 2, 32 + bob, 15 - reach, 28 + bob - reach, 1.8, 1, Paint.Shade(body, 8));
+                if (kind != "hush") p.Limb(40, 24 + bob, 46 + reach / 2, 32 + bob, 49 + reach, 28 + bob - reach, 1.8, 1, Paint.Shade(body, 8));
+                break;
+            }
             case "unmaker":
             {
                 // A hole in the world, ringed with eyes, shards of what it has unmade turning round it.
@@ -582,7 +657,7 @@ public sealed partial class SpriteFactory
 
     // ---- Machines ----
 
-    private static void Machine(Paint p, SpriteView v, SpriteFrame f, uint metal, uint eye, double s, bool heavy, bool cracks = false)
+    private static void Machine(Paint p, SpriteView v, SpriteFrame f, uint metal, uint eye, double s, bool heavy, bool cracks = false, bool wick = false)
     {
         uint dark = Paint.Shade(metal, -34), rivet = Paint.Shade(metal, 40);
         var mat = cracks ? Material.Stone : Material.Metal;
@@ -651,7 +726,15 @@ public sealed partial class SpriteFactory
         p.Rect(side ? 33 : 27, top + 6, 37, top + 9, Socket, false);
         p.Rect(side ? 34 : 28, top + 6.8, 36, top + 8.4, eye, false);
         if (!side) { p.Dot(26.5, top + 3, rivet); p.Dot(37, top + 3, rivet); p.Dot(26.5, top + 12, rivet); p.Dot(37, top + 12, rivet); }
-        if (heavy && f == SpriteFrame.Windup) for (int i = 0; i < 3; i++) p.Ellipse(24 + i * 8, top - 3 - i % 2 * 2, 2.6, 2, C(200, 200, 200), false); // steam
+        if (heavy && f == SpriteFrame.Windup && !wick) for (int i = 0; i < 3; i++) p.Ellipse(24 + i * 8, top - 3 - i % 2 * 2, 2.6, 2, C(200, 200, 200), false); // steam
+        if (wick)
+        {
+            // A wax warden: drips down its body, and a lit wick on its head.
+            for (int i = 0; i < 5; i++) p.Taper(32 - w + 3 + i * (w * 2 - 6) / 4, top + 14, 1.6, 32 - w + 3 + i * (w * 2 - 6) / 4, top + 20 + i % 3 * 5, 1.1, Paint.Shade(metal, 20));
+            p.Taper(32, top + 1, 0.6, 32, top - 3, 0.5, C(40, 30, 24));
+            p.Ellipse(32, top - 6, 2.2, 3.4, eye, false);
+            p.Ellipse(32, top - 5.4, 1, 1.8, C(255, 255, 230), false);
+        }
     }
 
     private static void Cart(Paint p, SpriteFrame f)
@@ -856,6 +939,27 @@ public sealed partial class SpriteFactory
                 p.Mat = Material.Matte;
                 p.Taper(32 + 5 * s, headY - 6 * s, 1, 32 + 9 * s, headY - 14 * s, 0.5, C(200, 60, 40)); // a feather
                 break;
+            case "archivist":
+            {
+                // Four more arms fanning out behind it, each with a book, a quill, a seal or a ledger.
+                for (int i = 0; i < 4; i++)
+                {
+                    double side = i % 2 == 0 ? -1 : 1, lift = i < 2 ? -10 : 0;
+                    double sx = 32 + side * 7 * s, sy = top + 20 * s + i / 2 * 4;
+                    double hx = 32 + side * (20 + i / 2 * 4) * s, hy = top + (14 + lift) * s;
+                    p.Limb(sx, sy, 32 + side * 15 * s, top + (24 + lift / 2) * s, hx, hy, 2 * s, 1.4 * s, k.Skin);
+                    p.Ellipse(hx, hy, 2 * s, 2 * s, k.Skin);
+                    if (i == 0) { p.Rect(hx - 4, hy - 6, hx + 4, hy, C(80, 30, 30)); p.Rect(hx - 3, hy - 5, hx + 3, hy - 1, C(230, 220, 190)); }
+                    else if (i == 1) p.Taper(hx, hy, 0.6, hx + 4, hy - 8, 0.3, C(240, 240, 230));
+                    else if (i == 2) p.Ellipse(hx, hy - 2, 3, 3, C(190, 40, 40));
+                    else p.Rect(hx - 3, hy - 7, hx + 3, hy, C(60, 70, 110));
+                }
+                // Spectacles, and a candle stuck in its cowl.
+                p.Ellipse(29, headY + 0.5, 2.2, 2.2, C(200, 230, 255), false); p.Ellipse(35, headY + 0.5, 2.2, 2.2, C(200, 230, 255), false);
+                p.Rect(30.4, headY - 14 * s, 33.6, headY - 7 * s, C(230, 220, 190));
+                p.Ellipse(32, headY - 16 * s, 1.6, 2.6, C(255, 200, 90), false);
+                break;
+            }
             case "knight":
                 p.Mat = Material.Metal;
                 p.Ellipse(32, headY - 0.5 * s, 7 * s, 7.6 * s, k.Clothes);

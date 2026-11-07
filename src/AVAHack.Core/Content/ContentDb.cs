@@ -48,6 +48,10 @@ public sealed class ContentDb
     public IReadOnlyList<ReagentDef> Reagents { get; init; } = [];
     public IReadOnlyList<IngredientDef> Ingredients { get; init; } = [];
     public IReadOnlyList<RecipeDef> Recipes { get; init; } = [];
+    public IReadOnlyList<RegionDef> Regions { get; init; } = [];
+
+    /// <summary>A region by id (the generator's themes are region ids).</summary>
+    public RegionDef Region(string id) => Regions.FirstOrDefault(r => r.Id == id) ?? throw new KeyNotFoundException($"No region '{id}'.");
 
     public AlchemyEffectDef Effect(string id) => AlchemyEffects.FirstOrDefault(e => e.Id == id) ?? throw new KeyNotFoundException($"No alchemy effect '{id}'.");
     public ReagentDef? Reagent(string id) => Reagents.FirstOrDefault(r => r.Id == id);
@@ -112,6 +116,7 @@ public sealed class ContentDb
             Reagents = OptionalRead<ReagentDef>("reagents"),
             Ingredients = OptionalRead<IngredientDef>("ingredients"),
             Recipes = OptionalRead<RecipeDef>("recipes"),
+            Regions = Read<RegionDef>("regions"),
         };
         var problems = db.Validate();
         if (problems.Count > 0) throw new InvalidDataException("The game's content has problems:\n" + string.Join('\n', problems));
@@ -183,6 +188,17 @@ public sealed class ContentDb
             foreach (var g in items.GroupBy(id).Where(g => g.Count() > 1)) p.Add($"{file}: '{g.Key}' is defined {g.Count()} times.");
         }
 
+        // Regions: unique, one final, at least one above it, and every family and boss real.
+        Unique(Regions, r => r.Id, "regions");
+        if (Regions.Count(r => r.Final) != 1) p.Add("regions: exactly one region must be final (the Unmade Heart).");
+        if (!Regions.Any(r => !r.Final)) p.Add("regions: there must be a region above the final one.");
+        var families = Creatures.Select(c => c.Family).ToHashSet();
+        foreach (var r in Regions)
+        {
+            foreach (var f in r.Families) if (!families.Contains(f)) p.Add($"regions: '{r.Id}' sends family '{f}', which has no creatures.");
+            if (r.Boss is { } b && Creatures.FirstOrDefault(c => c.Id == b) is not { Boss: not null }) p.Add($"regions: '{r.Id}''s boss '{b}' is not a boss creature.");
+            if (r.Wanderers < 0 || r.ForgeOneIn < 0) p.Add($"regions: '{r.Id}' has a negative rate.");
+        }
         Unique(Skills, s => s.Id.ToString(), "skills");
         Unique(Ancestries, a => a.Id, "ancestries");
         Unique(Callings, c => c.Id, "callings");

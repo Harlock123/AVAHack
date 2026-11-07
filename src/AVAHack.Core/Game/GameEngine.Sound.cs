@@ -23,8 +23,17 @@ public sealed partial class GameEngine
     /// <summary>Raised for every sound the game makes.</summary>
     public event Action<SoundCue>? Sound;
 
-    internal void Cue(string id, Cell at, double gain = 1) => Sound?.Invoke(new SoundCue(id, at.X + 0.5, at.Y + 0.5, gain));
-    internal void CueHere(string id, double gain = 1) => Sound?.Invoke(new SoundCue(id, PartyCell.X + 0.5, PartyCell.Y + 0.5, gain, Local: true));
+    internal void Cue(string id, Cell at, double gain = 1)
+    {
+        Sound?.Invoke(new SoundCue(id, at.X + 0.5, at.Y + 0.5, gain));
+        Hear(id);
+    }
+
+    internal void CueHere(string id, double gain = 1)
+    {
+        Sound?.Invoke(new SoundCue(id, PartyCell.X + 0.5, PartyCell.Y + 0.5, gain, Local: true));
+        Hear(id);
+    }
 
     /// <summary>
     /// How a sound reaches the party: its gain (0 if it doesn't) and its pan, −1 hard left to +1 hard right, as
@@ -90,6 +99,8 @@ public sealed partial class GameEngine
         "serpentCult" => "bark.serpentCult",
         "aberrations" => m.Def.Sprite is "stalker" ? "bark.beast" : "bark.aberrations",
         "unmade" => "bark.unmade",
+        "inkbound" => "bark.inkbound",
+        "mourners" => m.Def.Sprite is "bell" ? "bell" : "bark.mourners",
         _ => "bark.goblin",
     };
 
@@ -99,6 +110,7 @@ public sealed partial class GameEngine
         "restlessDead" when m.Def.Sprite is not ("shambler" or "hound" or "wight") => "hit.bone",
         "constructs" => "hit.metal",
         "oozes" => "hit.slime",
+        "inkbound" or "mourners" => m.Def.Sprite switch { "quill" or "bell" => "hit.metal", "slimeInk" or "waxGolem" => "hit.slime", _ => "hit.flesh" },
         _ => m.Def.Sprite is "knight" ? "hit.metal" : "hit.flesh",
     };
 
@@ -109,6 +121,8 @@ public sealed partial class GameEngine
         "constructs" => "die.machine",
         "oozes" => "die.slime",
         "elementals" or "unmade" => "die.spirit",
+        "inkbound" => m.Def.Sprite switch { "quill" or "waxGolem" => "die.machine", "slimeInk" => "die.slime", _ => "die.paper" },
+        "mourners" => m.Def.Sprite is "bell" ? "die.machine" : "die.spirit",
         _ => "die.flesh",
     };
 

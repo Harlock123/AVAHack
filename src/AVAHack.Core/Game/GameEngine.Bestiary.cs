@@ -240,6 +240,15 @@ public sealed partial class GameEngine
     private int BossShield(Monster m, int dmg)
     {
         if (m.Boss is null || dmg <= 0) return dmg;
+        if (m.Boss == "archivist" && ArchivistShield(m) is > 0 and var cut)
+        {
+            if (!LevelFlags.TryGetValue("bossSaid", out var said) || Time - double.Parse(said, CultureInfo.InvariantCulture) > 6)
+            {
+                LevelFlags["bossSaid"] = Time.ToString("R", CultureInfo.InvariantCulture);
+                Say("The Archivist reads on by candlelight, and the blow turns half aside. Snuff the candles!");
+            }
+            return Math.Max(1, (int)Math.Round(dmg * (1 - cut)));
+        }
         string? why = null;
         if (m.Boss == "bellwright" && Level.Valves.Count > 0 && Level.Levers.Any(l => Level.Valves.Contains(l.Cell) && !l.Down))
             why = "The Engine shrugs it off. Steam still roars through its valves: shut them!";
@@ -298,6 +307,9 @@ public sealed partial class GameEngine
                     if (m.Phase % 2 == 0) { Say("The water rises, and the Mother sinks beneath it."); Summon(m, "coilGuard", 3); }
                     else Say("The water drains away. The Mother is exposed!");
                 }
+                break;
+            case "archivist":
+                ArchivistTick(m, share);
                 break;
             case "unmaker":
                 if (m.Phase == 0 && m.SpecialTimer >= 15) { m.SpecialTimer = 0; Summon(m, "unmadeHound", 2); }

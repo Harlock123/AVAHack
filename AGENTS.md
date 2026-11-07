@@ -56,6 +56,8 @@ implicit usings, invariant globalization and central package versions. Package v
     - `.Crafting`: food, rest, Alchemy, cooking, Smithing and Enchanting.
     - `.Sound`: the `Sound` cues and `Hearing`. Sound fades along the passages, shut doors muffle it, and it is
       panned to its side.
+    - `.Stacks`: region rules switched on in `regions.json` (the hush, candles, shelves), heralds, and the
+      Archivist.
     - `.Save`.
     - The rest:
       - `Delve`: the run across levels, the Unmade Heart, and seed codes.
@@ -73,8 +75,13 @@ implicit usings, invariant globalization and central package versions. Package v
     - `Definitions.cs`, `Creatures.cs`, `Items.cs` and `Crafting.cs`: the record shapes.
     - `ContentDb`: strict loading and `Validate`.
     - `Data/*.json`: skills, ancestries, callings, backgrounds, perks, conditions, creatures, weapons, shields,
-      armour, gear, consumables, books, affixes, uniques, sets, loot, spells, alchemy, reagents, ingredients and
-      recipes.
+      armour, gear, consumables, books, affixes, uniques, sets, loot, spells, alchemy, reagents, ingredients,
+      recipes and regions. `regions.json` is the Delve's order of regions: four levels each, with their families,
+      boss and rules. A new region needs:
+      - its textures, from `tools/import-sbs-textures.sh`;
+      - an ambience loop, `amb.<id>`, in `tools/make_sounds.py`.
+
+      Tests fail without either.
     - `Levels/*.txt`: `test-hall` and `the-cellars`.
     - `Vaults/vaults.txt`.
 - `src/AVAHack.Render/`: the first-person view, depending only on Core.

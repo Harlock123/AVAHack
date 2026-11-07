@@ -45,7 +45,7 @@ public sealed class DelveReport(ITestOutputHelper output)
         if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_DEBUG") is not null)
             note += " | " + string.Join("; ", g.Party.Members.Select(m => $"{m.Name} L{m.Level} {m.MaxHp}hp " +
                 string.Join(",", Enum.GetValues<SkillId>().OrderByDescending(m.Rank).Take(3).Select(s => $"{s}{m.Rank(s)}"))))
-                + $" | boss {g.LivingBoss?.Name} | {string.Join(" / ", g.Log.TakeLast(2))}";
+                + $" | boss {g.LivingBoss?.Name} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
         return new Run(code, g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
     }
 
@@ -113,5 +113,22 @@ public sealed class DelveReport(ITestOutputHelper output)
         Assert.DoesNotContain(results, r => r.Mode == GameMode.Playing); // stuck: a level that can't be finished
         var winners = results.Where(r => r.Mode == GameMode.Won).ToList();
         Assert.All(winners, r => Assert.InRange(r.Level, 18, 32)); // the heroes keep up with the deep creatures
+    }
+
+    /// <summary>
+    /// Opt-in (AVAHACK_BALANCE_DEEP=1; it takes minutes): a full 24-level Delve through all six regions and the
+    /// Unmade Heart, played by the clearing bot. A report for the balance work in spec section 37, not a gate.
+    /// </summary>
+    [Fact]
+    public void A_full_twenty_four_level_delve()
+    {
+        if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_DEEP") != "1") return;
+        int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_RUNS"), out int n) ? n : 6;
+        var results = Enumerable.Range(1, runs).AsParallel().Select(i => Play((ulong)i * 7919, 24, 24 * 60, clears: true)).OrderBy(r => r.Seed).ToList();
+        foreach (var r in results)
+            output.WriteLine($"{r.Seed}: {r.Mode,-7} reached level {r.Depth,2}  {r.Minutes,6:F1} min  kills {r.Kills,4}  heroes at level {r.Level,2}  {r.Note}");
+        output.WriteLine($"won {results.Count(r => r.Mode == GameMode.Won)}/{runs}; average depth {results.Average(r => r.Depth):F1}; " +
+                         $"best {results.Max(r => r.Depth)}; average hero level {results.Average(r => r.Level):F1}");
+        Assert.DoesNotContain(results, r => r.Mode == GameMode.Playing);
     }
 }

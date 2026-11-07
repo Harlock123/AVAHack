@@ -86,6 +86,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                       .Where(x => x.M is not null).OrderBy(x => x.Dir == g.Facing ? 0 : 1).FirstOrDefault();
         // The Engine can't be hurt while its valves are open: leave it and shut them first.
         if (foe.M is { Boss: "bellwright" } && Clears && OpenValve() is not null) foe = default;
+        if (foe.M is { Boss: "archivist" } a2 && Clears && g.LitCandles.Any(c => c.Distance(a2.Cell) <= 8)) foe = default; // snuff first
         if (foe.M is { } m)
         {
             _resting = false;
@@ -173,7 +174,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (use is { } lever) { g.Press(GameAction.Use); _pulled.Add(lever); _pulledAt[lever] = g.Time; }
             if (Goal == "key") MakeRoom();
             if (Goal is "key" or "loot") { g.Press(GameAction.PickUp); _looted.Add(t); }
-            if (Goal == "chest") g.Press(GameAction.Use);
+            if (Goal is "chest" or "snuff") g.Press(GameAction.Use);
             if (Goal == "waystone") UseStone();
             if (Goal == "search" && face is { } wf)
             {
@@ -251,8 +252,11 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     {
         foreach (var (cell, items) in g.Level.Piles)
             if (items.Any(i => i.KeyId is not null) && !Gave("key", cell) && Reachable(cell)) { Goal = "key"; return (cell, null, null); }
-        // A woken Engine: its valves come before anything else.
+        // A woken Engine: its valves come before anything else; a woken Archivist: his candles.
         if (Clears && g.LivingBoss is { IsAware: true } && OpenValve() is { } valve) { Goal = "valve"; return (valve.Cell, valve.Face, valve); }
+        if (Clears && g.LivingBoss is { Boss: "archivist", IsAware: true } archivist)
+            foreach (var candle in g.LitCandles.Where(c => c.Distance(archivist.Cell) <= 8).OrderBy(c => c.Distance(g.PartyCell)).ToList())
+                if (Beside(candle) is { } at && !Gave("snuff", at.Cell)) { Goal = "snuff"; return (at.Cell, at.Face, null); }
         foreach (var lever in g.Level.Levers)
             if (WantsPull(lever) && !Gave("lever", lever.Cell) && Reachable(lever.Cell)) { Goal = "lever"; return (lever.Cell, lever.Face, lever); }
         foreach (var plate in g.Level.Plates)
@@ -426,7 +430,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         if (g.Level.Waystone == c || g.Level.Stations.ContainsKey(c)) return false;
         if (g.Level.IsStairsUp(c)) return false; // the bot only goes down
         if (!braveTraps && g.Level.Traps.Any(t => t.Cell == c && t.Spotted && t.Armed && t.Kind is not (TrapKind.AntiMagic or TrapKind.FloodingRoom))) return false;
-        if (g.Level.PlateAt(c) is { Mode: PlateMode.Toggle } plate && c != g.PartyCell && !WantsPress(plate)) return false;
+        if (g.Level.PlateAt(c) is { Mode: PlateMode.Toggle } plate && c != g.PartyCell && !WantsPress(plate) && !braveTraps) return false; // round it, unless it's the only way
         if (g.Level.DoorAt(c) is { } d && !d.IsPassable)
         {
             if (d.Locked) return HasKey(d.KeyId) || (Clears && d.LockDc > 0); // a lock can be picked

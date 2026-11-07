@@ -76,4 +76,23 @@ public sealed class ContentTests
         Assert.Contains("unknown effect 'glowing'", problems);
         Assert.Contains("requires itself", problems);
     }
+
+    [Fact]
+    public void The_validator_checks_the_regions()
+    {
+        var db = ContentDb.LoadBuiltIn();
+        var regions = db.Regions.Select(r => r.Id switch
+        {
+            "works" => r with { Families = ["oozes", "dragons"] },
+            "choir" => r with { Boss = "cellarRat" },
+            "stacks" => r with { Final = true },
+            _ => r,
+        }).ToList();
+        var broken = new ContentDb(db.Skills, db.Ancestries, db.Callings, db.Backgrounds, db.Perks, db.Conditions)
+            { Creatures = db.Creatures, Regions = regions };
+        var problems = string.Join('\n', broken.Validate());
+        Assert.Contains("family 'dragons', which has no creatures", problems);
+        Assert.Contains("boss 'cellarRat' is not a boss creature", problems);
+        Assert.Contains("exactly one region must be final", problems);
+    }
 }

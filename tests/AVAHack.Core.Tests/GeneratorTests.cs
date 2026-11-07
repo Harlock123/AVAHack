@@ -128,9 +128,35 @@ public sealed class GeneratorTests(ITestOutputHelper output)
         Assert.True(levels.Average(l => l.Traps.Count) >= 4);
         Assert.Contains(levels, l => l.Illusory.Count > 0);
         Assert.True(levels.Select(l => l.Traps.Select(t => t.Kind)).SelectMany(x => x).Distinct().Count() >= 10);
-        Assert.Equal("cellar", Generator.ThemeFor(4));
-        Assert.Equal("choir", Generator.ThemeFor(12));
-        Assert.Equal("cellar", Generator.ThemeFor(13)); // the regions come round again in longer Delves
+    }
+
+    [Fact]
+    public void A_24_level_Delve_runs_through_six_regions_with_a_boss_ending_each_and_the_Heart_below()
+    {
+        string[] order = ["cellar", "works", "choir", "stacks", "rootdark", "glass"];
+        for (int depth = 1; depth <= 24; depth++)
+            Assert.Equal(order[(depth - 1) / 4], Generator.ThemeFor(Db, depth, 24));
+        Assert.Equal("heart", Generator.ThemeFor(Db, 25, 24));
+        Assert.Equal("heart", Generator.ThemeFor(Db, 13, 12));                                  // a 12-level Delve's Heart
+        Assert.Equal("glass", Generator.ThemeFor(Db, 30, 40));                                  // past them all, the deepest goes on
+        Assert.Equal(("hollowKing", "bellwrightEngine", "motherOfCoils"), (Generator.BossFor(Db, 4, 24), Generator.BossFor(Db, 8, 24), Generator.BossFor(Db, 12, 24)));
+        Assert.Equal("unmaker", Generator.BossFor(Db, 25, 24));
+        Assert.Equal("unmaker", Generator.BossFor(Db, 13, 12));
+        Assert.Null(Generator.BossFor(Db, 13, 6));                                               // a short Delve has no Heart
+        Assert.Null(Generator.BossFor(Db, 7, 24));
+        // Every boss a region has gets its Waystone on the next level; every level of a 24-level Delve builds.
+        foreach (var d in Enumerable.Range(1, 25).Where(d => Generator.BossFor(Db, d, 24) is not null && d < 25))
+            Assert.True(Generator.HasWaystone(Db, d + 1, 24));
+        // And every region below the first opens with one, boss or no boss.
+        Assert.Equal([5, 9, 13, 17, 21, 25], Enumerable.Range(1, 25).Where(d => Generator.HasWaystone(Db, d, 24)));
+        foreach (var d in Enumerable.Range(13, 13))
+        {
+            var l = Generator.Generate(Db, 77, d, new GenOptions { MaxDepth = 24 });
+            Assert.Equal(Generator.ThemeFor(Db, d, 24), l.Theme);
+            Assert.StartsWith(Db.Region(l.Theme).Name, l.Name);
+            Assert.NotEmpty(l.Spawns);
+            Assert.All(l.Spawns, s => Assert.Contains(Db.Creature(s.Creature).Family, Db.Region(l.Theme).Families.Append("summoned")));
+        }
     }
 
     [Fact]

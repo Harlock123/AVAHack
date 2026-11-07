@@ -32,7 +32,7 @@ public sealed class SoundTests
             foreach (Match m in Regex.Matches(File.ReadAllText(file), @"PlayEffect\(""([a-zA-Z.\-]+)""")) cues.Add(m.Groups[1].Value);
         var db = ContentDb.LoadBuiltIn();
         foreach (var s in db.Spells) cues.Add("cast." + s.School.ToString().ToLowerInvariant());
-        foreach (var theme in new[] { "cellar", "works", "choir", "heart" }) cues.Add("amb." + theme);
+        foreach (var region in db.Regions) cues.Add("amb." + region.Id);
         cues.Add("ui.click");
         return cues;
     }

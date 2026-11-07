@@ -276,10 +276,11 @@ public sealed partial class GameEngine
         if (Invisible > 0 && m.Cell.Distance(PartyCell) > 1) return false;
         if (m.CalmLeft > 0) return false;
         if (NoticeHook is { } hook) return hook(m);
-        if (Sneaking) return SneakNotice(m);
+        if (Sneaking && !Candlelit) return SneakNotice(m); // a candle shows up even the careful
         double d = Math.Sqrt(Sq(m.Cell.X - PartyCell.X) + Sq(m.Cell.Y - PartyCell.Y));
         if (d <= 1.01) return true;
         double range = m.Def.Has("ambush") ? AmbushRange : Math.Max(2, m.Def.Perception - 5 + (Lit ? 1 : -1));
+        if (Candlelit) range += 3;
         return d <= range && HasLineOfSight(m.Cell, PartyCell);
     }
 
@@ -293,6 +294,7 @@ public sealed partial class GameEngine
         {
             Cue(BarkFor(m), m.Cell);
             if (m.Boss is not null && m.Def.Id == Level.Boss) CueHere("sting.boss");
+            Herald(m);
         }
         if (!m.Def.Has("pack")) return;
         foreach (var o in _monsters)

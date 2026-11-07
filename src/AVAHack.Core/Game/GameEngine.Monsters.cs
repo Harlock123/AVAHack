@@ -14,6 +14,10 @@ public sealed partial class GameEngine
     public const double FleeSeconds = 8;
     /// <summary>A blow nearer than this alerts anything that hears it.</summary>
     public const int NoiseRange = 4;
+    /// <summary>An aware creature that hasn't seen the party for this long gives up the hunt.</summary>
+    public const double GiveUpSeconds = 15;
+    /// <summary>The fight goes on while an aware creature has seen the party this recently.</summary>
+    public const double FightMemory = 3;
 
     private readonly List<Monster> _monsters = new();
     private int _nextMonsterId = 1;
@@ -26,9 +30,11 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Places a creature (for levels and tests). Its HP is rolled from its hit dice.</summary>
-    public Monster AddMonster(string creature, Cell cell, Dir facing)
+    public Monster AddMonster(string creature, Cell cell, Dir facing) => AddMonster(Content.Creature(creature), cell, facing);
+
+    /// <summary>Places a creature from a definition (a scaled or champion copy, say).</summary>
+    public Monster AddMonster(CreatureDef def, Cell cell, Dir facing)
     {
-        var def = Content.Creature(creature);
         var m = new Monster(_nextMonsterId++, def, cell, facing, Dice.Parse(def.HitDice).Roll(Rng.World), Content)
         {
             IdleLeft = 1 + Rng.Ai.Next(300) / 100.0,
@@ -82,8 +88,17 @@ public sealed partial class GameEngine
                 continue;
             }
             if (!m.IsAlive) continue;
+            if (m.IsAware && !m.Ally)
+            {
+                if (m.Cell.Distance(PartyCell) <= 1 || (m.Cell.Distance(PartyCell) <= 12 && HasLineOfSight(m.Cell, PartyCell))) m.LastSeen = Time;
+                else if (Time - m.LastSeen > GiveUpSeconds && m.Boss is null)
+                {
+                    m.State = MonsterState.Idle; // lost the scent
+                    m.Awareness = 0;
+                }
+            }
             TickMonster(m);
-            if (m.IsAware && m.Cell.Distance(PartyCell) <= 10) anyAware = true;
+            if (m.IsAware && !m.Ally && m.Cell.Distance(PartyCell) <= 10 && Time - m.LastSeen < FightMemory) anyAware = true;
         }
         UpdateFight(anyAware);
     }
@@ -221,6 +236,7 @@ public sealed partial class GameEngine
     {
         if (Invisible > 0 && m.Cell.Distance(PartyCell) > 1) return false;
         if (NoticeHook is { } hook) return hook(m);
+        if (Sneaking) return SneakNotice(m);
         double d = Math.Sqrt(Sq(m.Cell.X - PartyCell.X) + Sq(m.Cell.Y - PartyCell.Y));
         if (d <= 1.01) return true;
         double range = m.Def.Has("ambush") ? AmbushRange : Math.Max(2, m.Def.Perception - 5);
@@ -232,10 +248,14 @@ public sealed partial class GameEngine
     {
         if (!m.IsAlive || m.IsAware) return;
         m.State = MonsterState.Aware;
+        m.LastSeen = Time;
         if (!m.Def.Has("pack")) return;
         foreach (var o in _monsters)
             if (o != m && o.IsAlive && !o.IsAware && o.Def.Id == m.Def.Id && o.Cell.Distance(m.Cell) <= PackRange)
+            {
                 o.State = MonsterState.Aware;
+                o.LastSeen = Time;
+            }
     }
 
     /// <summary>Stealth replaces the plain noticing rules when it is on (spec 11.1).</summary>

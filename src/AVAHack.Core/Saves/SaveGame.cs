@@ -97,6 +97,8 @@ public sealed record MonsterSave
     public double AffixTimer { get; init; }
     public DamageType? LastHitType { get; init; }
     public List<ConditionSave> Conditions { get; init; } = [];
+    public double LastSeen { get; init; } = -100;
+    public double Awareness { get; init; }
 }
 
 public sealed record CellSave(int X, int Y);

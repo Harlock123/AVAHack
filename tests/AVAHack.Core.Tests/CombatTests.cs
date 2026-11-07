@@ -313,3 +313,25 @@ public sealed class CombatTests
         Assert.Equal(Play(), Play());
     }
 }
+
+public sealed class FightMemoryTests
+{
+    [Fact]
+    public void A_creature_that_cant_see_the_party_gives_up_and_the_fight_ends()
+    {
+        var h = new GameEngine(LevelLoader.Parse("""
+            start: 1 1 east
+            map:
+            #########
+            #...+...#
+            #########
+            """));
+        var r2 = h.AddMonster("shambler", new Cell(5, 1), Dir.West); // shamblers can't open doors
+        h.HandDown(HandSide.Right);
+        h.HandUp(HandSide.Right); // heard through the door
+        Assert.True(r2.IsAware);
+        for (int i = 0; i < 60 * (int)(GameEngine.GiveUpSeconds + 2); i++) h.Tick();
+        Assert.False(r2.IsAware);
+        Assert.False(h.InFight);
+    }
+}

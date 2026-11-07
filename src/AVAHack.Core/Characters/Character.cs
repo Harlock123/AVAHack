@@ -134,7 +134,7 @@ public sealed partial class Character
         }
     }
 
-    public int MaxStamina => Math.Max(10, 50 + 5 * Mod(Attribute.Con) + 10 * StaminaChoices + (int)ItemTotal("maxStamina"));
+    public int MaxStamina => Math.Max(10, (int)((50 + 5 * Mod(Attribute.Con) + 10 * StaminaChoices + ItemTotal("maxStamina")) * (1 + PerkTotalFor("staminaPct", null) / 100)));
 
     public int MaxMana => Math.Max(0, 20 + 5 * Math.Max(Mod(Attribute.Int), Mod(Attribute.Wis)) + 10 * ManaChoices + (int)ItemTotal("maxMana"));
 
@@ -146,15 +146,16 @@ public sealed partial class Character
             var w = Armour;
             int armour = w.Armour == 0 && HasTrait(Traits.ScaledHide) ? 2 : w.Armour;
             int dex = w.DexCap is { } cap ? Math.Min(Mod(Attribute.Dex), cap) : Mod(Attribute.Dex);
-            return 10 + armour + dex + w.Shield + w.Other + (int)ItemTotal("ac");
+            return 10 + armour + dex + w.Shield + w.Other + (int)ItemTotal("ac") + (int)PerkArmour;
         }
     }
 
     /// <summary>10 + WIS + floor(Survival / 10). Keen senses add 5 (advantage) when looking for secret doors.</summary>
     public int PassivePerception(bool secretDoors = false) =>
-        10 + Mod(Attribute.Wis) + SkillLevel(SkillId.Survival) / 10 + (secretDoors && HasTrait(Traits.KeenSenses) ? 5 : 0);
+        10 + Mod(Attribute.Wis) + SkillLevel(SkillId.Survival) / 10 + (secretDoors && HasTrait(Traits.KeenSenses) ? 5 : 0)
+        + (int)PerkTotalFor("perceptionBonus", null);
 
-    public int CarryCapacityKg => 15 * Score(Attribute.Str);
+    public int CarryCapacityKg => 15 * Score(Attribute.Str) + (int)PerkTotal("carryKg");
 
     /// <summary>What a merchant's price is multiplied by when buying: 5% less per point of CHA.</summary>
     public double BuyPriceFactor => Math.Clamp(1 - 0.05 * Mod(Attribute.Cha), 0.5, 1.5);
@@ -338,7 +339,7 @@ public sealed partial class Character
         double scale = InFight ? 0.25 : 1;
         if (!InFight && !IsDown && !Conditions.StopsRegeneration) Hp = Math.Min(MaxHp, Hp + MaxHp * 0.01 * seconds);
         if (!IsDown && ItemTotal("hpRegen") is > 0 and var regen) Hp = Math.Min(MaxHp, Hp + regen / 10.0 * seconds);
-        Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * scale * seconds);
+        Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * scale * seconds * (1 + PerkTotalFor("regenPct", "stamina") / 100));
         double manaRate = Math.Max(0, 0.03 + 0.005 * Mod(Attribute.Wis));
         Mana = Math.Min(MaxMana, Mana + MaxMana * manaRate * scale * seconds);
     }
@@ -351,6 +352,7 @@ public sealed partial class Character
         Stamina = MaxStamina;
         Mana = MaxMana;
         RelentlessUsed = false;
+        AvoidDeathUsed = false;
     }
 
     public void BeginFight()
@@ -424,7 +426,7 @@ public sealed partial class Character
         if (group == SkillGroup.Combat && source.TargetIsObjectOrAlly) return 0;
         if (group == SkillGroup.Magic && !source.SpellHadEffect) return 0;
         if (source.TargetLevel is { } tl && tl < Level - Progression.TrivialTargetGap) xp *= 0.10;
-        double pct = (HasTrait(Traits.Versatile) ? 10 : 0) + ExtraSkillXpPercent + ItemTotal("skillXpPct");
+        double pct = (HasTrait(Traits.Versatile) ? 10 : 0) + ExtraSkillXpPercent + ItemTotal("skillXpPct") + PerkTotal("xpPct");
         return Math.Max(0, xp * (1 + pct / 100));
     }
 
@@ -435,6 +437,7 @@ public sealed partial class Character
         _booksRead.Add(title);
         var ups = new List<(SkillId, int)>();
         int levels = RaiseRank(s, ups);
+        if (HasPerkFlag("booklore") && Rank(s) < SkillCeiling) levels += RaiseRank(s, ups);
         return new Progress(ups, levels);
     }
 
@@ -459,7 +462,7 @@ public sealed partial class Character
     {
         int r = ++_rank[(int)s];
         ups.Add((s, r));
-        return AddCharacterXp(r);
+        return AddCharacterXp(Progression.CharacterXpFor(r));
     }
 
     // ---- Levels (spec 7.3, 7.4) ----
@@ -553,6 +556,30 @@ public sealed partial class Character
                 if (e.Kind == kind && (scope is null || e.Scope is null || e.Scope == scope))
                     total += e.Value * rank;
         return total;
+    }
+
+    /// <summary>A perk effect's total for exactly this scope (null for the unscoped ones only).</summary>
+    public double PerkTotalFor(string kind, string? scope)
+    {
+        double total = 0;
+        foreach (var (id, rank) in _perks)
+            foreach (var e in Content.Perk(id).Effects)
+                if (e.Kind == kind && e.Scope == scope)
+                    total += e.Value * rank;
+        return total;
+    }
+
+    /// <summary>AC from armour perks: Juggernaut in heavy armour, Agile Defender in light or none, Stone Skin with none.</summary>
+    private double PerkArmour
+    {
+        get
+        {
+            if (_perks.Count == 0) return 0;
+            var kind = Body?.Kind;
+            double ac = kind == ArmourKind.Heavy ? PerkTotalFor("ac", "heavyArmour") : PerkTotalFor("ac", "lightArmour");
+            if (Body is null) ac += PerkTotalFor("ac", "unarmoured");
+            return ac;
+        }
     }
 
     /// <summary>Whether an owned perk grants this named behaviour.</summary>

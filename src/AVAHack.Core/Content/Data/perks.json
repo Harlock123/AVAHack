@@ -1,54 +1,2671 @@
-// Perk trees (spec 8). "ranks" is the skill rank each rank of the perk needs. Effects count once per rank bought.
-// M1 has the three sample trees; the rest arrive with M4.
+// Perk trees (spec 8): every skill. "ranks" is the skill rank each rank of the perk needs; effects count
+// once per rank bought. Flags name behaviours the rules check for; some arrive with later milestones.
 [
-  { "id": "blade.edgeDiscipline", "skill": "blade", "name": "Edge Discipline", "ranks": [0, 20, 40, 60, 80],
-    "effects": [{ "kind": "damagePct", "value": 20, "scope": "blade" }], "text": "+20% blade damage per rank." },
-  { "id": "blade.quickDraw", "skill": "blade", "name": "Quick Draw", "ranks": [20], "requires": ["blade.edgeDiscipline"],
-    "effects": [{ "kind": "recoveryPct", "value": -15, "scope": "blade" }], "text": "Blade recovery −15%." },
-  { "id": "blade.bleeder", "skill": "blade", "name": "Bleeder", "ranks": [30], "requires": ["blade.edgeDiscipline"],
-    "effects": [{ "kind": "flag", "scope": "critBleeds" }], "text": "Crits apply Bleeding (1d4 a second for 6 s)." },
-  { "id": "blade.riposte", "skill": "blade", "name": "Riposte", "ranks": [50], "requires": ["blade.quickDraw"],
-    "effects": [{ "kind": "flag", "scope": "riposte" }], "text": "After a successful block, the next blade hit within 2 s is a critical." },
-  { "id": "blade.twinFangs", "skill": "blade", "name": "Twin Fangs", "ranks": [50], "requires": ["blade.quickDraw"],
-    "effects": [{ "kind": "flag", "scope": "twinFangs" }], "text": "Dual-wielding blades: both hands share one cooldown." },
-  { "id": "blade.whirl", "skill": "blade", "name": "Whirl", "ranks": [70], "requires": ["blade.bleeder"],
-    "effects": [{ "kind": "flag", "scope": "whirl" }], "text": "A power attack hits every adjacent cell." },
-  { "id": "blade.executioner", "skill": "blade", "name": "Executioner", "ranks": [90], "requires": ["blade.whirl"],
-    "effects": [{ "kind": "flag", "scope": "executioner" }], "text": "Hits on targets under 25% HP have advantage and +50% damage." },
-
-  { "id": "destruction.adeptFlame", "skill": "destruction", "name": "Adept Flame", "ranks": [20],
-    "effects": [{ "kind": "manaCostPct", "value": -25, "scope": "fire" }, { "kind": "damagePct", "value": 25, "scope": "fire" }],
-    "text": "Fire spells cost 25% less mana and deal 25% more damage." },
-  { "id": "destruction.adeptFrost", "skill": "destruction", "name": "Adept Frost", "ranks": [20],
-    "effects": [{ "kind": "manaCostPct", "value": -25, "scope": "cold" }, { "kind": "damagePct", "value": 25, "scope": "cold" }],
-    "text": "Frost spells cost 25% less mana and deal 25% more damage." },
-  { "id": "destruction.adeptStorm", "skill": "destruction", "name": "Adept Storm", "ranks": [20],
-    "effects": [{ "kind": "manaCostPct", "value": -25, "scope": "lightning" }, { "kind": "damagePct", "value": 25, "scope": "lightning" }],
-    "text": "Lightning spells cost 25% less mana and deal 25% more damage." },
-  { "id": "destruction.lingeringFlame", "skill": "destruction", "name": "Lingering Flame", "ranks": [30], "requires": ["destruction.adeptFlame"],
-    "effects": [{ "kind": "flag", "scope": "lingeringFlame" }], "text": "Fire spells leave a burning cell for 4 s." },
-  { "id": "destruction.deepFreeze", "skill": "destruction", "name": "Deep Freeze", "ranks": [40], "requires": ["destruction.adeptFrost"],
-    "effects": [{ "kind": "flag", "scope": "deepFreeze" }], "text": "Frost spells Freeze a Chilled target that fails a CON save." },
-  { "id": "destruction.arc", "skill": "destruction", "name": "Arc", "ranks": [50], "requires": ["destruction.adeptStorm"],
-    "effects": [{ "kind": "flag", "scope": "arc" }], "text": "Lightning spells chain to a second target in an adjacent cell." },
-  { "id": "destruction.overcharge", "skill": "destruction", "name": "Overcharge", "ranks": [60],
-    "effects": [{ "kind": "flag", "scope": "overcharge" }], "text": "Hold the cast to spend twice the mana for 2.5 times the damage." },
-  { "id": "destruction.elementalMastery", "skill": "destruction", "name": "Elemental Mastery", "ranks": [80], "requires": ["destruction.overcharge"],
-    "effects": [{ "kind": "flag", "scope": "ignoreResistance" }], "text": "Ignore resistance (not immunity)." },
-  { "id": "destruction.cataclysm", "skill": "destruction", "name": "Cataclysm", "ranks": [100], "requires": ["destruction.elementalMastery"],
-    "effects": [{ "kind": "flag", "scope": "cataclysm" }], "text": "Once per rest, the next Destruction spell is a 3×3 blast." },
-
-  { "id": "stealth.hush", "skill": "stealth", "name": "Hush", "ranks": [0],
-    "effects": [{ "kind": "noisePct", "value": -20 }], "text": "Noise from steps −20%." },
-  { "id": "stealth.unseenHand", "skill": "stealth", "name": "Unseen Hand", "ranks": [20], "requires": ["stealth.hush"],
-    "effects": [{ "kind": "flag", "scope": "silentWork" }], "text": "Picking locks and disarming traps makes no noise." },
-  { "id": "stealth.backstab", "skill": "stealth", "name": "Backstab", "ranks": [30], "requires": ["stealth.hush"],
-    "effects": [{ "kind": "sneakMultiplier", "value": 3, "scope": "any" }, { "kind": "sneakMultiplier", "value": 6, "scope": "dagger" }],
-    "text": "Sneak attacks deal ×3 with any weapon, ×6 with a dagger." },
-  { "id": "stealth.lightFeet", "skill": "stealth", "name": "Light Feet", "ranks": [40], "requires": ["stealth.hush"],
-    "effects": [{ "kind": "flag", "scope": "lightFeet" }], "text": "Sneaking, you don't set off pressure plates (if you weigh under 60 kg)." },
-  { "id": "stealth.shadowStep", "skill": "stealth", "name": "Shadow Step", "ranks": [60], "requires": ["stealth.lightFeet"],
-    "effects": [{ "kind": "flag", "scope": "shadowStep" }], "text": "Once per fight, step 2 cells unseen, past a blocker." },
-  { "id": "stealth.vanish", "skill": "stealth", "name": "Vanish", "ranks": [80], "requires": ["stealth.shadowStep"],
-    "effects": [{ "kind": "flag", "scope": "vanish" }], "text": "Dropping into sneak mid-fight breaks lock-on half the time." }
+ {
+  "id": "blade.edgeDiscipline",
+  "skill": "blade",
+  "name": "Edge Discipline",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 20,
+    "scope": "blade"
+   }
+  ],
+  "text": "+20% blade damage per rank."
+ },
+ {
+  "id": "blade.quickDraw",
+  "skill": "blade",
+  "name": "Quick Draw",
+  "ranks": [
+   20
+  ],
+  "requires": [
+   "blade.edgeDiscipline"
+  ],
+  "effects": [
+   {
+    "kind": "recoveryPct",
+    "value": -15,
+    "scope": "blade"
+   }
+  ],
+  "text": "Blade recovery −15%."
+ },
+ {
+  "id": "blade.bleeder",
+  "skill": "blade",
+  "name": "Bleeder",
+  "ranks": [
+   30
+  ],
+  "requires": [
+   "blade.edgeDiscipline"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "critBleeds"
+   }
+  ],
+  "text": "Crits apply Bleeding (1d4 a second for 6 s)."
+ },
+ {
+  "id": "blade.riposte",
+  "skill": "blade",
+  "name": "Riposte",
+  "ranks": [
+   50
+  ],
+  "requires": [
+   "blade.quickDraw"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "riposte"
+   }
+  ],
+  "text": "After a successful block, the next blade hit within 2 s is a critical."
+ },
+ {
+  "id": "blade.twinFangs",
+  "skill": "blade",
+  "name": "Twin Fangs",
+  "ranks": [
+   50
+  ],
+  "requires": [
+   "blade.quickDraw"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "twinFangs"
+   }
+  ],
+  "text": "Dual-wielding blades: both hands share one cooldown."
+ },
+ {
+  "id": "blade.whirl",
+  "skill": "blade",
+  "name": "Whirl",
+  "ranks": [
+   70
+  ],
+  "requires": [
+   "blade.bleeder"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "whirl"
+   }
+  ],
+  "text": "A power attack hits every adjacent cell."
+ },
+ {
+  "id": "blade.executioner",
+  "skill": "blade",
+  "name": "Executioner",
+  "ranks": [
+   90
+  ],
+  "requires": [
+   "blade.whirl"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "executioner"
+   }
+  ],
+  "text": "Hits on targets under 25% HP have advantage and +50% damage."
+ },
+ {
+  "id": "destruction.adeptFlame",
+  "skill": "destruction",
+  "name": "Adept Flame",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -25,
+    "scope": "fire"
+   },
+   {
+    "kind": "damagePct",
+    "value": 25,
+    "scope": "fire"
+   }
+  ],
+  "text": "Fire spells cost 25% less mana and deal 25% more damage."
+ },
+ {
+  "id": "destruction.adeptFrost",
+  "skill": "destruction",
+  "name": "Adept Frost",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -25,
+    "scope": "cold"
+   },
+   {
+    "kind": "damagePct",
+    "value": 25,
+    "scope": "cold"
+   }
+  ],
+  "text": "Frost spells cost 25% less mana and deal 25% more damage."
+ },
+ {
+  "id": "destruction.adeptStorm",
+  "skill": "destruction",
+  "name": "Adept Storm",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -25,
+    "scope": "lightning"
+   },
+   {
+    "kind": "damagePct",
+    "value": 25,
+    "scope": "lightning"
+   }
+  ],
+  "text": "Lightning spells cost 25% less mana and deal 25% more damage."
+ },
+ {
+  "id": "destruction.lingeringFlame",
+  "skill": "destruction",
+  "name": "Lingering Flame",
+  "ranks": [
+   30
+  ],
+  "requires": [
+   "destruction.adeptFlame"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "lingeringFlame"
+   }
+  ],
+  "text": "Fire spells leave a burning cell for 4 s."
+ },
+ {
+  "id": "destruction.deepFreeze",
+  "skill": "destruction",
+  "name": "Deep Freeze",
+  "ranks": [
+   40
+  ],
+  "requires": [
+   "destruction.adeptFrost"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "deepFreeze"
+   }
+  ],
+  "text": "Frost spells Freeze a Chilled target that fails a CON save."
+ },
+ {
+  "id": "destruction.arc",
+  "skill": "destruction",
+  "name": "Arc",
+  "ranks": [
+   50
+  ],
+  "requires": [
+   "destruction.adeptStorm"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "arc"
+   }
+  ],
+  "text": "Lightning spells chain to a second target in an adjacent cell."
+ },
+ {
+  "id": "destruction.overcharge",
+  "skill": "destruction",
+  "name": "Overcharge",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "overcharge"
+   }
+  ],
+  "text": "Hold the cast to spend twice the mana for 2.5 times the damage."
+ },
+ {
+  "id": "destruction.elementalMastery",
+  "skill": "destruction",
+  "name": "Elemental Mastery",
+  "ranks": [
+   80
+  ],
+  "requires": [
+   "destruction.overcharge"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "ignoreResistance"
+   }
+  ],
+  "text": "Ignore resistance (not immunity)."
+ },
+ {
+  "id": "destruction.cataclysm",
+  "skill": "destruction",
+  "name": "Cataclysm",
+  "ranks": [
+   100
+  ],
+  "requires": [
+   "destruction.elementalMastery"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "cataclysm"
+   }
+  ],
+  "text": "Once per rest, the next Destruction spell is a 3×3 blast."
+ },
+ {
+  "id": "stealth.hush",
+  "skill": "stealth",
+  "name": "Hush",
+  "ranks": [
+   0
+  ],
+  "effects": [
+   {
+    "kind": "noisePct",
+    "value": -20
+   }
+  ],
+  "text": "Noise from steps −20%."
+ },
+ {
+  "id": "stealth.unseenHand",
+  "skill": "stealth",
+  "name": "Unseen Hand",
+  "ranks": [
+   20
+  ],
+  "requires": [
+   "stealth.hush"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "silentWork"
+   }
+  ],
+  "text": "Picking locks and disarming traps makes no noise."
+ },
+ {
+  "id": "stealth.backstab",
+  "skill": "stealth",
+  "name": "Backstab",
+  "ranks": [
+   30
+  ],
+  "requires": [
+   "stealth.hush"
+  ],
+  "effects": [
+   {
+    "kind": "sneakMultiplier",
+    "value": 3,
+    "scope": "any"
+   },
+   {
+    "kind": "sneakMultiplier",
+    "value": 6,
+    "scope": "dagger"
+   }
+  ],
+  "text": "Sneak attacks deal ×3 with any weapon, ×6 with a dagger."
+ },
+ {
+  "id": "stealth.lightFeet",
+  "skill": "stealth",
+  "name": "Light Feet",
+  "ranks": [
+   40
+  ],
+  "requires": [
+   "stealth.hush"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "lightFeet"
+   }
+  ],
+  "text": "Sneaking, you don't set off pressure plates (if you weigh under 60 kg)."
+ },
+ {
+  "id": "stealth.shadowStep",
+  "skill": "stealth",
+  "name": "Shadow Step",
+  "ranks": [
+   60
+  ],
+  "requires": [
+   "stealth.lightFeet"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "shadowStep"
+   }
+  ],
+  "text": "Once per fight, step 2 cells unseen, past a blocker."
+ },
+ {
+  "id": "stealth.vanish",
+  "skill": "stealth",
+  "name": "Vanish",
+  "ranks": [
+   80
+  ],
+  "requires": [
+   "stealth.shadowStep"
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "vanish"
+   }
+  ],
+  "text": "Dropping into sneak mid-fight breaks lock-on half the time."
+ },
+ {
+  "id": "blunt.boneBreaker",
+  "skill": "blunt",
+  "name": "Bone Breaker",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 20,
+    "scope": "blunt"
+   }
+  ],
+  "text": "+20% blunt damage per rank."
+ },
+ {
+  "id": "blunt.heavyHand",
+  "skill": "blunt",
+  "name": "Heavy Hand",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "recoveryPct",
+    "value": -10,
+    "scope": "blunt"
+   }
+  ],
+  "text": "Blunt recovery −10%.",
+  "requires": [
+   "blunt.boneBreaker"
+  ]
+ },
+ {
+  "id": "blunt.crushingBlows",
+  "skill": "blunt",
+  "name": "Crushing Blows",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "crushingBlows"
+   }
+  ],
+  "text": "Blunt criticals stagger.",
+  "requires": [
+   "blunt.boneBreaker"
+  ]
+ },
+ {
+  "id": "blunt.skullCracker",
+  "skill": "blunt",
+  "name": "Skull Cracker",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "skullCracker"
+   }
+  ],
+  "text": "Blunt power attacks stun for 1.5 s a quarter of the time.",
+  "requires": [
+   "blunt.crushingBlows"
+  ]
+ },
+ {
+  "id": "blunt.armourBreak",
+  "skill": "blunt",
+  "name": "Shatter Armour",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "armourBreak"
+   }
+  ],
+  "text": "Each blunt hit lowers the target's AC by 1, to −3.",
+  "requires": [
+   "blunt.heavyHand"
+  ]
+ },
+ {
+  "id": "blunt.boneMill",
+  "skill": "blunt",
+  "name": "Bone Mill",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 50,
+    "scope": "bludgeoningVsUndead"
+   },
+   {
+    "kind": "flag",
+    "scope": "boneMill"
+   }
+  ],
+  "text": "The dead you crush stay down, and take half as much again.",
+  "requires": [
+   "blunt.skullCracker"
+  ]
+ },
+ {
+  "id": "blunt.groundSlam",
+  "skill": "blunt",
+  "name": "Ground Slam",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "groundSlam"
+   }
+  ],
+  "text": "A blunt power attack hits every creature next to the party.",
+  "requires": [
+   "blunt.boneMill"
+  ]
+ },
+ {
+  "id": "twoHanded.barbaric",
+  "skill": "twoHanded",
+  "name": "Barbaric Might",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 20,
+    "scope": "twoHanded"
+   }
+  ],
+  "text": "+20% two-handed damage per rank."
+ },
+ {
+  "id": "twoHanded.greatReach",
+  "skill": "twoHanded",
+  "name": "Great Swings",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "recoveryPct",
+    "value": -10,
+    "scope": "twoHanded"
+   }
+  ],
+  "text": "Two-handed recovery −10%.",
+  "requires": [
+   "twoHanded.barbaric"
+  ]
+ },
+ {
+  "id": "twoHanded.cleave",
+  "skill": "twoHanded",
+  "name": "Cleave",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "cleave"
+   }
+  ],
+  "text": "A two-handed power attack also hits creatures to the left and right.",
+  "requires": [
+   "twoHanded.barbaric"
+  ]
+ },
+ {
+  "id": "twoHanded.deepWounds",
+  "skill": "twoHanded",
+  "name": "Deep Wounds",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "critBleeds2h"
+   }
+  ],
+  "text": "Two-handed criticals make the target bleed.",
+  "requires": [
+   "twoHanded.cleave"
+  ]
+ },
+ {
+  "id": "twoHanded.sweep",
+  "skill": "twoHanded",
+  "name": "Sweep",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "sweepStagger"
+   }
+  ],
+  "text": "Two-handed power attacks always stagger.",
+  "requires": [
+   "twoHanded.greatReach"
+  ]
+ },
+ {
+  "id": "twoHanded.devastate",
+  "skill": "twoHanded",
+  "name": "Devastating Blow",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "critRange",
+    "value": 1,
+    "scope": "twoHanded"
+   }
+  ],
+  "text": "Two-handed weapons crit one number lower.",
+  "requires": [
+   "twoHanded.deepWounds"
+  ]
+ },
+ {
+  "id": "twoHanded.warcry",
+  "skill": "twoHanded",
+  "name": "War Cry",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "warcry"
+   }
+  ],
+  "text": "Once a fight, a power attack frightens every creature next to the party.",
+  "requires": [
+   "twoHanded.devastate"
+  ]
+ },
+ {
+  "id": "archery.steadyAim",
+  "skill": "archery",
+  "name": "Steady Aim",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 20,
+    "scope": "archery"
+   }
+  ],
+  "text": "+20% bow damage per rank."
+ },
+ {
+  "id": "archery.nimbleFletch",
+  "skill": "archery",
+  "name": "Nimble Fingers",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "recoveryPct",
+    "value": -15,
+    "scope": "archery"
+   }
+  ],
+  "text": "Bows reload 15% faster.",
+  "requires": [
+   "archery.steadyAim"
+  ]
+ },
+ {
+  "id": "archery.longShot",
+  "skill": "archery",
+  "name": "Long Shot",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "longShot"
+   }
+  ],
+  "text": "Bows reach 2 cells farther.",
+  "requires": [
+   "archery.steadyAim"
+  ]
+ },
+ {
+  "id": "archery.piercingShot",
+  "skill": "archery",
+  "name": "Piercing Shot",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "piercingShot"
+   }
+  ],
+  "text": "Arrows go through the first creature to the one behind it.",
+  "requires": [
+   "archery.longShot"
+  ]
+ },
+ {
+  "id": "archery.keenShot",
+  "skill": "archery",
+  "name": "Keen Shot",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "critRange",
+    "value": 1,
+    "scope": "archery"
+   }
+  ],
+  "text": "Bows crit one number lower.",
+  "requires": [
+   "archery.nimbleFletch"
+  ]
+ },
+ {
+  "id": "archery.pinning",
+  "skill": "archery",
+  "name": "Pinning Shot",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "pinning"
+   }
+  ],
+  "text": "Arrows stun for 1 s a quarter of the time.",
+  "requires": [
+   "archery.piercingShot"
+  ]
+ },
+ {
+  "id": "archery.bullseye",
+  "skill": "archery",
+  "name": "Bullseye",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "bullseye"
+   }
+  ],
+  "text": "Bow criticals paralyse for 2 s.",
+  "requires": [
+   "archery.pinning"
+  ]
+ },
+ {
+  "id": "unarmed.ironFist",
+  "skill": "unarmed",
+  "name": "Iron Fist",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 25,
+    "scope": "unarmed"
+   }
+  ],
+  "text": "+25% unarmed damage per rank."
+ },
+ {
+  "id": "unarmed.flowing",
+  "skill": "unarmed",
+  "name": "Flowing Strikes",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "recoveryPct",
+    "value": -15,
+    "scope": "unarmed"
+   }
+  ],
+  "text": "Unarmed recovery −15%.",
+  "requires": [
+   "unarmed.ironFist"
+  ]
+ },
+ {
+  "id": "unarmed.stoneSkin",
+  "skill": "unarmed",
+  "name": "Stone Skin",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "ac",
+    "value": 2,
+    "scope": "unarmoured"
+   }
+  ],
+  "text": "+2 AC when wearing no body armour.",
+  "requires": [
+   "unarmed.ironFist"
+  ]
+ },
+ {
+  "id": "unarmed.stunningFist",
+  "skill": "unarmed",
+  "name": "Stunning Fist",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "stunningFist"
+   }
+  ],
+  "text": "Unarmed criticals stun for 2 s.",
+  "requires": [
+   "unarmed.flowing"
+  ]
+ },
+ {
+  "id": "unarmed.pressurePoint",
+  "skill": "unarmed",
+  "name": "Pressure Points",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "critRange",
+    "value": 2,
+    "scope": "unarmed"
+   }
+  ],
+  "text": "Unarmed strikes crit two numbers lower.",
+  "requires": [
+   "unarmed.stunningFist"
+  ]
+ },
+ {
+  "id": "unarmed.quiveringPalm",
+  "skill": "unarmed",
+  "name": "Quivering Palm",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "quiveringPalm"
+   }
+  ],
+  "text": "An unarmed power attack on a stunned creature deals triple damage.",
+  "requires": [
+   "unarmed.pressurePoint"
+  ]
+ },
+ {
+  "id": "block.shieldWall",
+  "skill": "block",
+  "name": "Shield Wall",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "blockPct",
+    "value": 8
+   }
+  ],
+  "text": "Blocks take off 8% more per rank."
+ },
+ {
+  "id": "block.powerBash",
+  "skill": "block",
+  "name": "Power Bash",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "damagePct",
+    "value": 60,
+    "scope": "block"
+   }
+  ],
+  "text": "Shield bashes deal 60% more.",
+  "requires": [
+   "block.shieldWall"
+  ]
+ },
+ {
+  "id": "block.quickReflexes",
+  "skill": "block",
+  "name": "Quick Reflexes",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "perfectWindow",
+    "value": 0.1
+   }
+  ],
+  "text": "The perfect block window is 0.1 s longer.",
+  "requires": [
+   "block.shieldWall"
+  ]
+ },
+ {
+  "id": "block.deflectArrows",
+  "skill": "block",
+  "name": "Deflect Arrows",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "deflectArrows"
+   }
+  ],
+  "text": "A raised shield stops missiles from ahead completely.",
+  "requires": [
+   "block.quickReflexes"
+  ]
+ },
+ {
+  "id": "block.disarmingBash",
+  "skill": "block",
+  "name": "Disarming Bash",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "disarmingBash"
+   }
+  ],
+  "text": "Bashes always stagger.",
+  "requires": [
+   "block.powerBash"
+  ]
+ },
+ {
+  "id": "block.elementalBlock",
+  "skill": "block",
+  "name": "Elemental Protection",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "elementalBlock"
+   }
+  ],
+  "text": "Blocking also halves spell damage from ahead.",
+  "requires": [
+   "block.deflectArrows"
+  ]
+ },
+ {
+  "id": "block.unbreakable",
+  "skill": "block",
+  "name": "Unbreakable",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "staminaCostPct",
+    "value": -50,
+    "scope": "block"
+   }
+  ],
+  "text": "Blocking costs half the Stamina.",
+  "requires": [
+   "block.elementalBlock"
+  ]
+ },
+ {
+  "id": "heavyArmour.juggernaut",
+  "skill": "heavyArmour",
+  "name": "Juggernaut",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "ac",
+    "value": 1,
+    "scope": "heavyArmour"
+   }
+  ],
+  "text": "+1 AC per rank in heavy armour."
+ },
+ {
+  "id": "heavyArmour.wellFitted",
+  "skill": "heavyArmour",
+  "name": "Well Fitted",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "staminaCostPct",
+    "value": -10
+   }
+  ],
+  "text": "Everything costs 10% less Stamina in heavy armour.",
+  "requires": [
+   "heavyArmour.juggernaut"
+  ]
+ },
+ {
+  "id": "heavyArmour.conditioning",
+  "skill": "heavyArmour",
+  "name": "Conditioning",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "carryKg",
+    "value": 25
+   }
+  ],
+  "text": "Carry 25 kg more.",
+  "requires": [
+   "heavyArmour.juggernaut"
+  ]
+ },
+ {
+  "id": "heavyArmour.towerOfStrength",
+  "skill": "heavyArmour",
+  "name": "Tower of Strength",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "towerOfStrength"
+   }
+  ],
+  "text": "In heavy armour, blows never knock you off balance: no disadvantage from being flanked.",
+  "requires": [
+   "heavyArmour.wellFitted"
+  ]
+ },
+ {
+  "id": "heavyArmour.reflectBlows",
+  "skill": "heavyArmour",
+  "name": "Reflect Blows",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "reflectBlows"
+   }
+  ],
+  "text": "One melee blow in ten is turned back on the attacker.",
+  "requires": [
+   "heavyArmour.towerOfStrength"
+  ]
+ },
+ {
+  "id": "heavyArmour.ironWill",
+  "skill": "heavyArmour",
+  "name": "Iron Will",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "ironWill"
+   }
+  ],
+  "text": "In heavy armour you can't be frightened.",
+  "requires": [
+   "heavyArmour.reflectBlows"
+  ]
+ },
+ {
+  "id": "lightArmour.agileDefender",
+  "skill": "lightArmour",
+  "name": "Agile Defender",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "ac",
+    "value": 1,
+    "scope": "lightArmour"
+   }
+  ],
+  "text": "+1 AC per rank in light or no armour."
+ },
+ {
+  "id": "lightArmour.customFit",
+  "skill": "lightArmour",
+  "name": "Custom Fit",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "staminaPct",
+    "value": 10
+   }
+  ],
+  "text": "+10% Stamina.",
+  "requires": [
+   "lightArmour.agileDefender"
+  ]
+ },
+ {
+  "id": "lightArmour.windWalker",
+  "skill": "lightArmour",
+  "name": "Wind Walker",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "regenPct",
+    "value": 50,
+    "scope": "stamina"
+   }
+  ],
+  "text": "Stamina comes back half as fast again.",
+  "requires": [
+   "lightArmour.agileDefender"
+  ]
+ },
+ {
+  "id": "lightArmour.dodge",
+  "skill": "lightArmour",
+  "name": "Deft Movement",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "dodge"
+   }
+  ],
+  "text": "One melee blow in ten misses you outright.",
+  "requires": [
+   "lightArmour.customFit"
+  ]
+ },
+ {
+  "id": "lightArmour.evasion",
+  "skill": "lightArmour",
+  "name": "Evasion",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "evasion"
+   }
+  ],
+  "text": "Blows that hit the whole party do half damage to you.",
+  "requires": [
+   "lightArmour.dodge"
+  ]
+ },
+ {
+  "id": "lightArmour.shadowDancer",
+  "skill": "lightArmour",
+  "name": "Shadow Dancer",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "shadowDancer"
+   }
+  ],
+  "text": "Sneaking doesn't slow you down.",
+  "requires": [
+   "lightArmour.evasion"
+  ]
+ },
+ {
+  "id": "athletics.endurance",
+  "skill": "athletics",
+  "name": "Endurance",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "staminaPct",
+    "value": 10
+   }
+  ],
+  "text": "+10% Stamina per rank."
+ },
+ {
+  "id": "athletics.packMule",
+  "skill": "athletics",
+  "name": "Pack Mule",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "carryKg",
+    "value": 20
+   }
+  ],
+  "text": "Carry 20 kg more.",
+  "requires": [
+   "athletics.endurance"
+  ]
+ },
+ {
+  "id": "athletics.vault",
+  "skill": "athletics",
+  "name": "Vault",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "vault"
+   }
+  ],
+  "text": "Jump a pit you can see: step into it and land on the far side.",
+  "requires": [
+   "athletics.endurance"
+  ]
+ },
+ {
+  "id": "athletics.secondBreath",
+  "skill": "athletics",
+  "name": "Second Breath",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "regenPct",
+    "value": 50,
+    "scope": "stamina"
+   }
+  ],
+  "text": "Stamina comes back half as fast again.",
+  "requires": [
+   "athletics.packMule"
+  ]
+ },
+ {
+  "id": "athletics.surefooted",
+  "skill": "athletics",
+  "name": "Surefooted",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "fallDamagePct",
+    "value": -50
+   }
+  ],
+  "text": "Falls hurt half as much.",
+  "requires": [
+   "athletics.vault"
+  ]
+ },
+ {
+  "id": "athletics.powerStrikes",
+  "skill": "athletics",
+  "name": "Power Strikes",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "staminaCostPct",
+    "value": -25,
+    "scope": "power"
+   }
+  ],
+  "text": "Power attacks cost a quarter less.",
+  "requires": [
+   "athletics.secondBreath"
+  ]
+ },
+ {
+  "id": "athletics.ironLungs",
+  "skill": "athletics",
+  "name": "Iron Lungs",
+  "ranks": [
+   80
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "ironLungs"
+   },
+   {
+    "kind": "regenPct",
+    "value": 50,
+    "scope": "stamina"
+   }
+  ],
+  "text": "Hold your breath three times as long; Stamina returns faster still.",
+  "requires": [
+   "athletics.powerStrikes"
+  ]
+ },
+ {
+  "id": "restoration.recovery",
+  "skill": "restoration",
+  "name": "Recovery",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "spellPowerPct",
+    "value": 15,
+    "scope": "restoration"
+   }
+  ],
+  "text": "Restoration spells are 15% stronger per rank."
+ },
+ {
+  "id": "restoration.respite",
+  "skill": "restoration",
+  "name": "Respite",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "respite"
+   }
+  ],
+  "text": "Healing spells also restore Stamina.",
+  "requires": [
+   "restoration.recovery"
+  ]
+ },
+ {
+  "id": "restoration.undeadBane",
+  "skill": "restoration",
+  "name": "Bane of the Dead",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "undeadBane"
+   }
+  ],
+  "text": "Restoration's radiant spells deal half as much again to the undead.",
+  "requires": [
+   "restoration.recovery"
+  ]
+ },
+ {
+  "id": "restoration.wardOfLight",
+  "skill": "restoration",
+  "name": "Ward of Light",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -25,
+    "scope": "restoration"
+   }
+  ],
+  "text": "Restoration spells cost a quarter less.",
+  "requires": [
+   "restoration.respite"
+  ]
+ },
+ {
+  "id": "restoration.avoidDeath",
+  "skill": "restoration",
+  "name": "Avoid Death",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "avoidDeath"
+   }
+  ],
+  "text": "Once a rest, a blow that would drop you heals 25 instead.",
+  "requires": [
+   "restoration.wardOfLight"
+  ]
+ },
+ {
+  "id": "restoration.recallSoul",
+  "skill": "restoration",
+  "name": "Recall Soul",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "recallSoul"
+   }
+  ],
+  "text": "You can learn Recall Soul, which raises the dead.",
+  "requires": [
+   "restoration.avoidDeath"
+  ]
+ },
+ {
+  "id": "warding.wardMastery",
+  "skill": "warding",
+  "name": "Ward Mastery",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "spellPowerPct",
+    "value": 15,
+    "scope": "warding"
+   }
+  ],
+  "text": "Wards are 15% stronger per rank."
+ },
+ {
+  "id": "warding.resilience",
+  "skill": "warding",
+  "name": "Resilience",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "spellSave",
+    "value": 2
+   }
+  ],
+  "text": "+2 to saves against spells.",
+  "requires": [
+   "warding.wardMastery"
+  ]
+ },
+ {
+  "id": "warding.spellbreaker",
+  "skill": "warding",
+  "name": "Spellbreaker",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "spellbreaker"
+   }
+  ],
+  "text": "Dispel also ends the target's wards and buffs.",
+  "requires": [
+   "warding.wardMastery"
+  ]
+ },
+ {
+  "id": "warding.absorb",
+  "skill": "warding",
+  "name": "Absorb",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "absorbSpells"
+   }
+  ],
+  "text": "One spell in four aimed at you restores Mana instead.",
+  "requires": [
+   "warding.resilience"
+  ]
+ },
+ {
+  "id": "warding.dispelMaster",
+  "skill": "warding",
+  "name": "Master of Lines",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -25,
+    "scope": "warding"
+   }
+  ],
+  "text": "Warding spells cost a quarter less.",
+  "requires": [
+   "warding.spellbreaker"
+  ]
+ },
+ {
+  "id": "warding.aegis",
+  "skill": "warding",
+  "name": "Aegis",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "aegis"
+   }
+  ],
+  "text": "Wards also cover the rest of the party, at half strength.",
+  "requires": [
+   "warding.absorb"
+  ]
+ },
+ {
+  "id": "conjuration.summoner",
+  "skill": "conjuration",
+  "name": "Summoner",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "durationPct",
+    "value": 20,
+    "scope": "conjuration"
+   }
+  ],
+  "text": "Summons last 20% longer per rank."
+ },
+ {
+  "id": "conjuration.boundStrength",
+  "skill": "conjuration",
+  "name": "Mystic Binding",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "boundStrength"
+   }
+  ],
+  "text": "Bound weapons deal 2 more damage.",
+  "requires": [
+   "conjuration.summoner"
+  ]
+ },
+ {
+  "id": "conjuration.elementalPotency",
+  "skill": "conjuration",
+  "name": "Elemental Potency",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "spellPowerPct",
+    "value": 25,
+    "scope": "conjuration"
+   }
+  ],
+  "text": "Summons hit 25% harder.",
+  "requires": [
+   "conjuration.summoner"
+  ]
+ },
+ {
+  "id": "conjuration.soulStealer",
+  "skill": "conjuration",
+  "name": "Soul Stealer",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "soulStealer"
+   }
+  ],
+  "text": "Creatures killed by your summons leave a spirit shard.",
+  "requires": [
+   "conjuration.boundStrength"
+  ]
+ },
+ {
+  "id": "conjuration.riftWalker",
+  "skill": "conjuration",
+  "name": "Rift Walker",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -25,
+    "scope": "conjuration"
+   }
+  ],
+  "text": "Conjuration costs a quarter less.",
+  "requires": [
+   "conjuration.elementalPotency"
+  ]
+ },
+ {
+  "id": "conjuration.twinSouls",
+  "skill": "conjuration",
+  "name": "Twin Souls",
+  "ranks": [
+   80
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "twinSouls"
+   }
+  ],
+  "text": "Two summons at once.",
+  "requires": [
+   "conjuration.riftWalker"
+  ]
+ },
+ {
+  "id": "conjuration.masterOfGates",
+  "skill": "conjuration",
+  "name": "Master of Gates",
+  "ranks": [
+   95
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "masterOfGates"
+   }
+  ],
+  "text": "Summons arrive with a champion's affix.",
+  "requires": [
+   "conjuration.twinSouls"
+  ]
+ },
+ {
+  "id": "illusion.dread",
+  "skill": "illusion",
+  "name": "Dread",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "spellPowerPct",
+    "value": 15,
+    "scope": "illusion"
+   }
+  ],
+  "text": "Illusion's save DCs rise by 1 per rank."
+ },
+ {
+  "id": "illusion.quietCasting",
+  "skill": "illusion",
+  "name": "Quiet Casting",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "quietCasting"
+   }
+  ],
+  "text": "Casting makes no noise.",
+  "requires": [
+   "illusion.dread"
+  ]
+ },
+ {
+  "id": "illusion.hypnoticGaze",
+  "skill": "illusion",
+  "name": "Hypnotic Gaze",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "durationPct",
+    "value": 25,
+    "scope": "illusion"
+   }
+  ],
+  "text": "Mind effects last a quarter longer.",
+  "requires": [
+   "illusion.dread"
+  ]
+ },
+ {
+  "id": "illusion.mindMaster",
+  "skill": "illusion",
+  "name": "Master of the Mind",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "mindMaster"
+   }
+  ],
+  "text": "Mind spells work on the mindless and the dead.",
+  "requires": [
+   "illusion.hypnoticGaze"
+  ]
+ },
+ {
+  "id": "illusion.veil",
+  "skill": "illusion",
+  "name": "Veil",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "manaCostPct",
+    "value": -30,
+    "scope": "illusion"
+   }
+  ],
+  "text": "Illusion costs 30% less.",
+  "requires": [
+   "illusion.quietCasting"
+  ]
+ },
+ {
+  "id": "illusion.rage",
+  "skill": "illusion",
+  "name": "Puppeteer",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "puppeteer"
+   }
+  ],
+  "text": "Frenzy can turn a creature to your side for its length.",
+  "requires": [
+   "illusion.mindMaster"
+  ]
+ },
+ {
+  "id": "enchanting.enchanter",
+  "skill": "enchanting",
+  "name": "Enchanter",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "spellPowerPct",
+    "value": 20,
+    "scope": "enchanting"
+   }
+  ],
+  "text": "Enchantments are 20% stronger per rank."
+ },
+ {
+  "id": "enchanting.soulSqueezer",
+  "skill": "enchanting",
+  "name": "Soul Squeezer",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "soulSqueezer"
+   }
+  ],
+  "text": "Disenchanting yields an extra spirit shard.",
+  "requires": [
+   "enchanting.enchanter"
+  ]
+ },
+ {
+  "id": "enchanting.insightful",
+  "skill": "enchanting",
+  "name": "Insightful Enchanter",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "insightful"
+   }
+  ],
+  "text": "Enchanting tells you an item's hidden properties.",
+  "requires": [
+   "enchanting.enchanter"
+  ]
+ },
+ {
+  "id": "enchanting.recharge",
+  "skill": "enchanting",
+  "name": "Recharger",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "rechargeDouble"
+   }
+  ],
+  "text": "Recharging wands fills them twice as much.",
+  "requires": [
+   "enchanting.soulSqueezer"
+  ]
+ },
+ {
+  "id": "enchanting.arcaneSmith",
+  "skill": "enchanting",
+  "name": "Arcane Smith",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "arcaneSmith"
+   }
+  ],
+  "text": "Smithing can improve enchanted and masterwork items.",
+  "requires": [
+   "enchanting.insightful"
+  ]
+ },
+ {
+  "id": "enchanting.extraEffect",
+  "skill": "enchanting",
+  "name": "Extra Effect",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "extraEffect"
+   }
+  ],
+  "text": "An item can carry one more enchantment.",
+  "requires": [
+   "enchanting.arcaneSmith"
+  ]
+ },
+ {
+  "id": "lockpicking.novice",
+  "skill": "lockpicking",
+  "name": "Steady Hands",
+  "ranks": [
+   0
+  ],
+  "effects": [
+   {
+    "kind": "lockBonus",
+    "value": 2
+   }
+  ],
+  "text": "+2 to pick locks."
+ },
+ {
+  "id": "lockpicking.deft",
+  "skill": "lockpicking",
+  "name": "Deft Fingers",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "lockBonus",
+    "value": 2
+   }
+  ],
+  "text": "+2 more to pick locks.",
+  "requires": [
+   "lockpicking.novice"
+  ]
+ },
+ {
+  "id": "lockpicking.locksmith",
+  "skill": "lockpicking",
+  "name": "Locksmith",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "noBreak"
+   }
+  ],
+  "text": "Picks never break.",
+  "requires": [
+   "lockpicking.novice"
+  ]
+ },
+ {
+  "id": "lockpicking.quickHands",
+  "skill": "lockpicking",
+  "name": "Quick Hands",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "quickPick"
+   }
+  ],
+  "text": "Picking a lock makes no noise.",
+  "requires": [
+   "lockpicking.deft"
+  ]
+ },
+ {
+  "id": "lockpicking.treasureHunter",
+  "skill": "lockpicking",
+  "name": "Treasure Hunter",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "treasureHunter"
+   }
+  ],
+  "text": "Chests you open hold better things.",
+  "requires": [
+   "lockpicking.locksmith"
+  ]
+ },
+ {
+  "id": "lockpicking.master",
+  "skill": "lockpicking",
+  "name": "Master Locksmith",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "lockBonus",
+    "value": 4
+   }
+  ],
+  "text": "+4 more to pick locks.",
+  "requires": [
+   "lockpicking.quickHands"
+  ]
+ },
+ {
+  "id": "lockpicking.keymaster",
+  "skill": "lockpicking",
+  "name": "Keymaster",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "keymaster"
+   }
+  ],
+  "text": "Arcane locks can be picked without Dispel.",
+  "requires": [
+   "lockpicking.master"
+  ]
+ },
+ {
+  "id": "traps.careful",
+  "skill": "traps",
+  "name": "Careful Hands",
+  "ranks": [
+   0
+  ],
+  "effects": [
+   {
+    "kind": "trapBonus",
+    "value": 2
+   }
+  ],
+  "text": "+2 to disarm traps."
+ },
+ {
+  "id": "traps.trapSense",
+  "skill": "traps",
+  "name": "Trap Sense",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "perceptionBonus",
+    "value": 2,
+    "scope": "traps"
+   }
+  ],
+  "text": "+2 Perception for finding traps.",
+  "requires": [
+   "traps.careful"
+  ]
+ },
+ {
+  "id": "traps.rig",
+  "skill": "traps",
+  "name": "Rig",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "rig"
+   }
+  ],
+  "text": "Pick up a disarmed trap's parts and set it again somewhere else.",
+  "requires": [
+   "traps.careful"
+  ]
+ },
+ {
+  "id": "traps.salvage",
+  "skill": "traps",
+  "name": "Salvage",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "salvage"
+   }
+  ],
+  "text": "Disarmed traps leave useful parts.",
+  "requires": [
+   "traps.trapSense"
+  ]
+ },
+ {
+  "id": "traps.quickDisarm",
+  "skill": "traps",
+  "name": "Quick Disarm",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "trapBonus",
+    "value": 3
+   }
+  ],
+  "text": "+3 more to disarm traps.",
+  "requires": [
+   "traps.salvage"
+  ]
+ },
+ {
+  "id": "traps.deathTrap",
+  "skill": "traps",
+  "name": "Death Trap",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "deathTrap"
+   }
+  ],
+  "text": "Traps you rig deal double damage.",
+  "requires": [
+   "traps.rig"
+  ]
+ },
+ {
+  "id": "traps.saboteur",
+  "skill": "traps",
+  "name": "Saboteur",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "saboteur"
+   }
+  ],
+  "text": "A failed disarm never springs the trap.",
+  "requires": [
+   "traps.quickDisarm"
+  ]
+ },
+ {
+  "id": "alchemy.alchemist",
+  "skill": "alchemy",
+  "name": "Alchemist",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "potionPct",
+    "value": 20
+   }
+  ],
+  "text": "Potions you brew are 20% stronger per rank."
+ },
+ {
+  "id": "alchemy.physician",
+  "skill": "alchemy",
+  "name": "Physician",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "physician"
+   }
+  ],
+  "text": "Healing potions you brew also cure poison.",
+  "requires": [
+   "alchemy.alchemist"
+  ]
+ },
+ {
+  "id": "alchemy.benefactor",
+  "skill": "alchemy",
+  "name": "Benefactor",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "potionPct",
+    "value": 25,
+    "scope": "helpful"
+   }
+  ],
+  "text": "Helpful potions a quarter stronger.",
+  "requires": [
+   "alchemy.alchemist"
+  ]
+ },
+ {
+  "id": "alchemy.poisoner",
+  "skill": "alchemy",
+  "name": "Poisoner",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "poisoner"
+   }
+  ],
+  "text": "Poisons you brew can coat a blade (3 hits).",
+  "requires": [
+   "alchemy.physician"
+  ]
+ },
+ {
+  "id": "alchemy.greenThumb",
+  "skill": "alchemy",
+  "name": "Green Thumb",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "greenThumb"
+   }
+  ],
+  "text": "Find two reagents where you'd find one.",
+  "requires": [
+   "alchemy.benefactor"
+  ]
+ },
+ {
+  "id": "alchemy.purity",
+  "skill": "alchemy",
+  "name": "Purity",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "purity"
+   }
+  ],
+  "text": "Brews have no unwanted effects.",
+  "requires": [
+   "alchemy.greenThumb"
+  ]
+ },
+ {
+  "id": "smithing.temper",
+  "skill": "smithing",
+  "name": "Temper",
+  "ranks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "effects": [
+   {
+    "kind": "smithQuality",
+    "value": 1
+   }
+  ],
+  "text": "Each rank lets you improve an item one step further."
+ },
+ {
+  "id": "smithing.mending",
+  "skill": "smithing",
+  "name": "Field Repairs",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "fieldRepairs"
+   }
+  ],
+  "text": "Repair at a whetstone without an anvil.",
+  "requires": [
+   "smithing.temper"
+  ]
+ },
+ {
+  "id": "smithing.dwarven",
+  "skill": "smithing",
+  "name": "Dwarven Smithing",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "dwarvenSmithing"
+   }
+  ],
+  "text": "Forge iron and steel bases at an anvil.",
+  "requires": [
+   "smithing.temper"
+  ]
+ },
+ {
+  "id": "smithing.advanced",
+  "skill": "smithing",
+  "name": "Advanced Armours",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "advancedArmours"
+   }
+  ],
+  "text": "Forge splint and plate.",
+  "requires": [
+   "smithing.dwarven"
+  ]
+ },
+ {
+  "id": "smithing.runed",
+  "skill": "smithing",
+  "name": "Runed Steel",
+  "ranks": [
+   70
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "runedSteel"
+   }
+  ],
+  "text": "Improved weapons gain +1 to hit as well.",
+  "requires": [
+   "smithing.advanced"
+  ]
+ },
+ {
+  "id": "smithing.master",
+  "skill": "smithing",
+  "name": "Master Smith",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "masterSmith"
+   }
+  ],
+  "text": "Improvements go one step past the usual limit.",
+  "requires": [
+   "smithing.runed"
+  ]
+ },
+ {
+  "id": "survival.fieldMedic",
+  "skill": "survival",
+  "name": "Field Medic",
+  "ranks": [
+   10
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "fieldMedic"
+   }
+  ],
+  "text": "Bandages heal 1d6 more."
+ },
+ {
+  "id": "survival.forager",
+  "skill": "survival",
+  "name": "Forager",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "forager"
+   }
+  ],
+  "text": "Find reagents and food in rubble.",
+  "requires": [
+   "survival.fieldMedic"
+  ]
+ },
+ {
+  "id": "survival.tracker",
+  "skill": "survival",
+  "name": "Tracker",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "perceptionBonus",
+    "value": 2
+   }
+  ],
+  "text": "+2 passive Perception.",
+  "requires": [
+   "survival.fieldMedic"
+  ]
+ },
+ {
+  "id": "survival.hardy",
+  "skill": "survival",
+  "name": "Hardy",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "hungerPct",
+    "value": -30
+   }
+  ],
+  "text": "Hunger and thirst come 30% slower.",
+  "requires": [
+   "survival.forager"
+  ]
+ },
+ {
+  "id": "survival.keenEye",
+  "skill": "survival",
+  "name": "Keen Eye",
+  "ranks": [
+   50
+  ],
+  "effects": [
+   {
+    "kind": "perceptionBonus",
+    "value": 3
+   }
+  ],
+  "text": "+3 more passive Perception.",
+  "requires": [
+   "survival.tracker"
+  ]
+ },
+ {
+  "id": "survival.safeCamp",
+  "skill": "survival",
+  "name": "Safe Camp",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "safeCamp"
+   }
+  ],
+  "text": "Half as many wandering monsters while resting.",
+  "requires": [
+   "survival.hardy"
+  ]
+ },
+ {
+  "id": "survival.wanderer",
+  "skill": "survival",
+  "name": "Wanderer",
+  "ranks": [
+   80
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "wanderer"
+   }
+  ],
+  "text": "Rest restores everything in half the time.",
+  "requires": [
+   "survival.safeCamp"
+  ]
+ },
+ {
+  "id": "lore.appraiser",
+  "skill": "lore",
+  "name": "Appraiser",
+  "ranks": [
+   10
+  ],
+  "effects": [
+   {
+    "kind": "identifyBonus",
+    "value": 10
+   }
+  ],
+  "text": "Identify items as if your Lore were 10 higher."
+ },
+ {
+  "id": "lore.booklore",
+  "skill": "lore",
+  "name": "Bookworm",
+  "ranks": [
+   20
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "booklore"
+   }
+  ],
+  "text": "Skill books teach two ranks.",
+  "requires": [
+   "lore.appraiser"
+  ]
+ },
+ {
+  "id": "lore.historian",
+  "skill": "lore",
+  "name": "Historian",
+  "ranks": [
+   30
+  ],
+  "effects": [
+   {
+    "kind": "xpPct",
+    "value": 5
+   }
+  ],
+  "text": "+5% skill XP.",
+  "requires": [
+   "lore.appraiser"
+  ]
+ },
+ {
+  "id": "lore.tongueOfStone",
+  "skill": "lore",
+  "name": "Tongue of Stone",
+  "ranks": [
+   40
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "tongueOfStone"
+   }
+  ],
+  "text": "Carvings answer one question: they show the way to the stairs.",
+  "requires": [
+   "lore.booklore"
+  ]
+ },
+ {
+  "id": "lore.sage",
+  "skill": "lore",
+  "name": "Sage",
+  "ranks": [
+   60
+  ],
+  "effects": [
+   {
+    "kind": "xpPct",
+    "value": 10
+   }
+  ],
+  "text": "+10% skill XP more.",
+  "requires": [
+   "lore.historian"
+  ]
+ },
+ {
+  "id": "lore.loremaster",
+  "skill": "lore",
+  "name": "Loremaster",
+  "ranks": [
+   90
+  ],
+  "effects": [
+   {
+    "kind": "flag",
+    "scope": "loremaster"
+   }
+  ],
+  "text": "You know every item you see.",
+  "requires": [
+   "lore.tongueOfStone"
+  ]
+ }
 ]

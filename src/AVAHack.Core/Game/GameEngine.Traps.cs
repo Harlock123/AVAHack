@@ -45,6 +45,7 @@ public sealed partial class GameEngine
     private void EnterCell(Cell c)
     {
         Explore(c);
+        SneakPractice();
         if (Level.NoteAt(c) is { Read: false } note)
         {
             note.Read = true;
@@ -75,7 +76,7 @@ public sealed partial class GameEngine
             Say("The floor gives way! You fall into the dark below.");
             foreach (var c in Party.Standing.ToList())
             {
-                int dmg = Dice.Parse("2d6").Roll(Rng.Combat);
+                int dmg = (int)(Dice.Parse("2d6").Roll(Rng.Combat) * Math.Max(0, 1 + c.PerkTotal("fallDamagePct") / 100));
                 c.TakeDamage(dmg);
                 FloatAtHero($"-{dmg}", TextKind.HeroHurt);
             }

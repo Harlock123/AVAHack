@@ -26,9 +26,16 @@ public sealed partial class GameEngine
 
     private static readonly WeaponDef Fist = new()
     {
-        Id = "fist", Name = "Fist", Skill = SkillId.Unarmed, Damage = "1d2", Type = DamageType.Bludgeoning,
+        Id = "fist", Name = "Fist", Skill = SkillId.Unarmed, Damage = "1d4", Type = DamageType.Bludgeoning,
         Recovery = 1.2, Text = "Bare knuckles.",
     };
+
+    /// <summary>Unarmed damage grows with the skill (spec 9.3): 1d4 + floor(Unarmed / 20) × 1d4.</summary>
+    public static Dice FistDice(Character c) => new(1 + c.SkillLevel(SkillId.Unarmed) / 20, 4);
+
+    /// <summary>Stamina costs after perks: power attacks, blocks and bashes.</summary>
+    private static double StaminaCost(Character c, double basic, string scope) =>
+        basic * Math.Max(0.1, 1 + (c.PerkTotalFor("staminaCostPct", scope) + (c.Body?.Kind == ArmourKind.Heavy ? c.PerkTotalFor("staminaCostPct", null) : 0)) / 100);
 
     private readonly List<Projectile> _projectiles = new();
     private double _calm;
@@ -114,7 +121,7 @@ public sealed partial class GameEngine
             Say($"{c.Name} can't reach from the back row.");
             return;
         }
-        if (power && !c.SpendStamina(PowerStamina))
+        if (power && !c.SpendStamina(StaminaCost(c, PowerStamina, "power")))
         {
             power = false;
             Say($"{c.Name} is too winded for a power attack.");
@@ -123,10 +130,21 @@ public sealed partial class GameEngine
         if (power) c.UseSkill(SkillId.Athletics, 0, XpSource.Plain);
         var attr = w.Finesse && c.Mod(Attribute.Dex) > c.Mod(Attribute.Str) ? Attribute.Dex : Attribute.Str;
         int offPenalty = hand == EquipSlot.LeftHand && w != Fist ? OffHandPenalty : 0;
-        var dice = Dice.Parse(w.Damage);
+        var dice = w == Fist ? FistDice(c) : Dice.Parse(w.Damage);
         if (c.QualityOf(hand) > 0) dice = dice with { Bonus = dice.Bonus + c.QualityOf(hand) };
-        Monster? target = ranged ? FirstInLine(w.Range) : null;
-        Strike(c, target, w.Skill, attr, dice, w.Type, power ? 1.5 : 1, power ? 30 : 0, w.CritRange, -offPenalty, hand, w.Kind);
+        int range = w.Range + (ranged && c.HasPerkFlag("longShot") ? 2 : 0);
+        Monster? target = ranged ? FirstInLine(range) : null;
+        int crit = w.CritRange - (int)c.PerkTotalFor("critRange", Character.SkillKey(w.Skill));
+        double stagger = power ? (w.Skill == SkillId.TwoHanded && c.HasPerkFlag("sweepStagger") ? 100 : 30) : 0;
+        _power = power;
+        Strike(c, target, w.Skill, attr, dice, w.Type, power ? 1.5 : 1, stagger, crit, -offPenalty, hand, w.Kind);
+        // Sweeping blows: Whirl, Ground Slam and Cleave hit the other creatures beside the party too.
+        if (power && !ranged && SweepFlag(c, w.Skill))
+            foreach (var other in AdjacentFoes().Where(m => m.Cell != PartyCell.Step(Facing)).ToList())
+                Strike(c, other, w.Skill, attr, dice, w.Type, 1.5, stagger, crit, -offPenalty, hand, w.Kind);
+        if (ranged && c.HasPerkFlag("piercingShot") && target is not null && SecondInLine(target, range) is { } behind)
+            Strike(c, behind, w.Skill, attr, dice, w.Type, 1, 0, crit, -offPenalty, hand, w.Kind);
+        _power = false;
     }
 
     private void Bash(Character c, ShieldDef shield)
@@ -136,13 +154,40 @@ public sealed partial class GameEngine
             Say($"{c.Name} can't reach from the back row.");
             return;
         }
-        if (!c.SpendStamina(BashStamina))
+        if (!c.SpendStamina(StaminaCost(c, BashStamina, "block")))
         {
             Say($"{c.Name} is too winded to bash.");
             return;
         }
         c.LeftHand.Start(shield.BashRecovery * c.RecoveryFactor(SkillId.Block));
-        Strike(c, null, SkillId.Block, Attribute.Str, Dice.Parse(shield.BashDamage), DamageType.Bludgeoning, 1, 20, 20, 0, null, "");
+        Strike(c, null, SkillId.Block, Attribute.Str, Dice.Parse(shield.BashDamage), DamageType.Bludgeoning, 1,
+               c.HasPerkFlag("disarmingBash") ? 100 : 20, 20, 0, null, "");
+    }
+
+    private bool _power;
+
+    private static bool SweepFlag(Character c, SkillId skill) => skill switch
+    {
+        SkillId.Blade => c.HasPerkFlag("whirl"),
+        SkillId.Blunt => c.HasPerkFlag("groundSlam"),
+        SkillId.TwoHanded => c.HasPerkFlag("cleave"),
+        _ => false,
+    };
+
+    /// <summary>The creatures in the cells beside the party: ahead, left and right.</summary>
+    private IEnumerable<Monster> AdjacentFoes() =>
+        new[] { Facing, Facing.Left(), Facing.Right() }.SelectMany(d => MonstersAt(PartyCell.Step(d)).Take(1)).Where(m => !m.Ally);
+
+    private Monster? SecondInLine(Monster first, int range)
+    {
+        var c = first.Cell;
+        for (int i = first.Cell.Distance(PartyCell); i < range; i++)
+        {
+            c = c.Step(Facing);
+            if (Level.KindAt(c) == CellKind.Wall) return null;
+            if (MonstersAt(c).FirstOrDefault() is { } m) return m;
+        }
+        return null;
     }
 
     /// <summary>The first creature straight ahead within <paramref name="range"/> cells, with nothing in between.</summary>
@@ -173,10 +218,16 @@ public sealed partial class GameEngine
 
         bool unaware = !target.IsAware;
         bool flank = DirTo(target.Cell, PartyCell) != target.Facing;
-        var adv = flank || unaware || target.AttackedWithAdvantage ? Advantage.Advantage : Advantage.None;
+        bool execute = skill == SkillId.Blade && c.HasPerkFlag("executioner") && target.Hp * 4 < target.MaxHp;
+        var adv = flank || unaware || execute || target.AttackedWithAdvantage ? Advantage.Advantage : Advantage.None;
         Alert(target);
         var res = c.Attack(Rng.Combat, skill, attr, target.Ac, adv, toHit);
         bool crit = res.Critical || (res.Hit && res.Roll.Natural >= critRange);
+        if (res.Hit && skill == SkillId.Blade && c.HasPerkFlag("riposte") && c.RiposteUntil > Time)
+        {
+            crit = true;
+            c.RiposteUntil = -1;
+        }
         var (x, y) = target.Position();
         if (!res.Hit)
         {
@@ -186,6 +237,9 @@ public sealed partial class GameEngine
         }
         double sneak = unaware ? SneakMultiplier(c, weaponKind) : 1;
         double mult = multiplier * c.DamageMultiplier(Character.SkillKey(skill)) * c.DamageMultiplier(type.ToString().ToLowerInvariant()) / (1 + c.ItemTotal("damagePct", "all") / 100.0) * sneak;
+        if (execute) mult *= 1.5;
+        if (type == DamageType.Bludgeoning && target.Def.Family == "restlessDead") mult *= 1 + c.PerkTotalFor("damagePct", "bludgeoningVsUndead") / 100;
+        if (skill == SkillId.Unarmed && _power && c.HasPerkFlag("quiveringPalm") && target.Conditions.Has(ConditionId.Stunned)) mult *= 3;
         int mod = c.Mod(attr) - (attr == Attribute.Str ? c.Conditions.StrengthPenalty : 0);
         int dmg = Combat.Damage(Rng.Combat, dice, mod, c.SkillLevel(skill), mult, crit, target.Resistances.For(type));
         if (hand is { } h)
@@ -195,9 +249,38 @@ public sealed partial class GameEngine
         c.UseSkill(skill, dmg, XpSource.Against(target.Def.Level));
         if (unaware) c.UseSkill(SkillId.Stealth, 0, XpSource.Against(target.Def.Level));
         OnHeroHit?.Invoke(c, target, crit);
+        PerkOnHit(c, target, skill, crit);
         DamageMonster(target, dmg, type, crit, unaware && sneak > 1);
         if (target.IsAlive && staggerChance > 0 && Rng.Combat.Chance(staggerChance)) Stagger(target);
     }
+
+    /// <summary>What the combat perks do when a blow lands.</summary>
+    private void PerkOnHit(Character c, Monster target, SkillId skill, bool crit)
+    {
+        if (crit && ((skill == SkillId.Blade && c.HasPerkFlag("critBleeds")) || (skill == SkillId.TwoHanded && c.HasPerkFlag("critBleeds2h"))))
+            if (!target.Def.ConditionImmune.Contains(ConditionId.Bleeding)) target.Conditions.Apply(ConditionId.Bleeding, 12, 6, Dice.Parse("1d4"));
+        if (skill == SkillId.Blunt)
+        {
+            if (crit && c.HasPerkFlag("crushingBlows")) Stagger(target);
+            if (_power && c.HasPerkFlag("skullCracker") && Rng.Combat.Chance(25)) target.Conditions.Apply(ConditionId.Stunned, 12, 1.5);
+            if (c.HasPerkFlag("armourBreak") && target.AcBonus > -3) target.AcBonus--;
+        }
+        if (skill == SkillId.Unarmed && crit && c.HasPerkFlag("stunningFist")) target.Conditions.Apply(ConditionId.Stunned, 12, 2);
+        if (skill == SkillId.Archery)
+        {
+            if (c.HasPerkFlag("pinning") && Rng.Combat.Chance(25)) target.Conditions.Apply(ConditionId.Stunned, 12, 1);
+            if (crit && c.HasPerkFlag("bullseye")) target.Conditions.Apply(ConditionId.Paralysed, 12, 2);
+        }
+        if (skill == SkillId.TwoHanded && _power && c.HasPerkFlag("warcry") && !_warcryUsed)
+        {
+            _warcryUsed = true;
+            foreach (var m in AdjacentFoes().ToList())
+                if (!m.Def.Has("mindless")) { m.State = MonsterState.Fleeing; m.FleeLeft = 6; }
+            Say($"{c.Name}'s war cry rings off the stones!");
+        }
+    }
+
+    private bool _warcryUsed;
 
     /// <summary>Raised after a hero's blow lands, before its damage: perks hook in here.</summary>
     internal event Action<Character, Monster, bool>? OnHeroHit;
@@ -358,13 +441,13 @@ public sealed partial class GameEngine
         if (side == RelativeSide.Ahead && IsBlocking(c) && dmg > 0)
         {
             int blocked;
-            if (c.LeftHand.HeldFor <= PerfectBlockWindow)
+            if (c.LeftHand.HeldFor <= PerfectBlockWindow + c.PerkTotal("perfectWindow"))
             {
                 blocked = dmg;
                 if (a.Range == 1) Stagger(m);
                 FloatAtHero("perfect block", TextKind.Blocked);
             }
-            else if (c.SpendStamina(BlockStamina))
+            else if (c.SpendStamina(StaminaCost(c, BlockStamina, "block")))
             {
                 double pct = Math.Min(90, c.OffHand!.BlockPercent + c.SkillLevel(SkillId.Block) / 4.0 + c.PerkTotal("blockPct"));
                 blocked = (int)Math.Round(dmg * pct / 100);
@@ -380,6 +463,24 @@ public sealed partial class GameEngine
             }
         }
         if (dmg <= 0) return;
+        if (a.Range == 1 && c.ArmourSkill == SkillId.LightArmour && c.HasPerkFlag("dodge") && Rng.Combat.Chance(10))
+        {
+            FloatAtHero("dodged", TextKind.Blocked);
+            return;
+        }
+        if (a.Range == 1 && c.Body?.Kind == ArmourKind.Heavy && c.HasPerkFlag("reflectBlows") && Rng.Combat.Chance(10))
+        {
+            DamageMonster(m, dmg, a.Type);
+            FloatAtHero("reflected", TextKind.Blocked);
+            return;
+        }
+        if (a.Area && c.HasPerkFlag("evasion")) dmg = Math.Max(1, dmg / 2);
+        if (c.HasPerkFlag("avoidDeath") && dmg >= c.Hp && !c.AvoidDeathUsed)
+        {
+            c.AvoidDeathUsed = true;
+            c.Heal(25);
+            Say($"{c.Name} refuses to fall!");
+        }
 
         c.TakeDamage(dmg);
         c.HurtFlash = 0.3;
@@ -471,6 +572,7 @@ public sealed partial class GameEngine
     private void EndFight()
     {
         _inFight = false;
+        _warcryUsed = false;
         foreach (var c in Party.Members) c.EndFight();
         // The fallen get up with 1 HP if anyone is still standing (spec 9.5).
         if (!Party.AllDown)

@@ -13,4 +13,8 @@ public enum GameAction
     Use,
     /// <summary>Pick up everything lying in the party's cell.</summary>
     PickUp,
+    /// <summary>Start or stop sneaking (spec 11.1).</summary>
+    Sneak,
+    /// <summary>Rest until healed, or until something comes (spec 13.7).</summary>
+    Rest,
 }

@@ -56,20 +56,21 @@ public sealed class ProgressionTests
         Assert.Equal(21, b.Rank(SkillId.Blade));
         Assert.Equal([(SkillId.Blade, 21)], p.RankUps);
         Assert.Equal(1, b.Xp(SkillId.Blade), 9);
-        Assert.Equal(21, b.CharacterXp); // character XP equals the new rank
+        Assert.Equal(7, b.CharacterXp); // character XP is a third of the new rank, rounded up
     }
 
     [Fact]
     public void Ranks_level_the_character_and_a_level_gives_its_rewards()
     {
         var b = Heroes.Brannoc(); // HP 13
-        // Blade 20 → 25 is 21 + 22 + 23 + 24 + 25 = 115 character XP: level 2 with 15 over.
-        double xp = Enumerable.Range(20, 5).Sum(Progression.XpToNext) + 0.001;
+        // Blade 20 → 35 is 7+8+8+8+9+9+9+10+10+10+11+11+11+12+12 = 145 character XP: level 2 (100), and 45
+        // toward level 3 (125).
+        double xp = Enumerable.Range(20, 15).Sum(Progression.XpToNext) + 0.001;
         var p = b.GainSkillXp(SkillId.Blade, xp, XpSource.Plain);
-        Assert.Equal(25, b.Rank(SkillId.Blade));
+        Assert.Equal(35, b.Rank(SkillId.Blade));
         Assert.Equal(1, p.LevelsGained);
         Assert.Equal(2, b.Level);
-        Assert.Equal(15, b.CharacterXp);
+        Assert.Equal(45, b.CharacterXp);
         Assert.Equal(1, b.PerkPoints);
         Assert.Equal(1, b.PendingLevelChoices);
         Assert.Equal(13 + 6 + 3, b.MaxHp);  // average d10 (6) + CON
@@ -189,7 +190,7 @@ public sealed class ProgressionTests
         var b = Heroes.Brannoc();
         Assert.NotNull(b.ReadBook("The Hollow Blade", SkillId.Blade));
         Assert.Equal(21, b.Rank(SkillId.Blade));
-        Assert.Equal(21, b.CharacterXp);
+        Assert.Equal(7, b.CharacterXp);
         Assert.Null(b.ReadBook("The Hollow Blade", SkillId.Blade));
         Assert.Equal(21, b.Rank(SkillId.Blade));
         Assert.True(b.HasRead("The Hollow Blade"));

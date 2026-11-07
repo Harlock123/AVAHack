@@ -19,6 +19,8 @@ public static class InputHandler
         PhysicalKey.E or PhysicalKey.ArrowRight or PhysicalKey.NumPad9 => GameAction.TurnRight,
         PhysicalKey.F or PhysicalKey.NumPad5 or PhysicalKey.Enter => GameAction.Use,
         PhysicalKey.G => GameAction.PickUp,
+        PhysicalKey.X => GameAction.Sneak,
+        PhysicalKey.R => GameAction.Rest,
         _ => null,
     };
 

@@ -131,7 +131,10 @@ public static class Traits
 
     public static readonly IReadOnlySet<string> PerkEffectKinds = new HashSet<string>
     {
-        "damagePct", "recoveryPct", "manaCostPct", "noisePct", "sneakMultiplier", "flag",
+        "damagePct", "recoveryPct", "manaCostPct", "noisePct", "sneakMultiplier", "flag", "blockPct", "ac",
+        "staminaCostPct", "critRange", "staminaPct", "carryKg", "regenPct", "lockBonus", "trapBonus", "perceptionBonus",
+        "fallDamagePct", "xpPct", "potionPct", "spellPowerPct", "durationPct", "perfectWindow", "spellSave",
+        "smithQuality", "hungerPct", "identifyBonus",
     };
 
     public static readonly IReadOnlySet<string> ConditionEffects = new HashSet<string>

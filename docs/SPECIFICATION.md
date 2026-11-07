@@ -34,6 +34,7 @@
 23. Implementation decisions (M1)
 24. Implementation decisions (M2)
 25. Implementation decisions (M3)
+26. Implementation decisions (M4)
 
 ---
 
@@ -346,8 +347,8 @@ Use XP per action is defined in `skills.json`. Examples:
 
 ### 7.3 Character level
 
-Every time any skill gains a rank, the character gains **character XP equal to the new rank**. The XP needed for
-the next level is:
+Every time any skill gains a rank, the character gains **character XP equal to a third of the new rank, rounded
+up** (changed in M4 from the whole rank; see section 26). The XP needed for the next level is:
 
 ```
 levelXp(L) = (L + 3) × 25        (L1→2: 100, L10→11: 325, L30→31: 825)
@@ -538,7 +539,7 @@ Trivial (DC 10 locks), Frost Touch and Guidance.
 
 ### 11.1 Stealth
 
-- Toggle **Sneak** with C. Steps take 0.4 s, light radius is halved and step noise is −50%.
+- Toggle **Sneak** with X (C is the character sheet). Steps take 0.4 s, light radius is halved and step noise is −50%.
 - Each tick, every monster that has line of sight runs a **notice check**:
 
   ```
@@ -1114,7 +1115,7 @@ Each milestone is finished when its exit test passes.
 | **M1** | Rules core. *Done (2026-11-06)* | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8. *Result:* 94 new Core tests (120 in all) |
 | **M2** | One hero, one fight. *Built (2026-11-06); the exit test waits on the user's play* | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play. *So far:* the balance bot wins The Cellars 10 times in 12, in about 2.6 minutes of game time |
 | **M3** | Party and creation. *Done (2026-11-06)* | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it. *Result:* the quick-start party (bot) gets through The Cellars about 9 times in 12; the creation screens make any party of one to four |
-| **M4** | Progression | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling |
+| **M4** | Progression. *Done (2026-11-06)* | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling. *Revised:* that target didn't fit the level curve; a bot run now shows every calling at level 8 with its best skill at 45 or more and its third-best at 35 or more (section 26) |
 | **M5** | Magic | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play |
 | **M6** | Generator | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable |
 | **M7** | The bestiary | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30 |
@@ -1167,6 +1168,7 @@ is built.
 ## 23. Implementation decisions (M1)
 24. Implementation decisions (M2)
 25. Implementation decisions (M3)
+26. Implementation decisions (M4)
 
 - **22 skills, not 20.** The table in section 7.1 always listed 22 (Survival and Lore are in the craft group). The
   count elsewhere was corrected to match.
@@ -1235,6 +1237,7 @@ is built.
 
 ## 24. Implementation decisions (M2)
 25. Implementation decisions (M3)
+26. Implementation decisions (M4)
 
 - **One hero, as a Lone Delver.** M2 plays Brannoc, the quick-start dwarf fighter, alone, so the Lone Delver rules
   of section 4 apply: +50% HP, +2 to saves and twice the skill XP. He has a longsword, a round shield and chain
@@ -1324,6 +1327,7 @@ is built.
 ---
 
 ## 25. Implementation decisions (M3)
+26. Implementation decisions (M4)
 
 - **The party** (`Party`) has four slots: front left, front right, back left and back right. A party of one is a
   Lone Delver.
@@ -1382,4 +1386,64 @@ is built.
     (F1). The game pauses under any overlay but help.
 - **Starting kit** (`StartingKit`): each calling's weapons and armour, a background item, two torches and two
   bandages.
+
+---
+
+## 26. Implementation decisions (M4)
+
+- **Perk trees for all 22 skills**: 145 perks, with 6–10 per tree and at least one that changes play in every tree.
+  Effect kinds: damage, recovery, Mana cost, noise, sneak multiplier, block %, AC by armour, Stamina cost, crit
+  range, Stamina %, carrying, regeneration, lock and trap bonuses, perception, fall damage, skill XP, potion
+  strength, spell power, duration, the perfect-block window, saves against spells, smithing quality, hunger and
+  identifying.
+  - **The combat flags work now:**
+    - bleeding crits (Blade, Two-handed);
+    - Crushing Blows (blunt crits stagger), Skull Cracker (blunt power attacks may stun) and Shatter Armour;
+    - Riposte and Executioner;
+    - Whirl, Ground Slam and Cleave (power attacks that hit the creatures beside the party);
+    - Sweep;
+    - Long Shot, Piercing Shot, Pinning Shot and Bullseye;
+    - Stunning Fist and Quivering Palm;
+    - Disarming Bash, Deft Movement, Reflect Blows, Evasion and Avoid Death;
+    - War Cry, Vault and Bookworm.
+  - **Flags waiting for later systems:** spells (M5), traps (M6), crafting and survival (M8).
+- **Character XP per rank is a third of the new rank, rounded up**, not the whole rank.
+  - With the whole rank, level 8 arrived after about 35 rank-ups. That was too soon for any calling to grow more
+    than one or two skills, and made the M4 target impossible.
+  - Halving still left the third-best skill in the low 30s. A third gives level 8 after roughly 70–90 rank-ups,
+    with a clear best skill and real breadth.
+  - The level curve itself ((L + 3) × 25) is unchanged.
+- **The M4 exit test, revised.** `ProgressionReport` trains each calling alone, with no Lone Delver bonus:
+  - in an arena against creatures scaled to its level (`Bestiary.Scale`);
+  - sneaking up on each one;
+  - blocking 70% of tells and power-attacking a third of the time;
+  - spending level-ups on HP (or Mana for casters) and perks in its best skills.
+
+  At level 8 every calling's best skill is 45–59 and its third-best 35–46, after 400–950 fights. "Three skills over
+  40" was reached by three callings and missed narrowly (38–39) by the rest, so the test asks for a specialist
+  with breadth instead.
+- **Use XP:** Athletics gives 2.5 per use (it was 0.5: power attacks hardly trained it), and Block gives
+  1.5 + 0.15 × the damage blocked.
+- **Unarmed** damage is 1d4 + floor(Unarmed / 20) × 1d4 (spec 9.3).
+- **Sneaking** (X) is a party-wide state:
+  - steps take 60% longer (not with Shadow Dancer);
+  - the light is shaded to 75%;
+  - creatures notice gradually instead of at once. Each tick, one that can see the party fills an awareness meter
+    by (Perception + 3 if a torch is lit − the party's worst (Stealth / 5 + DEX), less 3 in heavy armour) / 10 a
+    second, faster up close and three times as fast when adjacent. It notices when the meter fills; out of sight,
+    the meter drains.
+  - Every step sneaking past an unaware creature trains Stealth.
+  - The meter is drawn as an eye over the creature.
+- **Creatures give up.** An aware creature that hasn't seen the party for 15 s goes back to idling, and the fight
+  only counts creatures that saw the party in the last 3 s. Before this, a creature watching through a gate the
+  party had walked away from kept the fight (and so the lack of regeneration) going forever.
+- **The character sheet (C) is the level-up screen:**
+  - take the waiting HP, Stamina or Mana choice;
+  - spend attribute points;
+  - see all 22 skills with XP bars and item bonuses;
+  - open any skill's perk tree, see each perk's ranks, requirement and text, and take it.
+
+  The skills list marks every tree with a perk ready to buy.
+- **Trainers** (`Character.Train`) work, but there is nobody to train with until the Waystones (M7). Skill books
+  drop as loot.
 

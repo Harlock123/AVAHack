@@ -59,6 +59,7 @@ public sealed partial class GameEngine
             Action = m.Action, ActionLeft = m.ActionLeft, ActionTotal = m.ActionTotal, Attack = m.Attack?.Id,
             FromX = m.From.X, FromY = m.From.Y, StrikeTime = m.StrikeTime, IdleLeft = m.IdleLeft, FleeLeft = m.FleeLeft,
             AffixTimer = m.AffixTimer, LastHitType = m.LastHitType, Conditions = Character.SaveConditions(m.Conditions),
+            LastSeen = m.LastSeen, Awareness = m.Awareness,
         }).ToList(),
         Flags = new Dictionary<string, string>(LevelFlags),
         PartyX = PartyCell.X, PartyY = PartyCell.Y, Facing = Facing,
@@ -146,6 +147,8 @@ public sealed partial class GameEngine
             m.FleeLeft = ms.FleeLeft;
             m.AffixTimer = ms.AffixTimer;
             m.LastHitType = ms.LastHitType;
+            m.LastSeen = ms.LastSeen;
+            m.Awareness = ms.Awareness;
             Character.LoadConditions(m.Conditions, ms.Conditions);
             _monsters.Add(m);
         }

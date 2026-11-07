@@ -306,6 +306,12 @@ public sealed partial class GameView : Control, ICustomHitTest
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        try { HandleKey(e); }
+        finally { InvalidateVisual(); }
+    }
+
+    private void HandleKey(KeyEventArgs e)
+    {
         e.Handled = true;
         if (Screen == Screen.Create && CreateKey(e)) return;
         if (Screen != Screen.Play) return;

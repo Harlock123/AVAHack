@@ -125,7 +125,7 @@ public sealed partial class GameEngine
     /// <summary>Learns what the party's best Lore can tell about everything carried. Lore improves with each.</summary>
     public void IdentifyAll()
     {
-        int lore = Party.Best(h => h.SkillLevel(SkillId.Lore));
+        int lore = Party.Best(h => h.SkillLevel(SkillId.Lore) + (int)h.PerkTotal("identifyBonus") + (h.HasPerkFlag("loremaster") ? 100 : 0));
         var sage = Party.Standing.MaxBy(h => h.SkillLevel(SkillId.Lore));
         foreach (var hero in Party.Members)
             foreach (var item in hero.Backpack.Concat(hero.Equipped.Values).Where(i => i is { Identified: false }))
@@ -164,7 +164,7 @@ public sealed partial class GameEngine
         }
         var picker = Party.Standing.MaxBy(h => h.SkillLevel(SkillId.Lockpicking) / 5 + h.Mod(Rules.Attribute.Dex));
         if (picker is null) return false;
-        int roll = picker.RollD20(Rng.Combat) + picker.Mod(Rules.Attribute.Dex) + picker.SkillLevel(SkillId.Lockpicking) / 5;
+        int roll = picker.RollD20(Rng.Combat) + picker.Mod(Rules.Attribute.Dex) + picker.SkillLevel(SkillId.Lockpicking) / 5 + (int)picker.PerkTotal("lockBonus");
         if (roll >= chest.LockDc)
         {
             picker.UseSkill(SkillId.Lockpicking, chest.LockDc, XpSource.Plain);

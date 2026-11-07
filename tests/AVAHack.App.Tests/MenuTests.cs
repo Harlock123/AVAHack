@@ -153,3 +153,36 @@ public sealed class MenuTests
         Assert.Same(g.Party[Slot.FrontLeft], g.Selected);
     }
 }
+
+public sealed class SheetTests
+{
+    [AvaloniaFact]
+    public void The_sheet_takes_a_level_up_and_a_perk()
+    {
+        var db = ContentDb.LoadBuiltIn();
+        var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(db), db);
+        var v = new GameView(g, startLoop: false, store: new SaveStore(Path.Combine(Path.GetTempPath(), "avahack-sheet-" + Guid.NewGuid().ToString("N"))));
+        var w = new Window { Width = 1280, Height = 800, Content = v };
+        w.Show();
+        var h = g.Hero;
+        while (h.Level < 2) h.GainSkillXp(SkillId.Blade, 50, XpSource.Plain);
+        Assert.Equal(1, h.PendingLevelChoices);
+        w.KeyPressQwerty(PhysicalKey.C, RawInputModifiers.None);
+        Assert.Equal(Overlay.Character, v.Overlay);
+        for (int i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
+        w.CaptureRenderedFrame();
+        int hp = h.MaxHp;
+        // The "+5 HP" button sits under the attributes.
+        w.MouseDown(new Point(66, 300), MouseButton.Left);
+        w.MouseUp(new Point(66, 300), MouseButton.Left);
+        Assert.Equal(hp + 5, h.MaxHp);
+        // Blade is the first skill, already chosen; its first perk's Take button.
+        for (int i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
+        w.CaptureRenderedFrame();
+        w.MouseDown(new Point(904, 121), MouseButton.Left);
+        w.MouseUp(new Point(904, 121), MouseButton.Left);
+        Assert.Equal(1, h.PerkRank("blade.edgeDiscipline"));
+        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir)
+            w.CaptureRenderedFrame()!.Save(Path.Combine(dir, "AVAHack-sheet.png"), PngBitmapEncoderOptions.Default);
+    }
+}

@@ -72,6 +72,10 @@ public sealed class Monster
 
     /// <summary>Seconds left of the red flash after a hit.</summary>
     public double HurtFlash { get; internal set; }
+    /// <summary>While the party sneaks: how close this creature is to noticing it, 0 to 1 (the eye over its head).</summary>
+    public double Awareness { get; internal set; }
+    /// <summary>When it last saw (or heard) the party, in game seconds.</summary>
+    public double LastSeen { get; internal set; } = -100;
     /// <summary>Seconds left of the lunge after a blow lands.</summary>
     public double StrikeTime { get; internal set; }
     /// <summary>Seconds until a pile of bones stands up again.</summary>

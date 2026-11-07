@@ -105,6 +105,9 @@ public sealed partial class Character
     /// <summary>Food and water, 0–100 (spec 13.6).</summary>
     public double Food { get; internal set; } = 100;
     public double Water { get; internal set; } = 100;
+    /// <summary>Avoid Death's once-a-rest save.</summary>
+    public bool AvoidDeathUsed { get; internal set; }
+
     /// <summary>Moving in sneak mode (spec 11.1).</summary>
     public bool Sneaking { get; internal set; }
 }

@@ -55,7 +55,7 @@ public sealed partial class GameEngine
     public bool Paused { get; private set; }
 
     /// <summary>How bright the party's light is, for the view: a lit torch is full; magic and items change it.</summary>
-    public double LightStrength => LightLevel?.Invoke() ?? 1.05;
+    public double LightStrength => (LightLevel?.Invoke() ?? 1.05) * (Sneaking ? 0.75 : 1);
     internal Func<double>? LightLevel;
 
     /// <summary>True while a step, turn or bump is playing.</summary>
@@ -156,6 +156,16 @@ public sealed partial class GameEngine
         if (action == GameAction.Use)
         {
             UseAhead();
+            return;
+        }
+        if (action == GameAction.Sneak)
+        {
+            ToggleSneak();
+            return;
+        }
+        if (action == GameAction.Rest)
+        {
+            RestHook?.Invoke();
             return;
         }
         if (action == GameAction.PickUp)
@@ -265,6 +275,16 @@ public sealed partial class GameEngine
                         _ => Facing.Right(),
                     };
                     var target = PartyCell.Step(dir);
+                    if (Level.PitAt(target) is { Spotted: true } && Party.Standing.All(c => c.HasPerkFlag("vault")) && CanPartyEnter(target.Step(dir)))
+                    {
+                        // Over the pit in one bound.
+                        _motion = new Motion(MotionKind.Step, StepTicks * 2) { From = PartyCell };
+                        PartyCell = target.Step(dir);
+                        EnterCell(PartyCell);
+                        Say("The party vaults the pit.");
+                        Event?.Invoke(GameEvent.Stepped);
+                        return;
+                    }
                     double load = Party.Members.Max(c => c.Encumbrance);
                     if (load > 1.5 && CanPartyEnter(target))
                     {
@@ -275,6 +295,7 @@ public sealed partial class GameEngine
                     if (CanPartyEnter(target))
                     {
                         int ticks = load > 1 ? StepTicks * 3 / 2 : StepTicks;
+                        if (Sneaking && !Party.Standing.All(c => c.HasPerkFlag("shadowDancer"))) ticks = ticks * 8 / 5;
                         if (load > 1)
                             foreach (var c in Party.Members.Where(c => c.Encumbrance > 1)) c.UseSkill(SkillId.Athletics, 0, XpSource.Plain);
                         _motion = new Motion(MotionKind.Step, ticks) { From = PartyCell };

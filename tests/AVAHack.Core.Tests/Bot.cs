@@ -20,6 +20,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
 
     public string? Goal { get; private set; }
 
+    /// <summary>The share of tells the bot sees and blocks.</summary>
+    public double BlockChance { get; init; } = 0.5;
+
     private double Next() => _r.Next(1_000_000) / 1_000_000.0;
 
     /// <summary>Takes on another bot's memory and dice, so a loaded game's bot carries on as the original would.</summary>
@@ -58,7 +61,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (m.Action == MonsterAction.WindingUp)
             {
                 // Half the time it sees the tell; when it does, it raises the shield somewhere in the last half second.
-                if (_blockAt < 0) _blockAt = Next() < 0.5 ? 0.05 + Next() * 0.45 : 0;
+                if (_blockAt < 0) _blockAt = Next() < BlockChance ? 0.05 + Next() * 0.45 : 0;
                 if (_blockAt > 0 && m.ActionLeft <= _blockAt && !g.LeftHand.Held && g.Hero.Stamina > 10) g.HandDown(HandSide.Left);
             }
             else
@@ -66,14 +69,20 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                 _blockAt = -1;
                 if (g.LeftHand.Held && g.LeftHand.HeldFor > GameEngine.BashTap) g.HandUp(HandSide.Left);
             }
-            if (g.RightHand.Ready && !g.LeftHand.Held)
+            if (g.RightHand.Held)
+            {
+                // Charging a power attack: let go once it's charged.
+                if (g.RightHand.HeldFor >= GameEngine.PowerHold + 0.02) g.HandUp(HandSide.Right);
+            }
+            else if (g.RightHand.Ready && !g.LeftHand.Held)
             {
                 if (_swingDelay <= 0) _swingDelay = 0.15 + Next() * 0.35;
                 _swingDelay -= GameEngine.TickSeconds;
                 if (_swingDelay <= 0)
                 {
                     g.HandDown(HandSide.Right);
-                    g.HandUp(HandSide.Right);
+                    // A third of the time, when there's breath for it, a power attack.
+                    if (!(g.Hero.Stamina > 40 && Next() < 0.33)) g.HandUp(HandSide.Right);
                 }
             }
             // The rest of the party joins in: the front row with whatever it holds, the back row only with reach or a bow.
@@ -126,7 +135,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         foreach (var plate in g.Level.Plates)
             if (!_pressed.Contains(plate) && Reachable(plate.Cell)) { Goal = "plate"; return (plate.Cell, null, null); }
         Goal = "stairs";
-        return (g.Level.Stairs.First(), null, null);
+        return g.Level.Stairs.Any() ? (g.Level.Stairs.First(), null, null) : (null, null, null);
     }
 
     private bool Reachable(Cell c) => c == g.PartyCell || PathStep(c) is not null;

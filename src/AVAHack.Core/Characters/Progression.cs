@@ -16,6 +16,9 @@ public static class Progression
     /// <summary>Use XP for the next rank: 4 + 0.08 × rank^1.95 (rank 15 needs about 20, rank 50 about 168, rank 90 about 521).</summary>
     public static double XpToNext(int rank) => 4 + 0.08 * Math.Pow(rank, 1.95);
 
+    /// <summary>Character XP a skill's new rank gives: a third of the rank, rounded up (spec 7.3, as tuned in M4).</summary>
+    public static int CharacterXpFor(int newRank) => (newRank + 2) / 3;
+
     /// <summary>Character XP for the next level: (level + 3) × 25.</summary>
     public static int LevelXp(int level) => (level + 3) * 25;
 

@@ -16,7 +16,8 @@ public sealed class ContentTests
         Assert.Equal(10, db.Callings.Count);
         Assert.Equal(8, db.Backgrounds.Count);
         Assert.Equal(14, db.Conditions.Count);
-        Assert.Equal(["Blade", "Destruction", "Stealth"], db.Perks.Select(p => p.Skill.ToString()).Distinct());
+        Assert.Equal(22, db.Perks.Select(p => p.Skill).Distinct().Count()); // every skill has its tree
+        Assert.True(db.Perks.Count >= 140);
     }
 
     [Fact]

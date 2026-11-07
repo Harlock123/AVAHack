@@ -45,7 +45,7 @@ public sealed class DelveReport(ITestOutputHelper output)
         if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_DEBUG") is not null)
             note += " | " + string.Join("; ", g.Party.Members.Select(m => $"{m.Name} L{m.Level} {m.MaxHp}hp " +
                 string.Join(",", Enum.GetValues<SkillId>().OrderByDescending(m.Rank).Take(3).Select(s => $"{s}{m.Rank(s)}"))))
-                + $" | boss {g.LivingBoss?.Name} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
+                + $" | boss {g.LivingBoss?.Name} {bot.NodeReport} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
         return new Run(code, g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
     }
 

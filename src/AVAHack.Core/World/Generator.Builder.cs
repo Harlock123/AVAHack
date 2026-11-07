@@ -876,6 +876,9 @@ public static partial class Generator
             if (depth > 1 && !Enum.GetValues<Dir>().Select(d => _start.Step(d)).Where(reach.Contains)
                     .Any(n => Walk(n, avoid: _start).Contains(_down))) return false;
             if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } tt && !reach.Contains(tt))) return false;
+            // A teleporter must not drop the party in a pocket it can only leave through a hidden door: from where
+            // it lands, it must find its way back to the start without one.
+            if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } to && !Walk(to, secrets: false).Contains(_start))) return false;
             // Secret doors count as found: what lies behind them must be reachable too.
             bool Reachable(Cell c) => reach.Contains(c) || Enum.GetValues<Dir>().Any(d => reach.Contains(c.Step(d)));
             if (_spawns.Any(s => !Reachable(s.Cell))) return false;
@@ -885,7 +888,7 @@ public static partial class Generator
         }
 
         /// <summary>Everything a party starting at <paramref name="from"/> can reach, opening barriers as it goes.</summary>
-        private HashSet<Cell> Walk(Cell from, Cell? avoid = null)
+        private HashSet<Cell> Walk(Cell from, Cell? avoid = null, bool secrets = true)
         {
             var openDoors = _doors.Where(d => d.Kind == DoorKind.Hand && d.Key is null || d.Open).Select(d => d.Cell).ToHashSet();
             var blocked = _chests.Select(c => c.Cell).Concat(_pits.Select(p => p.Cell)).Concat(_altars).ToHashSet();
@@ -899,7 +902,7 @@ public static partial class Generator
                 grew = false;
                 var shut = _doors.Select(d => d.Cell).Where(c => !openDoors.Contains(c)).ToHashSet();
                 shut.UnionWith(blocked);
-                reach = Flood(from, shut, _secrets.Select(x => x.Cell).ToHashSet()).Keys.ToHashSet();
+                reach = Flood(from, shut, secrets ? _secrets.Select(x => x.Cell).ToHashSet() : []).Keys.ToHashSet();
                 foreach (var (cell, item) in _items)
                     if (item.KeyId is { } k && reach.Contains(cell))
                         foreach (var d in _doors.Where(d => d.Key == k)) grew |= openDoors.Add(d.Cell);

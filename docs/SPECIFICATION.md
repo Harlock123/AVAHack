@@ -2197,7 +2197,7 @@ The second new region, levels 17–20, after the Stacks. Where deep runs used to
     - the Sapsucker: a flying pack hunter;
     - the Root Wyrm: an unyielding ambusher that burrows;
     - the Burrow Matron: a summoner that calls up tunnel grubs;
-    - the Gnawing: a great worm that burrows and splits when cut.
+    - the Gnawing: a great worm that splits when cut.
   - **The spore-thralls**, delvers and beasts the fungus took:
     - the Thralled Delver: mindless, and it bursts when it dies;
     - the Capped Goblin: a pack archer;
@@ -2215,7 +2215,7 @@ The second new region, levels 17–20, after the Stacks. Where deep runs used to
 - **Spore pods.**
   - **Bursting.** A pod is a station. It bursts when the party, or any creature but a thrall or spore-kin, comes
     within a cell. The cloud is 3×3 of choking spores for 12 seconds. Like a gas trap's cloud, it poisons
-    whoever fails a CON save (against 14 + depth / 3) every 2 seconds.
+    whoever fails a CON save (against 12 + depth / 3) every 2 seconds.
   - **Fire.** Fire reaching a cloud sets it off: a bolt that lands in it, a burning blow, a fire trap or a burning
     hero. The cloud goes up and is gone. Everything in it takes 4d6 + depth fire, and heroes get a DEX save for
     half. So a spore cloud is a weapon, but only from outside it.
@@ -2231,36 +2231,60 @@ The second new region, levels 17–20, after the Stacks. Where deep runs used to
 - **Root walls.** Some room walls are grown over with roots, for the look only: a texture drawn over the region's
   stone.
 - **Burrowers** (a new `burrower` behaviour). An aware burrower more than a cell away, and no more than 14 steps
-  along the passages, waits 7 seconds. Then it comes up out of the earth behind the party, or beside it if that
-  cell is taken. It can do this mid-step.
+  along the passages, waits 10 seconds. Then it comes up out of the earth behind the party, or beside it if that
+  cell is taken. It can do this mid-step. Only one comes up in any 8 seconds on a level.
 - **Rooted** (a new behaviour) creatures never move. They turn to face the party, and the spawn tables never
   place them.
 - **The Mycel Crown** (level 20):
-  - **Its nodes.** Three Nodes of the Crown, rooted, stand in other rooms of its level. While any one lives, nothing
-    hurts the Crown.
-  - **Regrowth.** A node cut down grows back in 40 seconds while the Crown lives, without dropping loot again. A
-    node killed by fire stays dead.
-  - **Its script.** Every 15 seconds it calls up two thralled delvers and breathes a spore cloud round itself, a
-    cloud a careless fire bolt sets off in the party's face.
+  - **Rooted.** It never moves.
+  - **Its nodes.** Three Nodes of the Crown, rooted too, stand in other rooms of its level. While any one lives,
+    nothing hurts the Crown.
+  - **Regrowth.** A node cut down grows back once, in 90 seconds, while the Crown lives, without dropping loot
+    again. A node killed by fire, or cut down a second time, stays dead.
+  - **Its script.** While the party is within 6 cells, every 20 seconds it calls up two thralled delvers and
+    breathes a spore cloud round itself (CON against 13 + depth / 3). A careless fire bolt sets the cloud off in
+    the party's face. Out of its hall, it is quiet.
 
-  The fight is to burn the nodes, or to cut them all down and reach the Crown inside 40 seconds.
+  The fight is to leave it, burn or cut down its nodes, and come back.
 - **The bot**:
   - it hacks through a tangle in its way;
   - it waits for a pod ahead to burst;
-  - it treats tangles and pods as open when finding its way.
-- **Results** (6 seeds, 24-level Delves, clearing bot):
-  - average depth 17.2 (16.8 before), best 20; heroes at level 23–39;
-  - four of the six parties die in the Rootdark, and one reaches the Mycel Crown and falls to it;
-  - none wins: the Rootdark is now the wall, as the placeholder was. Tuning it is open.
+  - it treats tangles and pods as open when finding its way;
+  - it hunts the Crown's nodes, never strikes the Crown while one lives, and searches the walls when it can't
+    reach one. Before, it never hunted the nodes, because they carry a boss tag. That was the main reason
+    parties died at the Crown.
+- **Teleporters** (all regions). A teleporter must not drop the party in a pocket it can leave only through a hidden
+  door. From where it lands, the party must find its way back to the start without finding a secret; the level
+  check fails otherwise. One seed put the party in the Crown's hall that way, with every node outside and a
+  hidden door (DC 22–25 at that depth) the only way out.
+- **Tuning**, from the deep report's logs. The first Rootdark killed every party that reached it:
+  - the bot fighting a Crown it couldn't hurt;
+  - the Gnawing burrowing up behind the party and splitting;
+  - the Burrow Matron's endless grubs.
 
-  The 4- and 12-level Delves are unaffected; their reports pass.
+  The changes:
+  - the Crown is rooted, quiet out of its hall, and calls every 20 seconds instead of 15;
+  - its nodes grow back once, in 90 seconds instead of 40;
+  - the spore DCs are 2 lower;
+  - the Gnawing no longer burrows, and hits for 3d10 + 6 instead of 4d10 + 6;
+  - burrowers wait 10 seconds instead of 7, one at a time;
+  - the Matron has 15d10 + 45 hit points instead of 18d10 + 54.
+- **Results** (6 seeds, 24-level Delves, clearing bot):
+  - before the tuning, every party that reached the Rootdark died there (4 of 6 runs; one at the Crown);
+  - after it, three parties reach the Rootdark and two get through. They fall on levels 21 and 22 in the Glass
+    Roads, where the Refractor and the rifts' Unmade now do the killing;
+  - average depth 17.0, best 22, heroes at level 20–40, none won. The teleporter rule changes some levels, so
+    other seeds now fall earlier (levels 12, 13 and 16). Six seeds is a small sample.
+
+  The 12-level Delve still passes its gate, at 4 of 8 won (6 of 8 before; the teleporter rule changed some of its
+  levels too). The 4-level Delve and the Cellars pass.
 - **Tests.**
   - Rootdark levels with their families, pods, tangles, root walls, the Crown and its three nodes.
   - A pod bursting for the party, and for a creature but not a thrall. Fire setting a cloud off, burning a creature
     and the party.
   - Tangles blocking, hacked through by the third try, and burned.
-  - A burrower coming up beside the party.
-  - The Crown's shield, nodes growing back unless burned, and its summons.
+  - A burrower coming up beside the party, and only one coming up at a time.
+  - The Crown's shield, nodes growing back once unless burned, its summons, and its quiet out of reach.
   - A golden of a Rootdark cavern, and `Images/AVAHack-rootdark.png`.
 
 ## 39. Implementation decisions (the Glass Roads)
@@ -2320,9 +2344,9 @@ families, rules and boss.
     in sight, each hero takes 6d8 + depth radiant, with a DEX save for half. Stepping out of the line dodges it.
   - **Shards.** At half health it sheds three Shards of the Lens.
 - **The bot** needs nothing new: rifts block like any station, and a spent rift stops spawning.
-- **Results** (6 seeds, 24-level Delves, clearing bot): the same as after the Rootdark (section 38): average depth
-  17.2, best 20, none won. No party gets past the Rootdark, so the bot never reaches the Glass Roads yet. Its
-  balance waits on tuning the Rootdark. The 4- and 12-level Delves are unaffected; their reports pass.
+- **Results** (6 seeds, 24-level Delves, clearing bot): at first no party got past the Rootdark. After its tuning
+  (section 38) two reach the Glass Roads and fall there, on levels 21 and 22, to the Refractor's shardlings and the
+  rifts' Unmade. Tuning the Glass Roads is next.
 - **Tests.**
   - Glass Roads levels with their families, glass, rifts, mirror walls and the Lens, and the Heart's Waystone after it.
   - Glass crunching once, cutting, waking the hall, and gone.

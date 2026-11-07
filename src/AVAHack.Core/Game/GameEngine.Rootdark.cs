@@ -16,13 +16,14 @@ namespace AVAHack.Game;
 /// <item><b>Burrowers</b> tunnel through the earth: once every few seconds an aware one comes out of the wall
 /// behind the party, or beside it.</item>
 /// <item><b>The Mycel Crown</b> can't be hurt while any Node of the Crown lives. A node cut down grows back in
-/// <see cref="NodeRegrow"/> seconds unless fire killed it; the Crown calls up thralls and breathes spores.</item>
+/// <see cref="NodeRegrow"/> seconds, once, unless fire killed it; the Crown calls up thralls and breathes spores.</item>
 /// </list>
 /// A burst pod and a cut tangle are kept in the level's flags, so saves keep them.
 /// </summary>
 public sealed partial class GameEngine
 {
-    public const double SporeSeconds = 12, NodeRegrow = 40, BurrowSeconds = 7;
+    public const int CrownReach = 6;
+    public const double SporeSeconds = 12, NodeRegrow = 90, BurrowSeconds = 10, BurrowGap = 8, CrownCall = 20;
 
     /// <summary>A station that still stands in the way: a spore pod that hasn't burst, a tangle not yet cut.</summary>
     public bool StationBlocks(Cell c) =>
@@ -53,7 +54,7 @@ public sealed partial class GameEngine
         _gas.Add(new GasCloud
         {
             Cells = [.. Enumerable.Range(-1, 3).SelectMany(dy => Enumerable.Range(-1, 3).Select(dx => new Cell(cell.X + dx, cell.Y + dy)))],
-            Variant = "spores", SecondsLeft = SporeSeconds, Dc = 14 + Level.Depth / 3, Since = 2,
+            Variant = "spores", SecondsLeft = SporeSeconds, Dc = 12 + Level.Depth / 3, Since = 2,
         });
     }
 
@@ -120,6 +121,7 @@ public sealed partial class GameEngine
         if (m.Cell.Distance(PartyCell) <= 1) { m.SpecialTimer = 0; return; }
         m.SpecialTimer += TickSeconds;
         if (m.SpecialTimer < BurrowSeconds || m.Action is not (MonsterAction.None or MonsterAction.Stepping or MonsterAction.Turning)) return;
+        if (Time - _lastBurrow < BurrowGap) return;                          // one at a time comes up out of the earth
         if (Path(m.Cell) is not var (steps, _) || steps > 14) return;
         m.SpecialTimer = 0;
         foreach (var d in new[] { Facing.Opposite(), Facing.Left(), Facing.Right() })
@@ -132,9 +134,12 @@ public sealed partial class GameEngine
             m.Facing = d.Opposite();
             Say(d == Facing.Opposite() ? $"{m.TheName} bursts out of the earth behind you!" : $"{m.TheName} tunnels up beside you!");
             Cue("burrow", at);
+            _lastBurrow = Time;
             return;
         }
     }
+
+    private double _lastBurrow = -100;
 
     // ---- The Mycel Crown ----
 
@@ -143,7 +148,9 @@ public sealed partial class GameEngine
 
     private void CrownTick(Monster m)
     {
-        if (m.SpecialTimer >= 15)
+        // Rooted, it calls and breathes only while the party is in its hall.
+        if (m.Cell.Distance(PartyCell) > CrownReach) { m.SpecialTimer = Math.Min(m.SpecialTimer, CrownCall - 2); return; }
+        if (m.SpecialTimer >= CrownCall)
         {
             m.SpecialTimer = 0;
             Summon(m, "thralledDelver", 2);
@@ -151,7 +158,7 @@ public sealed partial class GameEngine
             _gas.Add(new GasCloud
             {
                 Cells = [.. Enumerable.Range(-1, 3).SelectMany(dy => Enumerable.Range(-1, 3).Select(dx => new Cell(m.Cell.X + dx, m.Cell.Y + dy)))],
-                Variant = "spores", SecondsLeft = 8, Dc = 15 + Level.Depth / 3, Since = 1,
+                Variant = "spores", SecondsLeft = 8, Dc = 13 + Level.Depth / 3, Since = 1,
             });
             Say("The Mycel Crown exhales, and spores billow round it.");
             Cue("spore", m.Cell);
@@ -166,10 +173,15 @@ public sealed partial class GameEngine
             m.SpecialTimer = 0;
             Say("The node shrivels in the flames. It won't grow back.");
         }
+        else if (m.Raised)
+        {
+            m.SpecialTimer = 0;
+            Say("The node falls a second time, and its threads go grey. It won't grow back.");
+        }
         else
         {
             m.SpecialTimer = NodeRegrow;
-            Say("The node falls, but its threads are still alive. Burn it, or it will grow back.");
+            Say("The node falls, but its threads are still alive. Burn it, or it will grow back once.");
         }
         if (!CrownFed && LivingBoss is { Boss: "mycelCrown" }) Say("Its last node lies cut. The Mycel Crown is bare!");
     }

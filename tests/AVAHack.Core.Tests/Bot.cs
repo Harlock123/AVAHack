@@ -87,6 +87,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         // The Engine can't be hurt while its valves are open: leave it and shut them first.
         if (foe.M is { Boss: "bellwright" } && Clears && OpenValve() is not null) foe = default;
         if (foe.M is { Boss: "archivist" } a2 && Clears && g.LitCandles.Any(c => c.Distance(a2.Cell) <= 8)) foe = default; // snuff first
+        if (foe.M is { Boss: "mycelCrown" } && Clears && g.CrownFed) foe = default;   // no blow lands while a node lives: find them first
         if (foe.M is { } m)
         {
             _resting = false;
@@ -275,7 +276,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             // The nearest living creature (the boss last: it seals the stairs and wakes when the party nears).
             // Stick with the creature it was after until it falls or the bot gives up on it.
             if (_prey is { IsAlive: true } p && !_gaveUp.Contains(p) && Reachable(p.Cell)) { Goal = "hunt"; return (p.Cell, null, null); }
-            var foe = g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null && !_gaveUp.Contains(m) && Reachable(m.Cell))
+            var foe = g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null or "crownNode" && !_gaveUp.Contains(m) && Reachable(m.Cell))
                        .MinBy(m => m.Cell.Distance(g.PartyCell));
             if (foe is not null) { Goal = "hunt"; _prey = foe; return (foe.Cell, null, null); }
             foreach (var chest in g.Level.Chests.Where(c => !c.Opened).OrderBy(c => c.Cell.Distance(g.PartyCell)))
@@ -284,6 +285,12 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                 if (!_looted.Contains(cell) && !Gave("loot", cell) && Reachable(cell)) { Goal = "loot"; return (cell, null, null); }
             // The Engine's valves must be shut (down) before it can be hurt.
             if (OpenValve() is { } v) { Goal = "valve"; return (v.Cell, v.Face, v); }
+            // The Mycel Crown can't be hurt while a node lives: hunt them, or search for the way to them.
+            if (g.LivingBoss is { Boss: "mycelCrown" } && g.CrownFed)
+            {
+                if (Node() is { } node) { Goal = "hunt"; _prey = node; return (node.Cell, null, null); }
+                if (WallToSearch() is { } w3) { Goal = "search"; return (w3.Cell, w3.Face, null); }
+            }
             // Last, the boss: it seals the stairs until it falls.
             if (g.LivingBoss is { } boss && Reachable(boss.Cell)) { Goal = "boss"; return (boss.Cell, null, null); }
         }
@@ -418,6 +425,13 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         g.Level.Levers.FirstOrDefault(l => g.Level.Valves.Contains(l.Cell) && !l.Down && !Gave("valve", l.Cell) && Reachable(l.Cell));
 
     private bool Gave(string goal, Cell c) => _gaveUp.Contains((goal, c));
+
+    /// <summary>For the reports: each node of the Crown, alive or not, reachable, given up on.</summary>
+    public string NodeReport => string.Join(" ", g.Monsters.Where(m => m.Boss == "crownNode").Select(m =>
+        $"node@{m.Cell}:{(m.IsAlive ? "alive" : "dead")}{(Reachable(m.Cell) ? "" : ",unreachable")}{(_gaveUp.Contains(m) ? ",gaveup" : "")}"));
+
+    /// <summary>A living node of the Mycel Crown the bot can get to.</summary>
+    private Monster? Node() => g.Monsters.FirstOrDefault(m => m.Boss == "crownNode" && m.IsAlive && !_gaveUp.Contains(m) && Reachable(m.Cell));
     private Monster? _prey;
 
     private bool Reachable(Cell c) => c == g.PartyCell || PathStep(c) is not null || PathStep(c, braveTraps: true) is not null;

@@ -136,12 +136,53 @@ public sealed class RootdarkTests
         m.State = MonsterState.Aware;
         m.LastSeen = 0;
         bool burrowed = false;
-        for (int i = 0; i < 60 * 12 && !burrowed; i++)
+        for (int i = 0; i < 60 * 20 && !burrowed; i++)
         {
             g.Tick();
             burrowed = m.Cell.Distance(g.PartyCell) <= 1 && g.Log.Any(l => l.Contains("out of the earth", StringComparison.Ordinal) || l.Contains("tunnels up", StringComparison.Ordinal));
         }
         Assert.True(burrowed, $"{m.Cell} {m.Action} {m.SpecialTimer:F1} at {g.Time:F1}s");
+    }
+
+    [Fact]
+    public void Only_one_burrower_comes_up_at_a_time()
+    {
+        var level = LevelLoader.Parse("""
+            start: 2 1 east
+            map:
+            ##############
+            #....#.......#
+            #....#.......#
+            #....#.......#
+            #....#.......#
+            #....#.......#
+            #....#.......#
+            #............#
+            ##############
+            """);
+        level.Theme = "rootdark";
+        var g = new GameEngine(level, 18, PartyTests.QuickParty(Db), Db);
+        // Three wyrms in reach, all ready to come up at once: only one does, and the next waits out the gap.
+        var wyrms = new[] { new Cell(7, 7), new Cell(8, 7), new Cell(9, 7) }.Select(at =>
+        {
+            var w = g.AddMonster("rootWyrm", at, Dir.West);
+            w.State = MonsterState.Aware;
+            w.LastSeen = 0;
+            w.SpecialTimer = GameEngine.BurrowSeconds;
+            return w;
+        }).ToList();
+        var was = wyrms.Select(w => w.Cell).ToList();
+        int jumps = 0;
+        for (int i = 0; i < 60 * 2; i++)
+        {
+            g.Tick();
+            for (int k = 0; k < wyrms.Count; k++)
+            {
+                if (wyrms[k].Cell.Distance(was[k]) > 1) jumps++;
+                was[k] = wyrms[k].Cell;
+            }
+        }
+        Assert.Equal(1, jumps);
     }
 
     [Fact]
@@ -167,6 +208,11 @@ public sealed class RootdarkTests
         Assert.True(node.IsAlive);
         Assert.False(burned.IsAlive);
         Assert.True(g.CrownFed);
+        // Cut down a second time, it stays down.
+        g.DamageMonster(node, node.Hp + 50, DamageType.Slashing);
+        Run(g, GameEngine.NodeRegrow + 1);
+        Assert.False(node.IsAlive);
+        Assert.False(g.CrownFed);
     }
 
     [Fact]
@@ -174,9 +220,19 @@ public sealed class RootdarkTests
     {
         var g = Make();
         g.Level.Boss = "mycelCrown";
-        var crown = g.AddMonster("mycelCrown", new Cell(9, 2), Dir.West);
+        var crown = g.AddMonster("mycelCrown", new Cell(6, 2), Dir.West);
         crown.State = MonsterState.Aware;
-        Run(g, 16);
+        Run(g, GameEngine.CrownCall + 1);
         Assert.Contains(g.Monsters, m => m.Def.Id == "thralledDelver");
+
+        // Out of its hall, it is quiet: it can't follow.
+        var h = Make();
+        h.Level.Boss = "mycelCrown";
+        h.Stand(new Cell(1, 1), Dir.East);
+        var far = h.AddMonster("mycelCrown", new Cell(10, 3), Dir.West);              // nine cells off
+        far.State = MonsterState.Aware;
+        Run(h, GameEngine.CrownCall * 2);
+        Assert.DoesNotContain(h.Monsters, m => m.Def.Id == "thralledDelver");
+        Assert.Equal(new Cell(10, 3), far.Cell);
     }
 }

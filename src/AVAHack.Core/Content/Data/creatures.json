@@ -3642,7 +3642,7 @@
  "family": "burrowers",
  "tier": "greater",
  "level": 30,
- "hitDice": "18d10+54",
+ "hitDice": "15d10+45",
  "ac": 17,
  "perception": 13,
  "stepSeconds": 0.9,
@@ -3710,7 +3710,7 @@
    "windup": 0.8,
    "recovery": 1.8,
    "toHit": 13,
-   "damage": "4d10+6",
+   "damage": "3d10+6",
    "type": "piercing",
    "area": true,
    "onHit": {
@@ -3725,7 +3725,6 @@
   "chase",
   "melee",
   "mindless",
-  "burrower",
   "splits"
  ],
  "resist": [
@@ -4151,9 +4150,9 @@
  ],
  "behaviour": [
   "guard",
-  "chase",
   "melee",
   "ranged",
+  "rooted",
   "unyielding",
   "boss"
  ],
@@ -4173,7 +4172,7 @@
   "blinded"
  ],
  "sprite": "crown",
- "text": "The mind of the Rootdark: a cap of fungus as wide as a cart, fed by nodes spread through its halls. It can't be hurt while they live.",
+ "text": "The mind of the Rootdark: a cap of fungus as wide as a cart, fed by nodes spread through its halls. It can't move, and it can't be hurt while they live.",
  "loot": "chest.rich",
  "boss": "mycelCrown"
 },

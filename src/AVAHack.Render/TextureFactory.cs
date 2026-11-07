@@ -49,6 +49,8 @@ public static class TextureFactory
             LeverUp = WithLever(wall, down: false),
             Shelf = Bookshelf(wall, seed + 12),
             RootWall = Rootwall(wall, seed + 13),
+            MirrorWall = Mirrorwall(wall.Side, seed + 14),
+            Shards = BrokenGlass(floor, seed + 15),
             LeverDown = WithLever(wall, down: true),
             Pit = PitHole(seed + 5),
             Plate = PressurePlate(seed + 6, floorRgb),
@@ -420,6 +422,59 @@ public static class TextureFactory
         {
             int h = Hash(seed, i, 99);
             Dot(t, h % 64, Hash(seed, i, 98) % 64, Rgb(200, 196, 170));
+        }
+        return t;
+    }
+
+    /// <summary>
+    /// A wall of polished black glass: a deep, near-black sheet with a faint violet sheen, a few long cracks, and
+    /// pale streaks of reflected light running down it. Drawn whole, not over the stone.
+    /// </summary>
+    public static Texture Mirrorwall(int side, int seed)
+    {
+        var t = new Texture(side);
+        for (int y = 0; y < 64; y++)
+        for (int x = 0; x < 64; x++)
+        {
+            // A smooth gradient with a soft vertical sheen, and seams where the panes meet.
+            double sheen = Math.Exp(-Math.Pow((x - 22 - y * 0.15) / 7.0, 2)) * 34 + Math.Exp(-Math.Pow((x - 50 + y * 0.1) / 3.0, 2)) * 18;
+            int v = (int)(14 + y * 0.12 + sheen);
+            bool seam = x is 0 or 63 || y is 0 or 63 || x == 31;
+            Dot(t, x, y, seam ? Rgb(6, 5, 10) : Rgb(Math.Min(255, v + 2), Math.Min(255, v), Math.Min(255, v + 12)));
+        }
+        // Long cracks, catching the light along one edge.
+        for (int k = 0; k < 3; k++)
+        {
+            int h = Hash(seed, k, 5);
+            double x = 6 + h % 52, y = Hash(seed, k, 6) % 40;
+            double dx = (Hash(seed, k, 7) % 9 - 4) / 6.0;
+            for (int i = 0; i < 26 && y < 63; i++)
+            {
+                x += dx + (Hash(seed, k, i) % 3 - 1) * 0.5;
+                y += 1;
+                if (x < 1 || x > 62) break;
+                Dot(t, (int)x, (int)y, Rgb(150, 140, 180));
+                if ((int)x + 1 < 63) Dot(t, (int)x + 1, (int)y, Rgb(4, 4, 8));
+            }
+        }
+        return t;
+    }
+
+    /// <summary>A floor strewn with shards of black glass, glinting.</summary>
+    public static Texture BrokenGlass(Texture floor, int seed)
+    {
+        var t = floor.Clone();
+        for (int i = 0; i < 34; i++)
+        {
+            int cx = 4 + Hash(seed, i, 1) % 56, cy = 4 + Hash(seed, i, 2) % 56, size = 2 + Hash(seed, i, 3) % 4;
+            int lean = Hash(seed, i, 4) % 3 - 1;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x <= size - y; x++)
+            {
+                int px = cx + x + lean * y, py = cy + y;
+                if (px is < 0 or > 63 || py is < 0 or > 63) continue;
+                Dot(t, px, py, y == 0 && x == 0 ? Rgb(220, 214, 240) : (x + y) % 3 == 0 ? Rgb(70, 64, 92) : Rgb(22, 20, 30));
+            }
         }
         return t;
     }

@@ -452,6 +452,20 @@ def make_all(rng, only):
     S("chop", mix((env(lowpass(noise(0.1, rng), 700), 0.001, 0.04), 1.0), (env(bandpass(noise(0.15, rng), 2200, 2), 0.002, 0.05), 0.6, 0.01),
                   (env(bandpass(noise(0.3, rng), 900, 3), 0.02, 0.15), 0.3, 0.06)), 0.7)
 
+    # The Glass Roads (spec 39), on their own generator too.
+    rng = random.Random(3939)
+    def tinkle(t0, lo, hi, count, spread):
+        return [(env(partials(rng.uniform(lo, hi), [1, 2.76, 5.4], [0.25, 0.12, 0.06], 0.3), 0.001, 0.08), rng.uniform(0.3, 0.8), t0 + rng.uniform(0, spread)) for _ in range(count)]
+    S("bark.shardborn", reverb(mix(*tinkle(0, 2500, 5200, 14, 0.5), (env(highpass(noise(0.5, rng), 4000), 0.02, 0.2), 0.4)), 0.4, 1.2, 0.6), 0.6)
+    S("bark.hollowed", reverb(env(mix(*[(voice(lambda t, k=k: (180 + k * 2.5) * (1 - 0.1 * t), 1.3, OH, rng, rough=0.08), 0.4) for k in range(3)]), 0.3, 0.7, 2.5, hold=0.4), 0.6, 1.6, 1.0), 0.55)
+    S("glass", mix((env(bandpass(noise(0.12, rng), 3000, 1.2), 0.002, 0.05), 1.0), *tinkle(0.02, 3000, 6000, 10, 0.25)), 0.65)
+    S("hit.glass", mix((env(bandpass(noise(0.08, rng), 2500, 1.5), 0.001, 0.03), 1.0), *tinkle(0.0, 2200, 4800, 6, 0.12)), 0.75)
+    S("die.glass", reverb(mix((env(highpass(noise(0.4, rng), 2000), 0.002, 0.15), 0.9), *tinkle(0.03, 1800, 6000, 26, 0.7)), 0.4, 1.2, 0.6), 0.8)
+    S("rift", reverb(mix((env(osc(lambda t: 55 + 30 * t, 1.4, "saw"), 0.3, 0.8, 2.5, hold=0.3), 0.5), (env(lowpass(noise(1.4, rng), lambda t: 300 + 1500 * t), 0.4, 0.6, 2.5, hold=0.3), 0.7)), 0.5, 1.5, 1.0), 0.7)
+    S("seal", reverb(mix(*[(env(osc(f, 1.6), 0.002, 0.9), 0.3, i * 0.04) for i, f in enumerate((523, 659, 784, 1047))]), 0.5, 1.4, 1.0), 0.6)
+    S("beam.charge", env(mix((osc(lambda t: 300 + 900 * t / 1.5, 1.5), 0.5), (osc(lambda t: 450 + 1350 * t / 1.5, 1.5), 0.3)), 1.3, 0.2, 2, hold=0.0), 0.5)
+    S("beam", reverb(mix((env(osc(lambda t: 1800 - 1200 * t, 0.7, "saw"), 0.005, 0.6), 0.5), (env(highpass(noise(0.7, rng), 2500), 0.005, 0.5), 0.8)), 0.4, 1.3, 0.7), 0.8)
+
 
 if __name__ == "__main__":
     make_all(random.Random(1234), set(sys.argv[1:]))

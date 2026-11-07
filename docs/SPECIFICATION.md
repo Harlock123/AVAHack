@@ -135,8 +135,9 @@ The town sends delvers down to silence it.
 - **The Rootdark (levels 17–20).** Giant roots and fungus beneath the Works. The Burrowers, the spore-thralls and
   the spore-kin. Spore pods burst in choking clouds that fire sets alight, root tangles choke the passages, and
   burrowers come up out of the earth behind you. Its boss is the Mycel Crown. (Section 38.)
-- **The Glass Roads (levels 21–24).** Halls of fused black glass where the Unmade first broke through.
-  *Placeholder:* the Unmade, aberrations, elementals and constructs.
+- **The Glass Roads (levels 21–24).** Halls of fused black glass where the Unmade first broke through. The
+  Shardborn, the Hollowed and the Unmade. Broken glass crunches underfoot and wakes the halls, rifts let the Unmade
+  through until you seal them, and its boss, the Lens, learns every blow you strike. (Section 39.)
 - **The Unmade Heart (final level).** Below the last level of any Delve of 12 levels or more. It leads to the
   Unmaker.
 
@@ -2113,7 +2114,7 @@ The user asked for a deeper dungeon with more kinds of creature: the structure f
 - **Progression.** Every second level past 20 gives attribute points, as well as every fourth. This keeps a long
   Delve's levels worth having once the skills near their cap.
 - **The Rootdark and the Glass Roads** were placeholders, made of existing families with no boss yet. The Rootdark
-  now has its own (section 38); the Glass Roads are next in line.
+  now has its own (section 38), and so do the Glass Roads (section 39).
 
 ### The Ossuary Stacks (levels 13–16)
 
@@ -2261,3 +2262,72 @@ The second new region, levels 17–20, after the Stacks. Where deep runs used to
   - A burrower coming up beside the party.
   - The Crown's shield, nodes growing back unless burned, and its summons.
   - A golden of a Rootdark cavern, and `Images/AVAHack-rootdark.png`.
+
+## 39. Implementation decisions (the Glass Roads)
+
+The last new region, levels 21–24, between the Rootdark and the Unmade Heart. All six regions now have their own
+families, rules and boss.
+
+- **Two new families**, six creatures each:
+  - **The Shardborn**, glass the Unmade's breaking-through left alive. Glass resists slashing and piercing, takes
+    double from bludgeoning, and is immune to poison and bleeding: a hammer is the weapon here.
+    - the Shardling: a scuttling pack of splinters that makes you bleed;
+    - the Prism Eye: a floating prism whose beam blinds;
+    - the Mirrorling: an unseen phaser that frightens;
+    - the Glass Strider: four legs of drawn glass, unyielding;
+    - the Obsidian Hulk: an area smash that stuns, and it opens doors;
+    - the Refractor: a flying caster that blinds an area and calls up shardlings.
+  - **The Hollowed**, delvers the Unmade emptied. They resist necrotic and psychic, and radiant hurts them double.
+    - the Hollow Pilgrim: mindless, and it weakens;
+    - the Glass-Eyed Archer: a pack archer;
+    - the Void-Torn Hound: a pack hunter;
+    - the Hollow Templar: an unyielding guard;
+    - the Echo of the Fallen: a flying phaser with an area keen;
+    - the Unsaid: a caster that curses and raises the fallen.
+
+  The Unmade live here too.
+- **The art.** The Shardborn get new drawers of glass facets in `SpriteFactory.Glass`:
+  - kites of black glass, dark on one side and violet-lit on the other;
+  - the shardling, the prisms (the eye, the Refractor ringed with shards, the Lens's shards) and the Lens;
+  - the strider, the hulk, the hound and the Echo use the bug, machine, beast and floater drawers.
+
+  The Hollowed are people with glass eyes. Each family has its own cry. Glass has its own sound when hit and when
+  it shatters.
+- **The glass loot table**: gold, reagents, gear, scrolls and potions.
+- **The region's switches** in `regions.json`: `shards` (8% of floor cells), `rifts` (3 a level) and `mirrorWalls`
+  (25% of room walls).
+- **Broken glass.**
+  - **Placing.** It lies on floor cells away from the start, the stairs and the stations, and is drawn as shards
+    over the floor.
+  - **Stepping on it.** The first time the party steps on it, it crunches. Anything unaware within 6 steps along
+    the passages wakes (a shut door counts as three). Each hero makes a DEX save against 13 + depth / 3, or takes
+    2d6 + depth / 3 slashing.
+  - **After.** The glass is ground to powder: the cell is kept in the level's flags, so saves keep it.
+- **Rifts.**
+  - **Placing.** A rift is a station in a room.
+  - **Spawning.** While the party is within 6 cells, an open rift lets one of the Unmade through every 12 seconds,
+    at the region's level, already aware. After three it is spent.
+  - **Sealing.** Use seals a rift: d20 + the better of Warding and Lore / 5 + WIS against 16, and the third try
+    always works. Either way it trains Warding.
+  - **Saves.** Sealed and spent rifts are kept in the level's flags. Spawning stops after three so a level can't
+    keep a party (or the bot) fighting for ever.
+- **Mirror walls**: some room walls are polished black glass, with cracks and a sheen. Only the look.
+- **The Lens** (level 24):
+  - **It learns blows.** A blow of the same damage type as the last one that hurt it is three quarters turned
+    aside. The party has to keep changing: blade, then hammer, then spell.
+  - **Its beam.** Every 10 seconds it turns and gathers light down its row or column, whichever the party is nearer
+    to. A second and a half later the beam fires down that line. If the party is still in it, within 10 cells and
+    in sight, each hero takes 6d8 + depth radiant, with a DEX save for half. Stepping out of the line dodges it.
+  - **Shards.** At half health it sheds three Shards of the Lens.
+- **The bot** needs nothing new: rifts block like any station, and a spent rift stops spawning.
+- **Results** (6 seeds, 24-level Delves, clearing bot): the same as after the Rootdark (section 38): average depth
+  17.2, best 20, none won. No party gets past the Rootdark, so the bot never reaches the Glass Roads yet. Its
+  balance waits on tuning the Rootdark. The 4- and 12-level Delves are unaffected; their reports pass.
+- **Tests.**
+  - Glass Roads levels with their families, glass, rifts, mirror walls and the Lens, and the Heart's Waystone after it.
+  - Glass crunching once, cutting, waking the hall, and gone.
+  - A rift letting three of the Unmade through, then spent. Another sealed by Use by the third try.
+  - The Lens learning a blow, and taking a new kind in full.
+  - Its beam hitting a party in line, and missing one that stepped aside.
+  - It shedding shards at half health.
+  - A golden of a Glass Roads hall, and `Images/AVAHack-glass.png`.

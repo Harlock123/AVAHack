@@ -48,6 +48,7 @@ public sealed partial class GameEngine
         SneakPractice();
         LookForSecrets(c);
         LookForTraps(c);
+        StepOnGlass(c);
         if (Level.Illusory.Contains(c) && !LevelFlags.ContainsKey($"illusion:{c}"))
         {
             LevelFlags[$"illusion:{c}"] = "1";

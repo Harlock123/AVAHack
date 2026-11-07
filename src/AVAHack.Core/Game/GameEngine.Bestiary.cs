@@ -238,9 +238,10 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Damage that a boss's script turns aside (the Engine's valves, the Mother under the water).</summary>
-    private int BossShield(Monster m, int dmg)
+    private int BossShield(Monster m, int dmg, DamageType type)
     {
         if (m.Boss is null || dmg <= 0) return dmg;
+        if (m.Boss == "lens") return LensShield(m, dmg, type);
         if (m.Boss == "mycelCrown" && CrownFed)
         {
             if (!LevelFlags.TryGetValue("bossSaid", out var fed) || Time - double.Parse(fed, CultureInfo.InvariantCulture) > 6)
@@ -323,6 +324,9 @@ public sealed partial class GameEngine
                 break;
             case "mycelCrown":
                 CrownTick(m);
+                break;
+            case "lens":
+                LensTick(m, share);
                 break;
             case "unmaker":
                 if (m.Phase == 0 && m.SpecialTimer >= 15) { m.SpecialTimer = 0; Summon(m, "unmadeHound", 2); }

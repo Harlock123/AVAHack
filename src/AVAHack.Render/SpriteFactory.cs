@@ -181,6 +181,29 @@ public sealed partial class SpriteFactory
                 }
                 break;
             }
+            case "rift":
+            case "rift-sealed":
+            {
+                // A tear standing in the air: a jagged lens of nothing, edged with violet light, glass shards
+                // hanging round it. Sealed, only a dark seam and the fallen glass.
+                p.Mat = Material.Gloss;
+                foreach (var (x, y, s) in new[] { (14.0, 20.0, 3.0), (50.0, 16.0, 2.5), (18.0, 46.0, 2.0), (47.0, 44.0, 3.0), (32.0, 6.0, 2.0) })
+                    if (kind == "rift") p.Poly(C(40, 36, 56), (x, y - s * 1.6), (x + s, y), (x, y + s * 1.6), (x - s * 0.8, y));
+                p.Mat = Material.Matte;
+                p.Ellipse(32, 62, 14, 2, C(30, 28, 40));
+                if (kind == "rift")
+                {
+                    p.Poly(C(150, 90, 230), false, (32, 4), (40, 18), (37, 30), (44, 44), (32, 60), (24, 44), (28, 30), (22, 16));
+                    p.Poly(C(12, 6, 22), false, (32, 9), (37, 19), (34, 30), (39, 43), (32, 55), (27, 43), (31, 30), (26, 18));
+                    for (int i = 0; i < 6; i++) p.Dot(29 + i % 3 * 3, 16 + i * 6, C(230, 200, 255));
+                }
+                else
+                {
+                    p.Line(32, 14, 32, 58, 0.8, C(60, 50, 80));
+                    for (int i = 0; i < 5; i++) p.Poly(C(40, 36, 56), (20 + i * 6, 62), (22 + i * 6, 57 - i % 2 * 2), (25 + i * 6, 62));
+                }
+                break;
+            }
             case "boulder":
                 p.Ellipse(32, 36, 27, 27, Paint.Rgb(110, 100, 90));
                 p.Ellipse(24, 28, 8, 6, Paint.Rgb(130, 120, 110));

@@ -72,4 +72,8 @@ public sealed class TextureSet
     public Texture? Shelf { get; init; }
     /// <summary>A wall grown over with roots (the Rootdark).</summary>
     public Texture? RootWall { get; init; }
+    /// <summary>A wall of polished black glass (the Glass Roads).</summary>
+    public Texture? MirrorWall { get; init; }
+    /// <summary>A floor strewn with broken glass (the Glass Roads).</summary>
+    public Texture? Shards { get; init; }
 }

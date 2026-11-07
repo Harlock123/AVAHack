@@ -35,6 +35,12 @@ public sealed partial class SpriteFactory
         // The Rootdark's spore-thralls: delvers and goblins the fungus took.
         ["thralledDelver"] = new(C(178, 170, 148), C(84, 72, 54), C(70, 80, 60), 0.95, false, "pick", false, false, C(240, 220, 120)),
         ["cappedGoblin"] = new(C(120, 140, 92), C(96, 78, 50), C(70, 56, 36), 0.8, true, "knife", false, false, C(240, 220, 120)),
+        // The Glass Roads' Hollowed: delvers the Unmade emptied, with glass for eyes; and the Mirrorling.
+        ["pilgrim"] = new(C(168, 160, 150), C(120, 110, 96), C(90, 80, 70), 0.95, false, "staff", false, true, C(200, 190, 255)),
+        ["glassArcher"] = new(C(170, 160, 150), C(70, 66, 74), C(110, 90, 60), 0.95, false, "bow", false, true, C(200, 190, 255)),
+        ["templar"] = new(C(160, 150, 140), C(150, 150, 160), C(220, 210, 190), 1.05, false, "sword", false, false, C(200, 190, 255)),
+        ["unsaid"] = new(C(150, 140, 140), C(24, 22, 28), C(140, 110, 200), 1.0, false, "staff", false, true, C(230, 220, 255)),
+        ["mirrorling"] = new(C(170, 166, 190), C(52, 48, 70), C(150, 136, 200), 1.0, false, "none", false, false, C(240, 240, 255)),
         ["mycelKnight"] = new(C(170, 160, 140), C(108, 104, 96), C(130, 100, 70), 1.05, false, "sword", false, false, C(240, 220, 120)),
     };
 
@@ -46,6 +52,7 @@ public sealed partial class SpriteFactory
         "golemMagma", "juggernaut", "engine", "naga", "nagaQueen", "tentacles", "stalker", "mimic",
         "pages", "slimeInk", "quill", "waxGolem", "errata", "bell", "veil", "keener", "hush",
         "grub", "rootBeetle", "sapsucker", "wyrm", "matron", "gnawing", "mossWarg", "carrier", "bloom", "node", "crown",
+        "shardling", "prism", "strider", "hulk", "refractor", "tornHound", "echo", "lens", "lensShard",
     ];
 
     /// <summary>Draws the M7 creatures. False if the id isn't one of them.</summary>
@@ -118,6 +125,16 @@ public sealed partial class SpriteFactory
             case "bloom": Fungus(p, f, C(190, 80, 120), C(230, 200, 190), 1.0, heap: true); return true;
             case "node": Node(p, f); return true;
             case "crown": Crown(p, v, f); return true;
+            // The Glass Roads.
+            case "shardling": Shardling(p, v, f, 0.8); return true;
+            case "prism": Prism(p, f, 0.8, C(255, 230, 160)); return true;
+            case "lensShard": Prism(p, f, 0.55, C(200, 160, 255), 34); return true;
+            case "refractor": Prism(p, f, 1.15, C(180, 220, 255), 28, shards: true); return true;
+            case "strider": Bug(p, v, f, GlassMid, GlassDark, 1.15, 4, GlassLight); return true;
+            case "hulk": Machine(p, v, f, C(34, 28, 40), C(255, 80, 40), 1.05, true, cracks: true); return true;
+            case "tornHound": Beast(p, v, f, C(40, 34, 52), C(190, 140, 255), false, lean: true); return true;
+            case "echo": Floater(p, f, C(170, 160, 210), C(240, 230, 255), "ghost"); return true;
+            case "lens": Lens(p, v, f); return true;
         }
         return false;
     }

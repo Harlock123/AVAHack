@@ -4176,5 +4176,782 @@
  "text": "The mind of the Rootdark: a cap of fungus as wide as a cart, fed by nodes spread through its halls. It can't be hurt while they live.",
  "loot": "chest.rich",
  "boss": "mycelCrown"
+},
+{
+ "id": "shardling",
+ "name": "Shardling",
+ "family": "shardborn",
+ "tier": "common",
+ "level": 30,
+ "hitDice": "16d10+32",
+ "ac": 18,
+ "perception": 14,
+ "stepSeconds": 0.5,
+ "turnSeconds": 0.4,
+ "size": "small",
+ "attacks": [
+  {
+   "id": "shear",
+   "windup": 0.5,
+   "recovery": 1.4,
+   "toHit": 12,
+   "damage": "2d10+6",
+   "type": "slashing",
+   "onHit": {
+    "condition": "bleeding",
+    "dc": 17,
+    "chance": 25
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "mindless",
+  "pack"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "shardling",
+ "text": "A scuttling knot of black glass splinters. It hunts in clattering packs. A hammer shatters it; a blade only chips it.",
+ "loot": "glass"
+},
+{
+ "id": "prismEye",
+ "name": "Prism Eye",
+ "family": "shardborn",
+ "tier": "common",
+ "level": 30,
+ "hitDice": "14d10+28",
+ "ac": 17,
+ "perception": 17,
+ "stepSeconds": 0.9,
+ "turnSeconds": 0.5,
+ "size": "small",
+ "attacks": [
+  {
+   "id": "glare",
+   "windup": 1.0,
+   "recovery": 2.6,
+   "toHit": 12,
+   "damage": "3d8+4",
+   "type": "radiant",
+   "range": 6,
+   "projectileSpeed": 9,
+   "onHit": {
+    "condition": "blinded",
+    "dc": 17,
+    "chance": 25,
+    "seconds": 4
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "ranged",
+  "flier"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "prism",
+ "text": "A floating prism that gathers the faint light of the Roads and throws it back as a searing beam.",
+ "loot": "glass"
+},
+{
+ "id": "mirrorling",
+ "name": "Mirrorling",
+ "family": "shardborn",
+ "tier": "common",
+ "level": 31,
+ "hitDice": "15d10+30",
+ "ac": 17,
+ "perception": 15,
+ "stepSeconds": 0.6,
+ "turnSeconds": 0.4,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "reflection",
+   "windup": 0.7,
+   "recovery": 1.8,
+   "toHit": 12,
+   "damage": "3d8+5",
+   "type": "psychic",
+   "onHit": {
+    "condition": "frightened",
+    "dc": 17,
+    "chance": 20,
+    "seconds": 6
+   }
+  }
+ ],
+ "behaviour": [
+  "ambush",
+  "chase",
+  "melee",
+  "phaser",
+  "invisible"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "mirrorling",
+ "text": "You see it only in the glass: your own face, a step behind you, smiling.",
+ "loot": "glass"
+},
+{
+ "id": "glassStrider",
+ "name": "Glass Strider",
+ "family": "shardborn",
+ "tier": "greater",
+ "level": 33,
+ "hitDice": "19d10+57",
+ "ac": 18,
+ "perception": 15,
+ "stepSeconds": 0.6,
+ "turnSeconds": 0.5,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "impale",
+   "windup": 0.8,
+   "recovery": 2.0,
+   "toHit": 13,
+   "damage": "3d10+7",
+   "type": "piercing",
+   "onHit": {
+    "condition": "bleeding",
+    "dc": 18,
+    "chance": 30
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "unyielding"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "strider",
+ "text": "Four legs of drawn glass, each as long as a spear, under a body like a chandelier.",
+ "loot": "glass"
+},
+{
+ "id": "obsidianHulk",
+ "name": "Obsidian Hulk",
+ "family": "shardborn",
+ "tier": "greater",
+ "level": 34,
+ "hitDice": "21d10+63",
+ "ac": 19,
+ "perception": 13,
+ "stepSeconds": 1.0,
+ "turnSeconds": 0.8,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "smash",
+   "windup": 1.1,
+   "recovery": 2.6,
+   "toHit": 13,
+   "damage": "4d10+7",
+   "type": "bludgeoning",
+   "area": true,
+   "onHit": {
+    "condition": "stunned",
+    "dc": 18,
+    "chance": 25,
+    "seconds": 2
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "unyielding",
+  "opener"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "hulk",
+ "text": "A giant of fused black glass with a slow red fire inside. It walks through doors as if they were curtains.",
+ "loot": "glass"
+},
+{
+ "id": "theRefractor",
+ "name": "The Refractor",
+ "family": "shardborn",
+ "tier": "dread",
+ "level": 36,
+ "hitDice": "22d10+66",
+ "ac": 18,
+ "perception": 17,
+ "stepSeconds": 0.8,
+ "turnSeconds": 0.6,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "splinter",
+   "windup": 0.8,
+   "recovery": 2.0,
+   "toHit": 14,
+   "damage": "3d10+7",
+   "type": "slashing"
+  },
+  {
+   "id": "spectrum",
+   "windup": 1.2,
+   "recovery": 3.0,
+   "toHit": 13,
+   "damage": "4d8+4",
+   "type": "radiant",
+   "range": 6,
+   "projectileSpeed": 9,
+   "area": true,
+   "onHit": {
+    "condition": "blinded",
+    "dc": 18,
+    "chance": 30,
+    "seconds": 4
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "ranged",
+  "summoner",
+  "flier"
+ ],
+ "summons": "shardling",
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "refractor",
+ "text": "A cathedral window torn from nowhere, turning slowly in the air. Splinters fall from it and get up.",
+ "loot": "chest.rich"
+},
+{
+ "id": "hollowPilgrim",
+ "name": "Hollow Pilgrim",
+ "family": "hollowed",
+ "tier": "common",
+ "level": 30,
+ "hitDice": "17d10+34",
+ "ac": 16,
+ "perception": 13,
+ "stepSeconds": 0.8,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "grasp",
+   "windup": 0.7,
+   "recovery": 1.8,
+   "toHit": 12,
+   "damage": "2d10+6",
+   "type": "necrotic",
+   "onHit": {
+    "condition": "weakened",
+    "dc": 17,
+    "chance": 20,
+    "seconds": 8
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "mindless"
+ ],
+ "resist": [
+  "necrotic",
+  "psychic"
+ ],
+ "vulnerable": [
+  "radiant"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "pilgrim",
+ "text": "It walks toward the Heart as it did in life, singing with no voice. Its eyes have turned to glass.",
+ "loot": "glass"
+},
+{
+ "id": "glassEyedArcher",
+ "name": "Glass-Eyed Archer",
+ "family": "hollowed",
+ "tier": "common",
+ "level": 30,
+ "hitDice": "15d10+30",
+ "ac": 17,
+ "perception": 17,
+ "stepSeconds": 0.8,
+ "turnSeconds": 0.5,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "knife",
+   "windup": 0.6,
+   "recovery": 1.6,
+   "toHit": 12,
+   "damage": "2d8+5",
+   "type": "slashing"
+  },
+  {
+   "id": "arrow",
+   "windup": 0.9,
+   "recovery": 2.2,
+   "toHit": 13,
+   "damage": "3d8+5",
+   "type": "piercing",
+   "range": 7,
+   "projectileSpeed": 12
+  }
+ ],
+ "behaviour": [
+  "patrol",
+  "chase",
+  "ranged",
+  "melee",
+  "pack"
+ ],
+ "resist": [
+  "necrotic",
+  "psychic"
+ ],
+ "vulnerable": [
+  "radiant"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "glassArcher",
+ "text": "Glass eyes never blink, and never miss a thing that moves.",
+ "loot": "glass"
+},
+{
+ "id": "tornHound",
+ "name": "Void-Torn Hound",
+ "family": "hollowed",
+ "tier": "common",
+ "level": 31,
+ "hitDice": "16d10+32",
+ "ac": 17,
+ "perception": 16,
+ "stepSeconds": 0.45,
+ "turnSeconds": 0.35,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "rend",
+   "windup": 0.5,
+   "recovery": 1.4,
+   "toHit": 13,
+   "damage": "3d8+6",
+   "type": "slashing",
+   "onHit": {
+    "condition": "bleeding",
+    "dc": 17,
+    "chance": 25
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "pack"
+ ],
+ "resist": [
+  "necrotic",
+  "psychic"
+ ],
+ "vulnerable": [
+  "radiant"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "tornHound",
+ "text": "A hound with the dark showing through it where its flanks should be.",
+ "loot": "glass"
+},
+{
+ "id": "hollowTemplar",
+ "name": "Hollow Templar",
+ "family": "hollowed",
+ "tier": "greater",
+ "level": 33,
+ "hitDice": "20d10+60",
+ "ac": 19,
+ "perception": 14,
+ "stepSeconds": 0.8,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "greatsword",
+   "windup": 0.9,
+   "recovery": 2.2,
+   "toHit": 14,
+   "damage": "4d8+7",
+   "type": "slashing"
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "unyielding",
+  "opener"
+ ],
+ "resist": [
+  "necrotic",
+  "psychic"
+ ],
+ "vulnerable": [
+  "radiant"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "templar",
+ "text": "Its oath outlived its soul. It still guards the road it swore to keep, from everyone.",
+ "loot": "glass"
+},
+{
+ "id": "echoOfTheFallen",
+ "name": "Echo of the Fallen",
+ "family": "hollowed",
+ "tier": "greater",
+ "level": 34,
+ "hitDice": "18d10+54",
+ "ac": 17,
+ "perception": 16,
+ "stepSeconds": 0.6,
+ "turnSeconds": 0.5,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "lament",
+   "windup": 0.9,
+   "recovery": 2.2,
+   "toHit": 13,
+   "damage": "3d10+6",
+   "type": "psychic",
+   "area": true,
+   "onHit": {
+    "condition": "frightened",
+    "dc": 18,
+    "chance": 30,
+    "seconds": 8
+   }
+  }
+ ],
+ "behaviour": [
+  "wander",
+  "chase",
+  "melee",
+  "phaser",
+  "flier"
+ ],
+ "resist": [
+  "necrotic",
+  "psychic"
+ ],
+ "vulnerable": [
+  "radiant"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "echo",
+ "text": "What is left of a delver who died on the Roads: their last moment, repeating, and reaching for you.",
+ "loot": "glass"
+},
+{
+ "id": "theUnsaid",
+ "name": "The Unsaid",
+ "family": "hollowed",
+ "tier": "dread",
+ "level": 36,
+ "hitDice": "22d10+66",
+ "ac": 18,
+ "perception": 17,
+ "stepSeconds": 0.8,
+ "turnSeconds": 0.6,
+ "size": "medium",
+ "attacks": [
+  {
+   "id": "silence",
+   "windup": 0.8,
+   "recovery": 2.0,
+   "toHit": 14,
+   "damage": "3d10+7",
+   "type": "necrotic"
+  },
+  {
+   "id": "unword",
+   "windup": 1.2,
+   "recovery": 3.0,
+   "toHit": 13,
+   "damage": "4d8+4",
+   "type": "psychic",
+   "range": 6,
+   "projectileSpeed": 8,
+   "area": true,
+   "onHit": {
+    "condition": "cursed",
+    "dc": 18,
+    "chance": 30,
+    "seconds": 10
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "ranged",
+  "raises"
+ ],
+ "resist": [
+  "necrotic",
+  "psychic"
+ ],
+ "vulnerable": [
+  "radiant"
+ ],
+ "conditionImmune": [
+  "frightened",
+  "asleep",
+  "poisoned"
+ ],
+ "sprite": "unsaid",
+ "text": "A priest of nothing. Where it speaks, words go out of the world, and the fallen get up without them.",
+ "loot": "chest.rich"
+},
+{
+ "id": "lensShard",
+ "name": "Shard of the Lens",
+ "family": "shardborn",
+ "tier": "lesser",
+ "level": 30,
+ "hitDice": "10d10+20",
+ "ac": 17,
+ "perception": 14,
+ "stepSeconds": 0.5,
+ "turnSeconds": 0.4,
+ "size": "small",
+ "attacks": [
+  {
+   "id": "cut",
+   "windup": 0.5,
+   "recovery": 1.4,
+   "toHit": 12,
+   "damage": "2d10+5",
+   "type": "slashing"
+  }
+ ],
+ "behaviour": [
+  "chase",
+  "melee",
+  "flier",
+  "mindless"
+ ],
+ "resist": [
+  "slashing",
+  "piercing"
+ ],
+ "vulnerable": [
+  "bludgeoning"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep"
+ ],
+ "sprite": "lensShard",
+ "text": "A sliver of the Lens, still turning to the light.",
+ "loot": "glass"
+},
+{
+ "id": "theLens",
+ "name": "The Lens",
+ "family": "shardborn",
+ "tier": "dread",
+ "level": 25,
+ "hitDice": "26d10+78",
+ "ac": 19,
+ "perception": 18,
+ "stepSeconds": 1.0,
+ "turnSeconds": 0.8,
+ "size": "large",
+ "attacks": [
+  {
+   "id": "facet",
+   "windup": 1.0,
+   "recovery": 2.4,
+   "toHit": 13,
+   "damage": "3d10+8",
+   "type": "slashing"
+  },
+  {
+   "id": "glare",
+   "windup": 1.3,
+   "recovery": 3.2,
+   "toHit": 13,
+   "damage": "3d10",
+   "type": "radiant",
+   "range": 6,
+   "projectileSpeed": 9,
+   "area": true,
+   "onHit": {
+    "condition": "blinded",
+    "dc": 18,
+    "seconds": 4
+   }
+  }
+ ],
+ "behaviour": [
+  "guard",
+  "chase",
+  "melee",
+  "ranged",
+  "unyielding",
+  "flier",
+  "boss"
+ ],
+ "boss": "lens",
+ "resist": [
+  "piercing"
+ ],
+ "immune": [
+  "poison"
+ ],
+ "conditionImmune": [
+  "poisoned",
+  "bleeding",
+  "diseased",
+  "frightened",
+  "asleep",
+  "stunned",
+  "paralysed",
+  "blinded"
+ ],
+ "sprite": "lens",
+ "text": "A vast disc of black glass that was a window between this world and the Unmade. It learns every blow you strike, and turns the same blow aside the next time.",
+ "loot": "chest.rich"
 }
 ]

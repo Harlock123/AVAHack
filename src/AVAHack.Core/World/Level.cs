@@ -63,6 +63,10 @@ public sealed class Level
     public HashSet<Cell> Shelves { get; } = new();
     /// <summary>Wall cells overgrown with roots (the Rootdark): only the look.</summary>
     public HashSet<Cell> RootWalls { get; } = new();
+    /// <summary>Floor cells strewn with broken glass (the Glass Roads).</summary>
+    public HashSet<Cell> Shards { get; } = new();
+    /// <summary>Walls of polished black glass (the Glass Roads): only the look.</summary>
+    public HashSet<Cell> MirrorWalls { get; } = new();
     /// <summary>The Unmade Heart, the Delve's last level.</summary>
     public bool Final { get; internal set; }
 
@@ -150,6 +154,7 @@ public sealed class Level
         if (_stairs.Contains(c)) return FloorLook.Stairs;
         if (_stairsUp.Contains(c)) return FloorLook.StairsUp;
         if (_rubble.Contains(c)) return FloorLook.Rubble;
+        if (Shards.Contains(c)) return FloorLook.Shards;
         foreach (var t in _traps)
         {
             if (t.Cell != c || !(t.Spotted || t.Kind is TrapKind.SwingingBlade or TrapKind.SpikeFloor)) continue;

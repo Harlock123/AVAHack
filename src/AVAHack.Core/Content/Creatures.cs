@@ -76,7 +76,7 @@ public sealed record CreatureDef
     public string? Loot { get; init; }
     /// <summary>What a summoner calls up every so often.</summary>
     public string? Summons { get; init; }
-    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir, archivist, mycelCrown, crownNode or unmaker.</summary>
+    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir, archivist, mycelCrown, crownNode, lens or unmaker.</summary>
     public string? Boss { get; init; }
     public required string Sprite { get; init; }
     public required string Text { get; init; }
@@ -177,5 +177,11 @@ public sealed record RegionDef
     public int Roots { get; init; }
     /// <summary>The share of room walls overgrown with roots (only the look).</summary>
     public double RootWalls { get; init; }
+    /// <summary>The share of floor cells strewn with broken glass: it crunches (waking things) and cuts, once.</summary>
+    public double Shards { get; init; }
+    /// <summary>Rifts in each level: tears that let the Unmade through until Use seals them.</summary>
+    public int Rifts { get; init; }
+    /// <summary>The share of room walls of polished black glass (only the look).</summary>
+    public double MirrorWalls { get; init; }
     public bool Final { get; init; }
 }

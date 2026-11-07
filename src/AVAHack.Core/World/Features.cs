@@ -65,7 +65,7 @@ public sealed record Spawn(string Creature, Cell Cell, Dir Facing)
 }
 
 /// <summary>What the floor of a cell looks like, for drawing.</summary>
-public enum FloorLook { Plain, Pit, Plate, Stairs, StairsUp, Trap, Spikes, Glyph, Rune, Teleporter, Rubble, Water }
+public enum FloorLook { Plain, Pit, Plate, Stairs, StairsUp, Trap, Spikes, Glyph, Rune, Teleporter, Rubble, Water, Shards }
 
 /// <summary>A wall that is really a door, until someone finds it (spec 14.2).</summary>
 public sealed class SecretDoor(Cell cell, int dc)

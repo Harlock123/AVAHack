@@ -670,6 +670,7 @@ public static partial class Generator
                 if (depth >= 3 && Roll(4) == 0) PlaceStation("altar");
                 for (int i = 0; i < Region.Candles; i++) PlaceStation("candle");
                 for (int i = 0; i < Region.Pods; i++) PlaceStation("pod");
+                for (int i = 0; i < Region.Rifts; i++) PlaceStation("rift");
                 if (Region.Roots > 0) PlaceRoots(Region.Roots);
             }
             // The Hollow Choir: five singers in a hall on level 6 (an optional fight; the stairs don't need it).
@@ -748,6 +749,31 @@ public static partial class Generator
                         if (At(w) != CellKind.Wall || level.RootWalls.Contains(w) || w.X <= 0 || w.Y <= 0 || w.X >= Size - 1 || w.Y >= Size - 1) continue;
                         if (Roll(100) < Region.RootWalls * 100) level.RootWalls.Add(w);
                     }
+        }
+
+        /// <summary>Walls of polished black glass round some rooms (the Glass Roads): only the look.</summary>
+        private void PlaceMirrorWalls(Level level)
+        {
+            foreach (var room in _rooms.Where(r => r.Vault is null))
+                foreach (var c in RoomCells(room))
+                    foreach (var d in Enum.GetValues<Dir>())
+                    {
+                        var w = c.Step(d);
+                        if (At(w) != CellKind.Wall || level.MirrorWalls.Contains(w) || w.X <= 0 || w.Y <= 0 || w.X >= Size - 1 || w.Y >= Size - 1) continue;
+                        if (Roll(100) < Region.MirrorWalls * 100) level.MirrorWalls.Add(w);
+                    }
+        }
+
+        /// <summary>Broken glass on some floor cells (the Glass Roads), never on the start, the stairs or a station.</summary>
+        private void PlaceShards(Level level)
+        {
+            for (int y = 1; y < Size - 1; y++)
+                for (int x = 1; x < Size - 1; x++)
+                {
+                    var c = new Cell(x, y);
+                    if (At(c) != CellKind.Floor || _taken.Contains(c) || _stations.ContainsKey(c) || c.Distance(_start) <= 2 || c == _down) continue;
+                    if (Roll(1000) < Region.Shards * 1000) level.Shards.Add(c);
+                }
         }
 
         private int MonsterLevel() => Math.Max(1, (int)(depth * 1.6)) + Roll(2);
@@ -898,6 +924,8 @@ public static partial class Generator
             foreach (var (c, k) in _stations) level.Stations[c] = k;
             if (Region.Shelves > 0 && !Plain) PlaceShelves(level);
             if (Region.RootWalls > 0 && !Plain) PlaceRootWalls(level);
+            if (Region.MirrorWalls > 0 && !Plain) PlaceMirrorWalls(level);
+            if (Region.Shards > 0 && !Plain) PlaceShards(level);
             level.Final = Region.Final;
             level.AddStairs(_down);
             if (depth > 1) level.AddStairsUp(_start);

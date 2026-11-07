@@ -62,6 +62,12 @@ public static class Scene
                 list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.7, 0.7, art.Prop(lit ? "candle" : "candle-out"), Glow: lit ? 0.5 : 0, SelfLit: lit));
                 continue;
             }
+            if (kind == "rift")
+            {
+                bool open = g.RiftOpen(cell);
+                list.Add(new SpriteInstance(cell.X + 0.5, cell.Y + 0.5, 0, 0.95, 0.95, art.Prop(open ? "rift" : "rift-sealed"), Glow: open ? 0.4 : 0, SelfLit: open));
+                continue;
+            }
             if (kind is "pod" or "roots")
             {
                 string look = kind == "pod" ? (g.PodWhole(cell) ? "pod" : "pod-burst") : g.RootsStand(cell) ? "roots" : "roots-cut";

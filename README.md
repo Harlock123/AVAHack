@@ -16,6 +16,9 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
   - **The Rootdark** (levels 17–20), giant roots beneath the Works. Spore pods burst in clouds that fire sets
     alight, root tangles choke the passages, and burrowing worms come up behind you. The Mycel Crown can't be
     hurt while its nodes live, and the nodes grow back unless you burn them.
+  - **The Glass Roads** (levels 21–24), halls of black glass where the Unmade broke through. Broken glass crunches
+    and wakes the halls, rifts let the Unmade through until you seal them, glass creatures shatter under a hammer,
+    and the Lens learns every blow you strike and throws a beam down the hall.
   Choose the seed, depth, monster strength, density, traps, magic items, food and Ironman before you start.
 - **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Skills grow with use and
   kills bring experience, with level-ups and perk trees.
@@ -97,6 +100,8 @@ pixel art:
 ![A hall of the Ossuary Stacks](Images/AVAHack-stacks.png)
 
 ![A cavern of the Rootdark](Images/AVAHack-rootdark.png)
+
+![A hall of the Glass Roads](Images/AVAHack-glass.png)
 
 Every item has its own icon, drawn and finished the same way:
 - 18 weapons, 8 armours, 3 shields and 12 pieces of gear;

@@ -153,6 +153,7 @@ public sealed partial class GameEngine
         TickLight();
         TickTraps();
         TickPods();
+        TickRifts();
         TickDeathSaves();
     }
 
@@ -353,6 +354,7 @@ public sealed partial class GameEngine
         if (Level.Waystone == ahead) { TouchWaystone(); return; }
         if (TouchCandle(ahead)) return;
         if (CutRoots(ahead)) return;
+        if (SealRift(ahead)) return;
         if (TouchStation(ahead)) return;
         if (Level.KindAt(ahead) == CellKind.Wall && !SearchShelf(ahead)) SearchWall(ahead);
     }

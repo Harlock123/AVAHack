@@ -130,6 +130,7 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             FloorLook.Rune => _tex.Rune ?? _tex.Plate,
             FloorLook.Teleporter => _tex.Teleporter ?? _tex.Plate,
             FloorLook.Rubble => _tex.Rubble ?? _tex.Floor,
+            FloorLook.Shards => _tex.Shards ?? _tex.Floor,
             _ => _tex.Floor,
         };
     }
@@ -258,6 +259,7 @@ public sealed class SoftwareViewRenderer : IViewRenderer
                     : level.KindAt(from) == CellKind.Door ? _tex.DoorFrame
                     : level.Shelves.Contains(from.Step(face)) && _tex.Shelf is { } shelf ? shelf
                     : level.RootWalls.Contains(from.Step(face)) && _tex.RootWall is { } roots ? roots
+                    : level.MirrorWalls.Contains(from.Step(face)) && _tex.MirrorWall is { } mirror ? mirror
                     : _tex.Wall;
             double hit = side == 0 ? py + dist * rdy : px + dist * rdx;
             double u = hit - Math.Floor(hit);

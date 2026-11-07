@@ -103,6 +103,8 @@ public sealed partial class GameEngine
         "mourners" => m.Def.Sprite is "bell" ? "bell" : "bark.mourners",
         "burrowers" => "bark.burrowers",
         "sporeThralls" => "bark.sporeThralls",
+        "shardborn" => "bark.shardborn",
+        "hollowed" => "bark.hollowed",
         _ => "bark.goblin",
     };
 
@@ -114,6 +116,8 @@ public sealed partial class GameEngine
         "oozes" => "hit.slime",
         "inkbound" or "mourners" => m.Def.Sprite switch { "quill" or "bell" => "hit.metal", "slimeInk" or "waxGolem" => "hit.slime", _ => "hit.flesh" },
         "sporeThralls" when m.Def.Sprite is "mycelKnight" => "hit.metal",
+        "shardborn" => "hit.glass",
+        "hollowed" when m.Def.Sprite is "templar" => "hit.metal",
         _ => m.Def.Sprite is "knight" ? "hit.metal" : "hit.flesh",
     };
 
@@ -126,6 +130,8 @@ public sealed partial class GameEngine
         "elementals" or "unmade" => "die.spirit",
         "inkbound" => m.Def.Sprite switch { "quill" or "waxGolem" => "die.machine", "slimeInk" => "die.slime", _ => "die.paper" },
         "mourners" => m.Def.Sprite is "bell" ? "die.machine" : "die.spirit",
+        "shardborn" => "die.glass",
+        "hollowed" => m.Def.Sprite is "echo" ? "die.spirit" : "die.flesh",
         _ => "die.flesh",
     };
 

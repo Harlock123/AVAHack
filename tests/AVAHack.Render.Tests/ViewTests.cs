@@ -217,6 +217,35 @@ public sealed class ViewTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void A_hall_of_the_Glass_Roads()
+    {
+        var db = AVAHack.Content.ContentDb.LoadBuiltIn();
+        var level = LevelLoader.Parse("""
+            start: 2 3 east
+            theme: glass
+            map:
+            ##########
+            #........#
+            #........#
+            #........#
+            #........#
+            #........#
+            ##########
+            """);
+        for (int x = 1; x < 9; x++) { if (x % 3 != 0) level.MirrorWalls.Add(new Cell(x, 0)); if (x % 2 == 0) level.MirrorWalls.Add(new Cell(x, 6)); }
+        for (int y = 1; y < 6; y++) level.MirrorWalls.Add(new Cell(9, y));
+        foreach (var c in new[] { new Cell(3, 3), new Cell(4, 2), new Cell(5, 4), new Cell(6, 3) }) level.Shards.Add(c);
+        level.Stations[new Cell(7, 1)] = "rift";
+        var g = new GameEngine(level, 1, new AVAHack.Characters.Party(AVAHack.Characters.CharacterBuilder.QuickStartParty(db).ToArray()), db);
+        g.AddMonster("prismEye", new Cell(6, 2), Dir.West);
+        g.AddMonster("hollowTemplar", new Cell(8, 4), Dir.West);
+        g.AddMonster("shardling", new Cell(5, 3), Dir.West);
+        var r = new SoftwareViewRenderer(TextureFactory.ForTheme("glass"));
+        r.Render(level, g.Camera(), 0, Scene.Build(g, g.Camera(), new SpriteFactory()));
+        GoldenImage.Check("glass-hall", r);
+    }
+
+    [Fact]
     public void Every_region_in_the_content_has_its_art()
     {
         foreach (var r in AVAHack.Content.ContentDb.LoadBuiltIn().Regions)

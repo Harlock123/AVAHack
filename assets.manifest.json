@@ -1,0 +1,28 @@
+{
+  "sources": [
+    {
+      "id": "sbs-dungeon-crawler-pack",
+      "title": "Old School Dungeon Crawler Pack and Cave Walls Addon",
+      "url": "https://screamingbrainstudios.itch.io/dungeon-crawler-pack",
+      "retrieved": "2026-11-07",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceFile": "src/AVAHack.Render/Assets/Textures/LICENSE-ScreamingBrainStudios.txt",
+      "authors": "Screaming Brain Studios",
+      "changes": "tools/import-sbs-textures.sh keeps each set's face-on Layer 1 wall and un-warps its near floor and ceiling into a flat cell. For the brick sets it enlarges a 64 px quarter to 128 px, and it scales every texture to one brightness. Sets: Brick 3 (cellar), Brick 1 (works), Brick 2 (choir), Shale Cave (heart).",
+      "files": [
+        "src/AVAHack.Render/Assets/Textures/cellar-ceiling.png",
+        "src/AVAHack.Render/Assets/Textures/cellar-floor.png",
+        "src/AVAHack.Render/Assets/Textures/cellar-wall.png",
+        "src/AVAHack.Render/Assets/Textures/choir-ceiling.png",
+        "src/AVAHack.Render/Assets/Textures/choir-floor.png",
+        "src/AVAHack.Render/Assets/Textures/choir-wall.png",
+        "src/AVAHack.Render/Assets/Textures/heart-ceiling.png",
+        "src/AVAHack.Render/Assets/Textures/heart-floor.png",
+        "src/AVAHack.Render/Assets/Textures/heart-wall.png",
+        "src/AVAHack.Render/Assets/Textures/works-ceiling.png",
+        "src/AVAHack.Render/Assets/Textures/works-floor.png",
+        "src/AVAHack.Render/Assets/Textures/works-wall.png"
+      ]
+    }
+  ]
+}

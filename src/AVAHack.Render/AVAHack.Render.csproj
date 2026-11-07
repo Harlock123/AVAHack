@@ -6,6 +6,10 @@
     <ProjectReference Include="..\AVAHack.Core\AVAHack.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- CC0 art from Screaming Brain Studios (Assets/CREDITS.md); tools/import-sbs-textures.sh makes these. -->
+    <EmbeddedResource Include="Assets\Textures\*.png" LogicalName="AVAHack.Render.Textures.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="AVAHack.Render.Tests" />
   </ItemGroup>
 </Project>

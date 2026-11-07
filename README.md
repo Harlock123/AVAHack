@@ -71,7 +71,12 @@ Tips:
 The view is drawn on the CPU by a column ray caster into a 640×400 framebuffer, which is then scaled up to the
 window. Walls, floor and ceiling are textured and lit by the party's torch. Doors slide up into the ceiling, and
 you can see through a portcullis. Creatures are camera-facing pictures with front, side and back views, drawn
-against a depth buffer. The textures and creatures are drawn in code as placeholders. Because there is no GPU in the path, the
+against a depth buffer.
+
+Each region's walls, floors and ceilings come from Screaming Brain Studios' CC0 *Old School Dungeon Crawler Pack*,
+converted by `tools/import-sbs-textures.sh`. The doors, levers, pits, plates, stairs, markings and creatures are
+still drawn in code. Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
+made from it by `tools/build_credits.py`. Because there is no GPU in the path, the
 tests render real frames and compare them with golden images. A frame takes about 2.3 ms on an 8-core ARM
 machine.
 

@@ -120,6 +120,46 @@ public sealed class ViewTests(ITestOutputHelper output)
         GoldenImage.Check("floors", r);
     }
 
+    [Theory]
+    [InlineData("works")]
+    [InlineData("choir")]
+    [InlineData("heart")]
+    public void Each_region_draws_with_its_own_art(string theme)
+    {
+        var (g, _) = Make();
+        var r = new SoftwareViewRenderer(TextureFactory.ForTheme(theme));
+        g.Stand(new Cell(3, 3), Dir.East);
+        Draw(g, r);
+        GoldenImage.Check($"region-{theme}", r);
+    }
+
+    [Theory]
+    [InlineData("cellar")]
+    [InlineData("works")]
+    [InlineData("choir")]
+    [InlineData("heart")]
+    public void The_art_pack_gives_every_region_its_walls_floors_and_ceilings(string theme)
+    {
+        var set = TextureFactory.ForTheme(theme);
+        foreach (var t in new[] { set.Wall, set.Floor, set.Ceiling })
+        {
+            Assert.Equal(128, t.Side);
+            Assert.All(t.Pixels, p => Assert.Equal(0xFFu, p >> 24)); // opaque
+        }
+        // The markings are drawn over the art at its size, and the lever on its wall.
+        Assert.Equal(128, set.TrapMark!.Side);
+        Assert.Equal(128, set.LeverUp.Side);
+        Assert.NotEqual(set.Wall.Pixels, set.LeverUp.Pixels);
+    }
+
+    [Fact]
+    public void The_code_drawn_set_is_still_there()
+    {
+        var set = TextureFactory.Drawn();
+        Assert.Equal(Texture.Size, set.Wall.Side);
+        Assert.Null(TextureFactory.Asset("no-such-texture"));
+    }
+
     [Fact]
     public void Every_pixel_is_drawn_from_every_cell_and_facing()
     {

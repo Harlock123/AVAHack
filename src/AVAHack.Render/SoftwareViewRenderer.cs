@@ -260,7 +260,7 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             double hit = side == 0 ? py + dist * rdy : px + dist * rdx;
             double u = hit - Math.Floor(hit);
             if ((side == 0 && rdx < 0) || (side == 1 && rdy > 0)) u = 1 - u;
-            int texX = (int)(u * Texture.Size) & Texture.Mask;
+            int texX = (int)(u * tex.Side) & tex.SideMask;
             int light = LightAt(dist, flicker);
             if (side == 0) light = light * 13 / 16;
             double span = bottomExact - topExact;
@@ -268,8 +268,8 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             float fd = (float)dist;
             for (int y = top; y <= bottom; y++)
             {
-                int texY = (int)((y + 0.5 - topExact) / span * Texture.Size) & Texture.Mask;
-                pixels[y * w + x] = Lit(tp[texY * Texture.Size + texX], light);
+                int texY = (int)((y + 0.5 - topExact) / span * tex.Side) & tex.SideMask;
+                pixels[y * w + x] = Lit(tp[texY * tex.Side + texX], light);
                 _depth[y * w + x] = fd;
             }
             col.HasWall = true;
@@ -288,15 +288,17 @@ public sealed class SoftwareViewRenderer : IViewRenderer
         }
 
         // Ceiling above the wall and floor below it, cast row by row.
-        var ceil = _tex.Ceiling.Pixels;
+        var ceilTex = _tex.Ceiling;
+        var ceil = ceilTex.Pixels;
+        int cs = ceilTex.Side, cm = ceilTex.SideMask;
         for (int y = 0; y < top; y++)
         {
             double rowDist = (1 - eye) * _focal / (horizon - (y + 0.5));
             if (rowDist <= 0) continue;
             double wx = px + rowDist * rdx, wy = py + rowDist * rdy;
-            int tx = (int)((wx - Math.Floor(wx)) * Texture.Size) & Texture.Mask;
-            int ty = (int)((wy - Math.Floor(wy)) * Texture.Size) & Texture.Mask;
-            pixels[y * w + x] = Lit(ceil[ty * Texture.Size + tx], LightAt(rowDist, flicker) * 7 / 8);
+            int tx = (int)((wx - Math.Floor(wx)) * cs) & cm;
+            int ty = (int)((wy - Math.Floor(wy)) * cs) & cm;
+            pixels[y * w + x] = Lit(ceil[ty * cs + tx], LightAt(rowDist, flicker) * 7 / 8);
             _depth[y * w + x] = (float)rowDist;
         }
         for (int y = bottom + 1; y < h; y++)
@@ -304,9 +306,10 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             double rowDist = eye * _focal / ((y + 0.5) - horizon);
             if (rowDist <= 0) continue;
             double wx = px + rowDist * rdx, wy = py + rowDist * rdy;
-            int tx = (int)((wx - Math.Floor(wx)) * Texture.Size) & Texture.Mask;
-            int ty = (int)((wy - Math.Floor(wy)) * Texture.Size) & Texture.Mask;
-            pixels[y * w + x] = Lit(FloorTexture(wx, wy).Pixels[ty * Texture.Size + tx], LightAt(rowDist, flicker));
+            var ft = FloorTexture(wx, wy);
+            int tx = (int)((wx - Math.Floor(wx)) * ft.Side) & ft.SideMask;
+            int ty = (int)((wy - Math.Floor(wy)) * ft.Side) & ft.SideMask;
+            pixels[y * w + x] = Lit(ft.Pixels[ty * ft.Side + tx], LightAt(rowDist, flicker));
             _depth[y * w + x] = (float)rowDist;
         }
 
@@ -322,7 +325,7 @@ public sealed class SoftwareViewRenderer : IViewRenderer
             if (y1 < y0) continue;
             var tex = d.Door.Kind == DoorKind.Portcullis ? _tex.Portcullis : _tex.Door;
             var tp = tex.Pixels;
-            int texX = (int)(d.U * Texture.Size) & Texture.Mask;
+            int texX = (int)(d.U * tex.Side) & tex.SideMask;
             int light = LightAt(dd, flicker);
             if (!d.Door.AlongX) light = light * 13 / 16;
             for (int y = y0; y <= y1; y++)
@@ -330,8 +333,8 @@ public sealed class SoftwareViewRenderer : IViewRenderer
                 // Height on the panel: z runs 0 (floor) to 1 (ceiling); the raised panel shows v from Open to 1.
                 double z = eye + (horizon - (y + 0.5)) * dd / _focal;
                 double v = 1 + d.Door.Open - z;
-                int texY = (int)(v * Texture.Size) & Texture.Mask;
-                uint c = tp[texY * Texture.Size + texX];
+                int texY = (int)(v * tex.Side) & tex.SideMask;
+                uint c = tp[texY * tex.Side + texX];
                 if (c >> 24 == 0) continue;
                 pixels[y * w + x] = Lit(c, light);
                 _depth[y * w + x] = (float)dd;

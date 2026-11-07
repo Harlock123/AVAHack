@@ -77,7 +77,9 @@ implicit usings, invariant globalization and central package versions. Package v
     - `Vaults/vaults.txt`.
 - `src/AVAHack.Render/`: the first-person view, depending only on Core.
   - `SoftwareViewRenderer`: the ray caster.
-  - `TextureFactory`: regional textures.
+  - `TextureFactory`: each region's textures. Walls, floors and ceilings come from the art in `Assets/Textures`
+    (embedded, read by `PngReader`); doors, levers, pits, plates, stairs and markings are drawn in code over them.
+    `TextureFactory.Drawn` is the all-code set.
   - `SpriteFactory` and `SpriteFactory.Bestiary`: code-drawn creatures, props and icons.
   - `Scene`: the engine's creatures, missiles and props as sprites, with elite and champion tints.
 - `src/AVAHack.App/`: Avalonia. `Views/GameView*.cs` is one control split by screen:
@@ -129,6 +131,10 @@ implicit usings, invariant globalization and central package versions. Package v
 - **Changing the look means changing the goldens.** If a render change is meant to be seen, rewrite the goldens
   with `AVAHACK_UPDATE_GOLDEN=1`, open the PNGs and check them, and commit them with the change. If the change
   isn't meant to be seen and a golden fails, the change is wrong.
+- **Third-party art is recorded.** Each file goes in `assets.manifest.json` with its source, licence and changes,
+  and its licence file ships beside it. Run `tools/build_credits.py` to remake `CREDITS.md`. `AssetTests` fails if a
+  shipped texture isn't listed. Prefer CC0 or CC-BY, never share-alike, and never art taken from another game.
+  Textures are made by scripts in `tools/` (`import-sbs-textures.sh`), not edited by hand.
 - **Never trim.** Avalonia loads XAML by reflection, so `PublishTrimmed` stays false.
 - **Tests never touch the user's folders.** Anything a test writes goes to a temp folder or to the folder in
   `AVAHACK_SHOTS`.

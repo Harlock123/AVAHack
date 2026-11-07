@@ -40,6 +40,7 @@
 29. Implementation decisions (M7)
 30. Implementation decisions (M8)
 31. Implementation decisions (the balance pass)
+32. Implementation decisions (M9: textures from an art pack)
 
 ---
 
@@ -924,6 +925,7 @@ the game.
   stone, dirt and moss textures are made with noise.
 - **Placeholders (M0–M2).** Flat-coloured procedural textures and silhouette sprites, so the game can be played
   before any art is chosen.
+- **First pack (M9).** Walls, floors and ceilings come from Screaming Brain Studios' CC0 pack (section 32).
 
 ---
 
@@ -1827,3 +1829,46 @@ below come from the bot reports on 16 seeds.
 - **Time.** The spec's 8–12 hours can't be checked by a bot that moves without pause. The bot takes 45–85 minutes
   of game time for a full Delve, about 5 minutes a level. A person exploring, reading and managing their packs takes
   several times that. Whether it comes to 8 hours is for the user's play to say.
+
+## 32. Implementation decisions (M9: textures from an art pack)
+
+The first piece of M9's "art from the manifest": real textures for walls, floors and ceilings.
+
+- **The pack.** Screaming Brain Studios' *Old School Dungeon Crawler Pack* and *Cave Walls Addon*, from itch.io
+  (CC0, retrieved 2026-11-07). Each set has a wall seen face on (Center), side walls, and a floor and ceiling seen
+  in perspective, at two distances.
+- **Made for compositing, not ray casting.** The pack is drawn for crawlers that paste pre-drawn pieces together.
+  `tools/import-sbs-textures.sh` (ImageMagick) turns it into textures:
+  - **Walls:** the near face-on wall, as drawn.
+  - **Floors and ceilings:** the near trapezoid (256×64, half a cell deep) un-warped by a perspective distort into
+    a flat half cell, then stacked twice to make a whole cell. The side walls and the far pieces aren't needed.
+  - **The brick sets** lay 16 courses to a cell, which turned to mush at the view's 640×400. The script keeps a
+    64 px quarter (the pattern repeats every 16 px, so it still tiles) and enlarges it to 128 px.
+  - **Brightness.** The sets ran from 0.18 to 0.81 mean grey, and the view lights them all alike. Each texture is
+    scaled to the code-drawn set's means: walls 0.43, floors 0.34, ceilings 0.25.
+- **Regions:**
+  - cellar: Brick 3 (dark brick, lightened);
+  - works: Brick 1 (warm brick);
+  - choir: Brick 2 (mossy brick);
+  - heart: Shale Cave (bare violet stone).
+
+  The Cellars handmade level uses the cellar set.
+- **Textures carry their own size.** `Texture` was a fixed 64×64. It now has a power-of-two side: the pack's textures
+  are 128 and the code-drawn ones stay 64, and the renderer samples each by its own size.
+- **What stays in code.**
+  - Doors, the portcullis, pits, plates and stairs.
+  - Levers, trap marks, spikes and sigils, which are drawn over the pack's wall or floor at its size. A 128 texture
+    gets 2×2 blocks, so they sit where they did.
+  - Door frames: the region's wall itself for the pack sets.
+  - `TextureFactory.Drawn` keeps the old all-code set.
+- **No image library in Render.** `PngReader` decodes the 8-bit RGB and RGBA PNGs the script writes, using .NET's
+  `ZLibStream`. The textures are embedded resources, so the single-file build carries them.
+- **The record.**
+  - `assets.manifest.json` lists the source, licence, author, changes and files.
+  - `tools/build_credits.py` writes `CREDITS.md` from it.
+  - The pack's licence ships beside the textures.
+  - `AssetTests` fails if a shipped texture is missing from the manifest, a listed file is missing, or the credits
+    are out of date.
+- **Goldens rewritten.** Every view changed, and three new goldens show the works, choir and heart regions.
+- **Next:** creatures, items and icons. No free pack covers 58 creatures in one style, so those need their own
+  choice (spec 15.3's gaps rule).

@@ -1,42 +1,101 @@
 namespace AVAHack.Render;
 
 /// <summary>
-/// Draws the placeholder textures in code: stone blocks, flagstones, a rough ceiling, a planked door, an iron
-/// portcullis and a lever. Only integer hashing is used, so the same seed gives the same pixels on every machine.
+/// The view's textures. Walls, floors and ceilings come from the CC0 art pack (Assets/Textures, made by
+/// tools/import-sbs-textures.sh); doors, bars, levers, pits, plates, stairs and markings are drawn in code over
+/// them. <see cref="Drawn"/> gives the all-code set the game had before. Only integer hashing is used, so the same
+/// seed gives the same pixels on every machine.
 /// </summary>
 public static class TextureFactory
 {
-    public static TextureSet Cellar(int seed = 1) => Themed(seed, 0x6E6A62, 0x57524A, 0x3F3B36, 0x625D56);
+    /// <summary>The cellars' textures (the handmade level and the first region).</summary>
+    public static TextureSet Cellar(int seed = 1) => ForTheme("cellar", seed);
 
-    /// <summary>The textures for a region: cellar (grey stone), works (rust-stained brick) or choir (green, damp stone).</summary>
-    public static TextureSet ForTheme(string theme) => theme switch
+    /// <summary>
+    /// The textures for a region: cellar (dark brick), works (warm brick), choir (mossy brick) or heart (bare
+    /// violet stone), from the art pack; a region without art gets the code-drawn set.
+    /// </summary>
+    public static TextureSet ForTheme(string theme, int seed = 1)
+    {
+        int s = theme switch { "works" => 11, "choir" => 21, "heart" => 31, _ => seed };
+        if (Asset($"{theme}-wall") is { } wall && Asset($"{theme}-floor") is { } floor && Asset($"{theme}-ceiling") is { } ceiling)
+            return Build(s, wall, floor, ceiling);
+        return Drawn(theme, seed);
+    }
+
+    /// <summary>The code-drawn textures M0–M8 used: grey stone, rust-stained brick or green, damp stone.</summary>
+    public static TextureSet Drawn(string theme = "cellar", int seed = 1) => theme switch
     {
         "works" => Themed(11, 0x74604E, 0x4E4640, 0x3A322C, 0x6A584A),
         "choir" => Themed(21, 0x566A5E, 0x46524A, 0x2E3A34, 0x5A6A60),
-        _ => Cellar(),
+        _ => Themed(seed, 0x6E6A62, 0x57524A, 0x3F3B36, 0x625D56),
     };
 
-    private static TextureSet Themed(int seed, int wall, int floor, int ceiling, int frame) => new()
+    private static TextureSet Themed(int seed, int wall, int floor, int ceiling, int frame) =>
+        Build(seed, StoneBlocks(seed, wall), Flagstones(seed + 1, floor), RoughStone(seed + 2, ceiling), frame, floor);
+
+    /// <summary>A whole set from a wall, a floor and a ceiling: everything else is drawn to match them.</summary>
+    private static TextureSet Build(int seed, Texture wall, Texture floor, Texture ceiling, int? frame = null, int? floorBase = null)
     {
-        Wall = StoneBlocks(seed, wall),
-        Floor = Flagstones(seed + 1, floor),
-        Ceiling = RoughStone(seed + 2, ceiling),
-        DoorFrame = DressedFrame(seed + 3, frame),
-        Door = Planks(seed + 4),
-        Portcullis = Bars(),
-        LeverUp = WithLever(StoneBlocks(seed, wall), down: false),
-        LeverDown = WithLever(StoneBlocks(seed, wall), down: true),
-        Pit = PitHole(seed + 5),
-        Plate = PressurePlate(seed + 6, floor),
-        Stairs = StairsDown(seed + 7),
-        StairsUp = StairsUpward(seed + 8),
-        TrapMark = Marked(Flagstones(seed + 1, floor), 0xA03020),
-        Spikes = SpikeBed(seed + 9, floor),
-        Glyph = Sigil(Flagstones(seed + 1, floor), 0x60B0FF),
-        Rune = Sigil(Flagstones(seed + 1, floor), 0xF0D040),
-        Teleporter = Sigil(Flagstones(seed + 1, floor), 0xB060F0),
-        Rubble = Broken(seed + 10, floor),
-    };
+        int floorRgb = floorBase ?? floor.Average();
+        return new()
+        {
+            Wall = wall,
+            Floor = floor,
+            Ceiling = ceiling,
+            DoorFrame = frame is { } f ? DressedFrame(seed + 3, f) : wall, // the art's own wall frames its doors
+            Door = Planks(seed + 4),
+            Portcullis = Bars(),
+            LeverUp = WithLever(wall, down: false),
+            LeverDown = WithLever(wall, down: true),
+            Pit = PitHole(seed + 5),
+            Plate = PressurePlate(seed + 6, floorRgb),
+            Stairs = StairsDown(seed + 7),
+            StairsUp = StairsUpward(seed + 8),
+            TrapMark = Marked(floor, 0xA03020),
+            Spikes = SpikeBed(floor),
+            Glyph = Sigil(floor, 0x60B0FF),
+            Rune = Sigil(floor, 0xF0D040),
+            Teleporter = Sigil(floor, 0xB060F0),
+            Rubble = Broken(seed + 10, floorRgb),
+        };
+    }
+
+    private static readonly Dictionary<string, Texture?> Assets = new();
+
+    /// <summary>A texture from the embedded art (Assets/Textures/&lt;name&gt;.png), or null if there is none.</summary>
+    public static Texture? Asset(string name)
+    {
+        lock (Assets)
+        {
+            if (Assets.TryGetValue(name, out var cached)) return cached;
+            using var stream = typeof(TextureFactory).Assembly.GetManifestResourceStream($"AVAHack.Render.Textures.{name}.png");
+            Texture? t = null;
+            if (stream is not null)
+            {
+                var (pixels, w, h) = PngReader.Read(stream);
+                if (w != h) throw new InvalidDataException($"Texture {name} is {w}×{h}; textures are square.");
+                t = new Texture(w);
+                Array.Copy(pixels, t.Pixels, pixels.Length);
+                for (int i = 0; i < t.Pixels.Length; i++) t.Pixels[i] |= 0xFF000000u; // walls and floors are opaque
+            }
+            Assets[name] = t;
+            return t;
+        }
+    }
+
+    /// <summary>
+    /// Paints one cell of the 64-wide drawing grid that markings use, at whatever size <paramref name="t"/> is: a
+    /// 128 texture gets a 2×2 block. So a lever or a sigil sits in the same place on any wall or floor.
+    /// </summary>
+    private static void Dot(Texture t, int x, int y, uint c)
+    {
+        int k = t.Side / Texture.Size;
+        if (k <= 1) { t[x, y] = c; return; }
+        for (int dy = 0; dy < k; dy++)
+        for (int dx = 0; dx < k; dx++)
+            t[x * k + dx, y * k + dy] = c;
+    }
 
     private static Texture StairsUpward(int seed)
     {
@@ -51,38 +110,36 @@ public static class TextureFactory
     /// <summary>A floor with a warning scratched into it: a spotted trap.</summary>
     private static Texture Marked(Texture floor, int colour)
     {
-        var t = new Texture();
-        Array.Copy(floor.Pixels, t.Pixels, t.Pixels.Length);
+        var t = floor.Clone();
         uint c = Rgb(colour >> 16 & 0xFF, colour >> 8 & 0xFF, colour & 0xFF);
         for (int i = 14; i < 50; i++)
-            for (int k = -1; k <= 1; k++) { t[i + k, i] = c; t[63 - i + k, i] = c; }
+            for (int k = -1; k <= 1; k++) { Dot(t, i + k, i, c); Dot(t, 63 - i + k, i, c); }
         return t;
     }
 
-    private static Texture SpikeBed(int seed, int floor)
+    private static Texture SpikeBed(Texture floor)
     {
-        var t = Flagstones(seed, floor);
+        var t = floor.Clone();
         for (int sy = 6; sy < 64; sy += 12)
         for (int sx = 6; sx < 64; sx += 12)
             for (int r = 0; r < 4; r++)
             for (int k = -r; k <= r; k++)
-                t[sx + k, sy + 4 - r] = Rgb(150 + r * 20, 150 + r * 20, 160 + r * 20);
+                Dot(t, sx + k, sy + 4 - r, Rgb(150 + r * 20, 150 + r * 20, 160 + r * 20));
         return t;
     }
 
     private static Texture Sigil(Texture floor, int colour)
     {
-        var t = new Texture();
-        Array.Copy(floor.Pixels, t.Pixels, t.Pixels.Length);
+        var t = floor.Clone();
         uint c = Rgb(colour >> 16 & 0xFF, colour >> 8 & 0xFF, colour & 0xFF);
         // A circle drawn with integer steps (a fixed table, so it's the same everywhere).
         for (int a = 0; a < 64; a++)
         {
             int dx = CircleX[a], dy = CircleX[(a + 16) % 64];
-            t[32 + dx * 22 / 100, 32 + dy * 22 / 100] = c;
-            t[32 + dx * 14 / 100, 32 + dy * 14 / 100] = c;
+            Dot(t, 32 + dx * 22 / 100, 32 + dy * 22 / 100, c);
+            Dot(t, 32 + dx * 14 / 100, 32 + dy * 14 / 100, c);
         }
-        for (int i = -18; i <= 18; i++) { t[32 + i, 32 + i / 2] = c; t[32 - i / 2, 32 + i] = c; }
+        for (int i = -18; i <= 18; i++) { Dot(t, 32 + i, 32 + i / 2, c); Dot(t, 32 - i / 2, 32 + i, c); }
         return t;
     }
 
@@ -296,14 +353,13 @@ public static class TextureFactory
     /// <summary>A wall texture with an iron plate and a lever handle, up or down.</summary>
     public static Texture WithLever(Texture wall, bool down)
     {
-        var t = new Texture();
-        Array.Copy(wall.Pixels, t.Pixels, t.Pixels.Length);
+        var t = wall.Clone();
         // The mounting plate.
         for (int y = 24; y < 44; y++)
         for (int x = 26; x < 38; x++)
         {
             bool rim = x is 26 or 37 || y is 24 or 43;
-            t[x, y] = rim ? Rgb(34, 34, 38) : Rgb(78, 76, 80);
+            Dot(t, x, y, rim ? Rgb(34, 34, 38) : Rgb(78, 76, 80));
         }
         // The handle: a shaft from the pivot, ending in a knob.
         int pivotX = 31, pivotY = 34;
@@ -312,13 +368,13 @@ public static class TextureFactory
         {
             int y = pivotY + dir * i;
             for (int x = pivotX - 1; x <= pivotX + 1; x++)
-                t[x, y] = x == pivotX - 1 ? Rgb(150, 140, 120) : Rgb(96, 88, 74);
+                Dot(t, x, y, x == pivotX - 1 ? Rgb(150, 140, 120) : Rgb(96, 88, 74));
         }
         int knobY = pivotY + dir * 18;
         for (int y = knobY - 2; y <= knobY + 2; y++)
         for (int x = pivotX - 3; x <= pivotX + 3; x++)
-            t[x, y] = Rgb(120, 40, 30);
-        t[pivotX - 2, knobY - 1] = Rgb(190, 90, 70);
+            Dot(t, x, y, Rgb(120, 40, 30));
+        Dot(t, pivotX - 2, knobY - 1, Rgb(190, 90, 70));
         return t;
     }
 }

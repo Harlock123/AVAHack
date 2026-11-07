@@ -14,8 +14,8 @@ public sealed class ActiveCondition
     public double SecondsLeft { get; internal set; }
     public int SaveDc { get; internal set; }
     public Dice? DamagePerSecond { get; internal set; }
-    internal double SinceSave;
-    internal double SinceDamage;
+    public double SinceSave { get; internal set; }
+    public double SinceDamage { get; internal set; }
 }
 
 /// <summary>What happened when conditions were ticked.</summary>

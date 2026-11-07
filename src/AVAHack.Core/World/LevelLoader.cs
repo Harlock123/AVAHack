@@ -12,6 +12,7 @@ namespace AVAHack.World;
 /// plate: 8 3 hold -> 9 3          # a pressure plate holding the door at (9,3) open while pressed (or toggle)
 /// note: 2 2 Scratched in the wall: "Mind the third flagstone."
 /// monster: cellarRat 4 5 north    # a creature from creatures.json, its cell and facing
+/// chest: 6 2 chest.cellar [locked 15]   # a chest holding a loot table's roll, maybe locked
 /// map:
 /// #####
 /// #.+.#                           # # wall  . floor  + hand door  P portcullis  O open portcullis
@@ -31,6 +32,7 @@ public static class LevelLoader
         var plateLines = new List<(int Line, string Text)>();
         var noteLines = new List<(int Line, string Text)>();
         var monsterLines = new List<(int Line, string Text)>();
+        var chestLines = new List<(int Line, string Text)>();
         var rows = new List<string>();
         bool inMap = false;
 
@@ -80,6 +82,9 @@ public static class LevelLoader
                     break;
                 case "monster":
                     monsterLines.Add((i, value));
+                    break;
+                case "chest":
+                    chestLines.Add((i, value));
                     break;
                 default:
                     throw Error(i, $"unknown directive '{key}'");
@@ -208,6 +213,16 @@ public static class LevelLoader
             if (level.KindAt(cell) != CellKind.Floor || level.PitAt(cell) is not null) throw Error(i, $"the monster's cell {cell} must be floor");
             level.AddSpawn(new Spawn(p[0], cell, DirExtensions.Parse(p[3])));
         }
+
+        foreach (var (i, value) in chestLines)
+        {
+            var p = Split(value);
+            if (p.Length is not (3 or 5)) throw Error(i, "chest needs: x y table [locked dc]");
+            var cell = new Cell(Int(p[0], i), Int(p[1], i));
+            if (level.KindAt(cell) != CellKind.Floor || level.PitAt(cell) is not null || level.PlateAt(cell) is not null) throw Error(i, $"the chest's cell {cell} must be plain floor");
+            int dc = p.Length == 5 && p[3].Equals("locked", StringComparison.OrdinalIgnoreCase) ? Int(p[4], i) : 0;
+            level.AddChest(new Chest(cell, p[2], dc));
+        }
         return level;
     }
 
@@ -247,7 +262,9 @@ public static class LevelLoader
                            ?? asm.GetManifestResourceStream($"AVAHack.Content.Levels\\{name}.txt")
                            ?? throw new FileNotFoundException($"No built-in level '{name}'.");
         using var reader = new StreamReader(stream);
-        return Parse(reader.ReadToEnd());
+        var level = Parse(reader.ReadToEnd());
+        level.Source = "built-in:" + name;
+        return level;
     }
 
     private static string StripComment(string s)

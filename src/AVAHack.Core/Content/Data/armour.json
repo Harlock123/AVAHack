@@ -1,4 +1,80 @@
+// Body armour (spec 13.2): light lets all of DEX count, medium up to 2, heavy none.
 [
-  { "id": "leather", "name": "Leather Jerkin", "kind": "light", "ac": 1, "weightKg": 5, "text": "Boiled leather." },
-  { "id": "chainMail", "name": "Chain Mail", "kind": "heavy", "ac": 6, "dexCap": 0, "weightKg": 20, "text": "Heavy, noisy, and very reassuring." }
+ {
+  "id": "padded",
+  "name": "Padded Gambeson",
+  "kind": "light",
+  "ac": 1,
+  "weightKg": 4,
+  "value": 5,
+  "text": "Quilted cloth."
+ },
+ {
+  "id": "leather",
+  "name": "Leather Jerkin",
+  "kind": "light",
+  "ac": 1,
+  "weightKg": 5,
+  "value": 10,
+  "text": "Boiled leather."
+ },
+ {
+  "id": "studded",
+  "name": "Studded Leather",
+  "kind": "light",
+  "ac": 2,
+  "weightKg": 6,
+  "value": 45,
+  "text": "Leather with iron studs."
+ },
+ {
+  "id": "hide",
+  "name": "Hide Armour",
+  "kind": "medium",
+  "ac": 3,
+  "dexCap": 2,
+  "weightKg": 6,
+  "value": 10,
+  "text": "Thick and smelly."
+ },
+ {
+  "id": "scale",
+  "name": "Scale Mail",
+  "kind": "medium",
+  "ac": 4,
+  "dexCap": 2,
+  "weightKg": 11,
+  "value": 50,
+  "text": "Overlapping plates on leather."
+ },
+ {
+  "id": "chainMail",
+  "name": "Chain Mail",
+  "kind": "heavy",
+  "ac": 6,
+  "dexCap": 0,
+  "weightKg": 20,
+  "value": 75,
+  "text": "Heavy, noisy, and very reassuring."
+ },
+ {
+  "id": "splint",
+  "name": "Splint Mail",
+  "kind": "heavy",
+  "ac": 7,
+  "dexCap": 0,
+  "weightKg": 27,
+  "value": 200,
+  "text": "Strips of steel riveted to leather."
+ },
+ {
+  "id": "plate",
+  "name": "Plate Armour",
+  "kind": "heavy",
+  "ac": 8,
+  "dexCap": 0,
+  "weightKg": 30,
+  "value": 600,
+  "text": "A suit of steel."
+ }
 ]

@@ -32,10 +32,20 @@ public sealed class ContentDb
     public IReadOnlyList<BackgroundDef> Backgrounds { get; }
     public IReadOnlyList<PerkDef> Perks { get; }
     public IReadOnlyList<ConditionDef> Conditions { get; }
-    public IReadOnlyList<CreatureDef> Creatures { get; private init; } = [];
-    public IReadOnlyList<WeaponDef> Weapons { get; private init; } = [];
-    public IReadOnlyList<ShieldDef> Shields { get; private init; } = [];
-    public IReadOnlyList<ArmourDef> Armours { get; private init; } = [];
+    public IReadOnlyList<CreatureDef> Creatures { get; init; } = [];
+    public IReadOnlyList<WeaponDef> Weapons { get; init; } = [];
+    public IReadOnlyList<ShieldDef> Shields { get; init; } = [];
+    public IReadOnlyList<ArmourDef> Armours { get; init; } = [];
+    public IReadOnlyList<GearDef> Gear { get; init; } = [];
+    public IReadOnlyList<ConsumableDef> Consumables { get; init; } = [];
+    public IReadOnlyList<BookDef> Books { get; init; } = [];
+    public IReadOnlyList<AffixDef> Affixes { get; init; } = [];
+    public IReadOnlyList<UniqueDef> Uniques { get; init; } = [];
+    public IReadOnlyList<SetDef> Sets { get; init; } = [];
+    public IReadOnlyList<LootTableDef> LootTables { get; init; } = [];
+    public IReadOnlyList<Magic.SpellDef> Spells { get; init; } = [];
+
+    private Dictionary<string, Items.ItemBase>? _bases;
 
     private readonly Dictionary<SkillId, SkillDef> _skills;
     private readonly Dictionary<string, AncestryDef> _ancestries;
@@ -61,16 +71,14 @@ public sealed class ContentDb
         _conditions = conditions.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
     }
 
-    /// <summary>A copy with creatures and equipment added (they arrived in M2).</summary>
-    public ContentDb With(IReadOnlyList<CreatureDef> creatures, IReadOnlyList<WeaponDef> weapons,
-                          IReadOnlyList<ShieldDef> shields, IReadOnlyList<ArmourDef> armours) =>
-        new(Skills, Ancestries, Callings, Backgrounds, Perks, Conditions)
-        {
-            Creatures = creatures,
-            Weapons = weapons,
-            Shields = shields,
-            Armours = armours,
-        };
+    /// <summary>Every item base by id: weapons, shields, armour, gear, consumables, books and the rest.</summary>
+    public IReadOnlyDictionary<string, Items.ItemBase> Bases => _bases ??= Items.ItemBase.All(this);
+
+    public Items.ItemBase Base(string id) => Bases.TryGetValue(id, out var b) ? b : throw new KeyNotFoundException($"No item '{id}'.");
+    public AffixDef Affix(string id) => Affixes.FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException($"No affix '{id}'.");
+    public UniqueDef Unique(string id) => Uniques.FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException($"No unique item '{id}'.");
+    public LootTableDef LootTable(string id) => LootTables.FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException($"No loot table '{id}'.");
+    public Magic.SpellDef Spell(string id) => Spells.FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException($"No spell '{id}'.");
 
     /// <summary>The content shipped with the game, loaded once and checked.</summary>
     public static ContentDb LoadBuiltIn()
@@ -79,7 +87,20 @@ public sealed class ContentDb
         db = new ContentDb(
             Read<SkillDef>("skills"), Read<AncestryDef>("ancestries"), Read<CallingDef>("callings"),
             Read<BackgroundDef>("backgrounds"), Read<PerkDef>("perks"), Read<ConditionDef>("conditions"))
-            .With(Read<CreatureDef>("creatures"), Read<WeaponDef>("weapons"), Read<ShieldDef>("shields"), Read<ArmourDef>("armour"));
+        {
+            Creatures = Read<CreatureDef>("creatures"),
+            Weapons = Read<WeaponDef>("weapons"),
+            Shields = Read<ShieldDef>("shields"),
+            Armours = Read<ArmourDef>("armour"),
+            Gear = Read<GearDef>("gear"),
+            Consumables = Read<ConsumableDef>("consumables"),
+            Books = Read<BookDef>("books"),
+            Affixes = Read<AffixDef>("affixes"),
+            Uniques = Read<UniqueDef>("uniques"),
+            Sets = Read<SetDef>("sets"),
+            LootTables = Read<LootTableDef>("loot"),
+            Spells = OptionalRead<Magic.SpellDef>("spells"),
+        };
         var problems = db.Validate();
         if (problems.Count > 0) throw new InvalidDataException("The game's content has problems:\n" + string.Join('\n', problems));
         return _builtIn = db;
@@ -87,6 +108,12 @@ public sealed class ContentDb
 
     /// <summary>Reads one embedded data file, a JSON array of <typeparamref name="T"/>.</summary>
     public static List<T> Read<T>(string name) => Parse<T>(ReadText(name), name);
+
+    private static List<T> OptionalRead<T>(string name)
+    {
+        try { return Read<T>(name); }
+        catch (FileNotFoundException) { return []; }
+    }
 
     public static List<T> Parse<T>(string json, string name)
     {
@@ -231,6 +258,7 @@ public sealed class ContentDb
         }
         foreach (var a in Armours)
             if (a.Kind == ArmourKind.Heavy && a.DexCap is not 0) p.Add($"armour: {a.Id} is heavy, so its DEX cap must be 0.");
+        ValidateItems(p);
         return p;
     }
 
@@ -258,6 +286,51 @@ public sealed class ContentDb
             if (c.FleeAtPercent is < 0 or > 90) p.Add($"creatures: {c.Id} flees at {c.FleeAtPercent}%; it must be 0–90.");
             if (c.FleeAtPercent > 0 && c.Has("mindless")) p.Add($"creatures: {c.Id} is mindless, so it can't flee.");
         }
+    }
+
+    private void ValidateItems(List<string> p)
+    {
+        foreach (var g in Weapons.Select(w => w.Id).Concat(Shields.Select(w => w.Id)).Concat(Armours.Select(w => w.Id))
+                     .Concat(Gear.Select(w => w.Id)).Concat(Consumables.Select(w => w.Id)).Concat(Books.Select(w => w.Id))
+                     .GroupBy(x => x).Where(g => g.Count() > 1))
+            p.Add($"items: '{g.Key}' is used by {g.Count()} item bases.");
+        var slots = new HashSet<string> { "head", "neck", "cloak", "hands", "belt", "legs", "feet", "ring" };
+        foreach (var g in Gear.Where(g => !slots.Contains(g.Slot))) p.Add($"gear: {g.Id}'s slot '{g.Slot}' is not a slot.");
+        foreach (var c in Consumables)
+        {
+            if (c.Heal is { } h) CheckDice(p, $"consumables: {c.Id}'s heal", h);
+            if (c.Special is { } sp && sp is not ("identify" or "light" or "oil" or "food" or "water")) p.Add($"consumables: {c.Id} has an unknown special '{sp}'.");
+        }
+        var kinds = new HashSet<string> { "toHit", "damagePct", "extraDamage", "ac", "resist", "recoveryPct", "attribute", "maxHp", "maxStamina", "maxMana", "hpRegen", "skillXpPct", "skill" };
+        foreach (var a in Affixes)
+        {
+            if (!kinds.Contains(a.Kind)) p.Add($"affixes: {a.Id} has an unknown kind '{a.Kind}'.");
+            if (a.Min > a.Max) p.Add($"affixes: {a.Id}'s min is above its max.");
+            if (a.Kind is "extraDamage" or "resist" && !Enum.TryParse<DamageType>(a.Scope, true, out _)) p.Add($"affixes: {a.Id} needs a damage type.");
+            if (a.Kind == "attribute" && !TryEnum<Attribute>(a.Scope ?? "")) p.Add($"affixes: {a.Id} needs an attribute.");
+            if (a.Kind == "skill" && !TryEnum<SkillId>(a.Scope ?? "")) p.Add($"affixes: {a.Id} needs a skill.");
+        }
+        var bases = Bases;
+        foreach (var u in Uniques)
+        {
+            if (!bases.ContainsKey(u.Base)) p.Add($"uniques: {u.Id}'s base '{u.Base}' doesn't exist.");
+            foreach (var a in u.Affixes.Keys.Where(a => Affixes.All(x => x.Id != a))) p.Add($"uniques: {u.Id} has an unknown affix '{a}'.");
+            if (u.Set is { } set && Sets.All(x => x.Id != set)) p.Add($"uniques: {u.Id} belongs to an unknown set '{set}'.");
+        }
+        foreach (var t in LootTables)
+        {
+            CheckDice(p, $"loot: {t.Id}'s rolls", t.Rolls);
+            foreach (var e in t.Entries)
+            {
+                int given = (e.Item is null ? 0 : 1) + (e.Category is null ? 0 : 1) + (e.Gold is null ? 0 : 1) + (e.Nothing ? 1 : 0);
+                if (given != 1) p.Add($"loot: {t.Id} has an entry that isn't exactly one of item, category, gold or nothing.");
+                if (e.Item is { } it && !bases.ContainsKey(it)) p.Add($"loot: {t.Id} names an unknown item '{it}'.");
+                if (e.Gold is { } gd) CheckDice(p, $"loot: {t.Id}'s gold", gd);
+                if (e.Category is { } cat && !bases.Values.Any(b => b.Category == cat)) p.Add($"loot: {t.Id} names an empty category '{cat}'.");
+            }
+        }
+        foreach (var c in Creatures.Where(c => c.Loot is not null && LootTables.All(t => t.Id != c.Loot)))
+            p.Add($"creatures: {c.Id}'s loot table '{c.Loot}' doesn't exist.");
     }
 
     private static void CheckDice(List<string> p, string what, string dice)

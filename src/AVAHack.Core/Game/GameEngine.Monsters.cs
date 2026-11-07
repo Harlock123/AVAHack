@@ -29,7 +29,7 @@ public sealed partial class GameEngine
     public Monster AddMonster(string creature, Cell cell, Dir facing)
     {
         var def = Content.Creature(creature);
-        var m = new Monster(_nextMonsterId++, def, cell, facing, Dice.Parse(def.HitDice).Roll(Rng.World))
+        var m = new Monster(_nextMonsterId++, def, cell, facing, Dice.Parse(def.HitDice).Roll(Rng.World), Content)
         {
             IdleLeft = 1 + Rng.Ai.Next(300) / 100.0,
         };
@@ -53,7 +53,7 @@ public sealed partial class GameEngine
     /// <summary>Whether creature <paramref name="m"/> may walk into cell <paramref name="c"/> now.</summary>
     private bool CanEnter(Monster m, Cell c, bool forPath)
     {
-        if (c == PartyCell) return false;
+        if (c == PartyCell || Level.ChestAt(c) is not null) return false;
         var kind = Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
         if (kind == CellKind.Door)
@@ -106,6 +106,24 @@ public sealed partial class GameEngine
 
     private void TickMonster(Monster m)
     {
+        if (m.Conditions.Active.Any())
+        {
+            var tick = m.Conditions.Tick(TickSeconds, Rng.Combat, (a, dc) => Checks.RollD20(Rng.Combat, Advantage.None) + m.SaveBonus(a) >= dc);
+            if (tick.Damage > 0) DamageMonster(m, tick.Damage, DamageType.Poison);
+            if (!m.IsAlive) return;
+        }
+        if (!m.Conditions.CanAct)
+        {
+            if (m.Action == MonsterAction.WindingUp) { m.Action = MonsterAction.None; m.Attack = null; }
+            return;
+        }
+        if (m.Summoned)
+        {
+            m.SummonLeft -= TickSeconds;
+            if (m.SummonLeft <= 0) { m.State = MonsterState.Dead; Say($"The {m.Def.Name} fades away."); return; }
+        }
+        MonsterTickHook?.Invoke(m);
+        if (!m.IsAlive) return;
         if (m.Action != MonsterAction.None)
         {
             m.ActionLeft -= TickSeconds;
@@ -134,6 +152,11 @@ public sealed partial class GameEngine
             }
         }
 
+        if (m.Ally)
+        {
+            AllyFight(m);
+            return;
+        }
         if (!m.IsAware)
         {
             if (Notices(m)) Alert(m);
@@ -172,9 +195,32 @@ public sealed partial class GameEngine
         if (dirs.Count > 0) StepTo(m, dirs[Rng.Ai.Next(dirs.Count)]);
     }
 
+    /// <summary>Champions, bosses and others hook in here each tick.</summary>
+    internal Action<Monster>? MonsterTickHook;
+
+    /// <summary>An ally hunts the nearest foe: turns to it and strikes when adjacent, otherwise closes in.</summary>
+    private void AllyFight(Monster m)
+    {
+        var foe = _monsters.Where(o => o.IsAlive && !o.Ally).OrderBy(o => o.Cell.Distance(m.Cell)).FirstOrDefault();
+        if (foe is null || foe.Cell.Distance(m.Cell) > 10)
+        {
+            // Nothing to fight: stay close to the party.
+            if (m.Cell.Distance(PartyCell) > 2 && PathStep(m, c => c.Distance(PartyCell) <= 1) is { } back) StepTo(m, back);
+            return;
+        }
+        if (foe.Cell.Distance(m.Cell) == 1 && DirTo(m.Cell, foe.Cell) is { } face)
+        {
+            if (m.Facing != face) { Turn(m, face); return; }
+            if (m.Def.Attacks.FirstOrDefault(a => a.Range == 1) is { } melee) { WindUp(m, melee); return; }
+        }
+        if (PathStep(m, c => c.Distance(foe.Cell) == 1) is { } dir) StepTo(m, dir);
+    }
+
     /// <summary>Whether a creature sees or senses the party now.</summary>
     private bool Notices(Monster m)
     {
+        if (Invisible > 0 && m.Cell.Distance(PartyCell) > 1) return false;
+        if (NoticeHook is { } hook) return hook(m);
         double d = Math.Sqrt(Sq(m.Cell.X - PartyCell.X) + Sq(m.Cell.Y - PartyCell.Y));
         if (d <= 1.01) return true;
         double range = m.Def.Has("ambush") ? AmbushRange : Math.Max(2, m.Def.Perception - 5);
@@ -191,6 +237,9 @@ public sealed partial class GameEngine
             if (o != m && o.IsAlive && !o.IsAware && o.Def.Id == m.Def.Id && o.Cell.Distance(m.Cell) <= PackRange)
                 o.State = MonsterState.Aware;
     }
+
+    /// <summary>Stealth replaces the plain noticing rules when it is on (spec 11.1).</summary>
+    internal Func<Monster, bool>? NoticeHook;
 
     private bool ShouldFlee(Monster m)
     {

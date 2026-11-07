@@ -11,4 +11,6 @@ public enum GameAction
     TurnRight,
     /// <summary>Use what is in front: pull a lever on the wall ahead, or open or close the door ahead.</summary>
     Use,
+    /// <summary>Pick up everything lying in the party's cell.</summary>
+    PickUp,
 }

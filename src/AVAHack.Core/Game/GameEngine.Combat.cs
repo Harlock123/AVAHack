@@ -21,6 +21,8 @@ public sealed partial class GameEngine
     public const double StaggerSeconds = 0.8;
     /// <summary>Seconds with no creature after the party before the fight is over.</summary>
     public const double CalmSeconds = 3;
+    /// <summary>The off hand's penalty to hit when fighting with two weapons (spec 9.3).</summary>
+    public const int OffHandPenalty = 2;
 
     private static readonly WeaponDef Fist = new()
     {
@@ -30,96 +32,151 @@ public sealed partial class GameEngine
 
     private readonly List<Projectile> _projectiles = new();
     private double _calm;
+    private bool _inFight;
 
-    public Hand LeftHand { get; } = new();
-    public Hand RightHand { get; } = new();
+    /// <summary>The first hero's hands (the single-hero parts of the game use these).</summary>
+    public Hand LeftHand => Hero.LeftHand;
+    public Hand RightHand => Hero.RightHand;
     public IReadOnlyList<Projectile> Projectiles => _projectiles;
-    public bool InFight => Hero.InFight;
-    /// <summary>Seconds left of the red flash after the hero is hurt.</summary>
+    public bool InFight => _inFight;
+    /// <summary>Seconds left of the red flash after a hero is hurt.</summary>
     public double HeroHurt { get; private set; }
 
-    /// <summary>The shield is up: the left hand is held and there is a shield on it.</summary>
-    public bool Blocking => LeftHand.Held && Hero.OffHand is not null && Hero.Conditions.CanAct && !Hero.IsDown;
+    /// <summary>The first hero's shield is up.</summary>
+    public bool Blocking => IsBlocking(Hero);
 
-    public Hand HandOf(HandSide side) => side == HandSide.Left ? LeftHand : RightHand;
+    public bool IsBlocking(Character c) => c.LeftHand.Held && c.OffHand is not null && c.Conditions.CanAct && !c.IsDown;
 
-    /// <summary>A hand's key or button went down. Holding the weapon hand charges a power attack; holding the shield blocks.</summary>
-    public void HandDown(HandSide side)
+    public Hand HandOf(HandSide side) => HandOf(Hero, side);
+    public static Hand HandOf(Character c, HandSide side) => side == HandSide.Left ? c.LeftHand : c.RightHand;
+
+    public void HandDown(HandSide side) => HandDown(Hero, side);
+    public void HandUp(HandSide side) => HandUp(Hero, side);
+
+    /// <summary>The hand of hero <paramref name="index"/> (in slot order; 0 is front left) went down.</summary>
+    public void HandDown(int index, HandSide side)
     {
-        var h = HandOf(side);
+        if (Party.At(index) is { } c) HandDown(c, side);
+    }
+
+    public void HandUp(int index, HandSide side)
+    {
+        if (Party.At(index) is { } c) HandUp(c, side);
+    }
+
+    /// <summary>A hand's key or button went down. Holding the weapon hand charges a power attack; holding a shield blocks.</summary>
+    public void HandDown(Character c, HandSide side)
+    {
+        var h = HandOf(c, side);
         if (h.Held) return; // key repeat
         h.Held = true;
         h.HeldFor = 0;
     }
 
     /// <summary>
-    /// A hand's key or button came up: the weapon hand swings (a power attack if it was held long enough); the
-    /// shield hand bashes if it was only tapped.
+    /// A hand came up: a weapon swings (a power attack if it was held long enough); a shield bashes if it was
+    /// only tapped.
     /// </summary>
-    public void HandUp(HandSide side)
+    public void HandUp(Character c, HandSide side)
     {
-        var h = HandOf(side);
+        var h = HandOf(c, side);
         if (!h.Held) return;
         h.Held = false;
         double held = h.HeldFor;
         h.HeldFor = 0;
-        if (Mode != GameMode.Playing || Paused || !h.Ready || Hero.IsDown || !Hero.Conditions.CanAct) return;
-        if (side == HandSide.Right) SwingWeapon(held >= PowerHold);
-        else if (Hero.OffHand is { } shield && held < BashTap) Bash(shield);
+        if (Mode != GameMode.Playing || Paused || !h.Ready || c.IsDown || !c.Conditions.CanAct) return;
+        if (side == HandSide.Right) SwingWeapon(c, c.MainHand ?? Fist, EquipSlot.RightHand, held >= PowerHold);
+        else if (c.OffHand is { } shield) { if (held < BashTap) Bash(c, shield); }
+        else if (c.OffWeapon is { } off) SwingWeapon(c, off, EquipSlot.LeftHand, held >= PowerHold);
+        else if (c.MainHand is null || c.MainHand.Skill == SkillId.Unarmed) SwingWeapon(c, Fist, EquipSlot.LeftHand, false);
     }
 
     private void TickHands()
     {
-        foreach (var h in new[] { LeftHand, RightHand })
+        foreach (var c in Party.Members)
         {
-            if (h.Recovery > 0) h.Recovery = Math.Max(0, h.Recovery - TickSeconds);
-            if (h.Held) h.HeldFor += TickSeconds;
+            foreach (var h in new[] { c.LeftHand, c.RightHand })
+            {
+                if (h.Recovery > 0) h.Recovery = Math.Max(0, h.Recovery - TickSeconds);
+                if (h.Held) h.HeldFor += TickSeconds;
+            }
+            if (c.HurtFlash > 0) c.HurtFlash = Math.Max(0, c.HurtFlash - TickSeconds);
         }
         if (HeroHurt > 0) HeroHurt = Math.Max(0, HeroHurt - TickSeconds);
     }
 
-    private void SwingWeapon(bool power)
+    private void SwingWeapon(Character c, WeaponDef w, EquipSlot hand, bool power)
     {
-        var w = Hero.MainHand ?? Fist;
-        if (power && !Hero.SpendStamina(PowerStamina))
+        var handState = hand == EquipSlot.RightHand ? c.RightHand : c.LeftHand;
+        bool ranged = w.Kind == "bow";
+        if (!ranged && w.Kind != "reach" && !Party.IsFront(c))
         {
-            power = false;
-            Say("Too winded for a power attack.");
-        }
-        RightHand.Start(w.Recovery * Hero.RecoveryFactor(w.Skill) * (power ? 1.3 : 1));
-        if (power) Hero.UseSkill(SkillId.Athletics, 0, XpSource.Plain);
-        var attr = w.Finesse && Hero.Mod(Attribute.Dex) > Hero.Mod(Attribute.Str) ? Attribute.Dex : Attribute.Str;
-        Strike(w.Skill, attr, Dice.Parse(w.Damage), w.Type, power ? 1.5 : 1, power ? 30 : 0);
-    }
-
-    private void Bash(ShieldDef shield)
-    {
-        if (!Hero.SpendStamina(BashStamina))
-        {
-            Say("Too winded to bash.");
+            Say($"{c.Name} can't reach from the back row.");
             return;
         }
-        LeftHand.Start(shield.BashRecovery * Hero.RecoveryFactor(SkillId.Block));
-        Strike(SkillId.Block, Attribute.Str, Dice.Parse(shield.BashDamage), DamageType.Bludgeoning, 1, 20);
+        if (power && !c.SpendStamina(PowerStamina))
+        {
+            power = false;
+            Say($"{c.Name} is too winded for a power attack.");
+        }
+        handState.Start(w.Recovery * c.RecoveryFactor(w.Skill) * (power ? 1.3 : 1));
+        if (power) c.UseSkill(SkillId.Athletics, 0, XpSource.Plain);
+        var attr = w.Finesse && c.Mod(Attribute.Dex) > c.Mod(Attribute.Str) ? Attribute.Dex : Attribute.Str;
+        int offPenalty = hand == EquipSlot.LeftHand && w != Fist ? OffHandPenalty : 0;
+        var dice = Dice.Parse(w.Damage);
+        if (c.QualityOf(hand) > 0) dice = dice with { Bonus = dice.Bonus + c.QualityOf(hand) };
+        Monster? target = ranged ? FirstInLine(w.Range) : null;
+        Strike(c, target, w.Skill, attr, dice, w.Type, power ? 1.5 : 1, power ? 30 : 0, w.CritRange, -offPenalty, hand, w.Kind);
     }
 
-    /// <summary>A blow at whatever stands in the cell ahead.</summary>
-    private void Strike(SkillId skill, Attribute attr, Dice dice, DamageType type, double multiplier, double staggerChance)
+    private void Bash(Character c, ShieldDef shield)
+    {
+        if (!Party.IsFront(c))
+        {
+            Say($"{c.Name} can't reach from the back row.");
+            return;
+        }
+        if (!c.SpendStamina(BashStamina))
+        {
+            Say($"{c.Name} is too winded to bash.");
+            return;
+        }
+        c.LeftHand.Start(shield.BashRecovery * c.RecoveryFactor(SkillId.Block));
+        Strike(c, null, SkillId.Block, Attribute.Str, Dice.Parse(shield.BashDamage), DamageType.Bludgeoning, 1, 20, 20, 0, null, "");
+    }
+
+    /// <summary>The first creature straight ahead within <paramref name="range"/> cells, with nothing in between.</summary>
+    private Monster? FirstInLine(int range)
+    {
+        var c = PartyCell;
+        for (int i = 0; i < range; i++)
+        {
+            c = c.Step(Facing);
+            if (Level.KindAt(c) == CellKind.Wall || Level.DoorAt(c) is { IsPassable: false, Kind: DoorKind.Hand } || Level.ChestAt(c) is not null) return null;
+            if (MonstersAt(c).FirstOrDefault() is { } m) return m;
+        }
+        return null;
+    }
+
+    /// <summary>A blow (or arrow) at <paramref name="target"/>, or at whatever stands in the cell ahead.</summary>
+    private void Strike(Character c, Monster? target, SkillId skill, Attribute attr, Dice dice, DamageType type, double multiplier,
+                        double staggerChance, int critRange, int toHit, EquipSlot? hand, string weaponKind)
     {
         var ahead = PartyCell.Step(Facing);
         AlertWithin(NoiseRange);
-        var target = MonstersAt(ahead).FirstOrDefault();
+        target ??= MonstersAt(ahead).FirstOrDefault();
         if (target is null)
         {
-            if (_monsters.FirstOrDefault(m => m.State == MonsterState.Pile && m.Cell == ahead) is { } pile) StrikePile(pile, type);
+            if (weaponKind != "bow" && _monsters.FirstOrDefault(m => m.State == MonsterState.Pile && m.Cell == ahead) is { } pile) StrikePile(pile, type);
             return;
         }
 
         bool unaware = !target.IsAware;
         bool flank = DirTo(target.Cell, PartyCell) != target.Facing;
-        var adv = flank || unaware ? Advantage.Advantage : Advantage.None;
+        var adv = flank || unaware || target.AttackedWithAdvantage ? Advantage.Advantage : Advantage.None;
         Alert(target);
-        var res = Hero.Attack(Rng.Combat, skill, attr, target.Def.Ac, adv);
+        var res = c.Attack(Rng.Combat, skill, attr, target.Ac, adv, toHit);
+        bool crit = res.Critical || (res.Hit && res.Roll.Natural >= critRange);
         var (x, y) = target.Position();
         if (!res.Hit)
         {
@@ -127,13 +184,33 @@ public sealed partial class GameEngine
             Event?.Invoke(GameEvent.Missed);
             return;
         }
-        double mult = multiplier * Hero.DamageMultiplier(Character.SkillKey(skill)) * (unaware ? 2 : 1);
-        int mod = Hero.Mod(attr) - (attr == Attribute.Str ? Hero.Conditions.StrengthPenalty : 0);
-        int dmg = Combat.Damage(Rng.Combat, dice, mod, Hero.Rank(skill), mult, res.Critical, target.Resistances.For(type));
+        double sneak = unaware ? SneakMultiplier(c, weaponKind) : 1;
+        double mult = multiplier * c.DamageMultiplier(Character.SkillKey(skill)) * c.DamageMultiplier(type.ToString().ToLowerInvariant()) / (1 + c.ItemTotal("damagePct", "all") / 100.0) * sneak;
+        int mod = c.Mod(attr) - (attr == Attribute.Str ? c.Conditions.StrengthPenalty : 0);
+        int dmg = Combat.Damage(Rng.Combat, dice, mod, c.SkillLevel(skill), mult, crit, target.Resistances.For(type));
+        if (hand is { } h)
+            foreach (var (t, amount) in c.ExtraDamage(h))
+                dmg += Combat.ApplyAffinity(amount, target.Resistances.For(t));
         Event?.Invoke(GameEvent.Hit);
-        Hero.UseSkill(skill, dmg, XpSource.Against(target.Def.Level));
-        DamageMonster(target, dmg, type, res.Critical, unaware);
+        c.UseSkill(skill, dmg, XpSource.Against(target.Def.Level));
+        if (unaware) c.UseSkill(SkillId.Stealth, 0, XpSource.Against(target.Def.Level));
+        OnHeroHit?.Invoke(c, target, crit);
+        DamageMonster(target, dmg, type, crit, unaware && sneak > 1);
         if (target.IsAlive && staggerChance > 0 && Rng.Combat.Chance(staggerChance)) Stagger(target);
+    }
+
+    /// <summary>Raised after a hero's blow lands, before its damage: perks hook in here.</summary>
+    internal event Action<Character, Monster, bool>? OnHeroHit;
+
+    /// <summary>A sneak attack's multiplier: ×2 for anyone, ×3 (×5 with a dagger) for a Rogue, more with Backstab.</summary>
+    public static double SneakMultiplier(Character c, string weaponKind)
+    {
+        double m = 2;
+        if (c.Calling.Signature == "sneakAttack") m = weaponKind == "dagger" ? 5 : 3;
+        foreach (var (id, _) in c.Perks)
+            foreach (var e in c.Content.Perk(id).Effects)
+                if (e.Kind == "sneakMultiplier" && (e.Scope == "any" || e.Scope == weaponKind)) m = Math.Max(m, e.Value);
+        return m;
     }
 
     private void StrikePile(Monster pile, DamageType type)
@@ -145,6 +222,7 @@ public sealed partial class GameEngine
             Kills++;
             Float?.Invoke(new FloatText(x, y, 0.2, "crushed", TextKind.Critical));
             Say($"You grind the {pile.Def.Name}'s bones to splinters. It won't rise again.");
+            DropLoot(pile);
             Event?.Invoke(GameEvent.MonsterDied);
         }
         else
@@ -155,15 +233,23 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Damage to a creature, already through its resistances.</summary>
-    private void DamageMonster(Monster m, int dmg, DamageType type, bool critical = false, bool sneak = false)
+    internal void DamageMonster(Monster m, int dmg, DamageType type, bool critical = false, bool sneak = false)
     {
         var (x, y) = m.Position();
         string text = dmg == 0 ? "immune" : sneak ? $"{dmg}!!" : critical ? $"{dmg}!" : dmg.ToString();
         Float?.Invoke(new FloatText(x, y, FloatZ(m), text, critical || sneak ? TextKind.Critical : TextKind.MonsterHurt));
-        if (dmg <= 0) return;
+        if (dmg <= 0 || !m.IsAlive) return;
+        if (m.Ward > 0)
+        {
+            int soak = Math.Min(m.Ward, dmg);
+            m.Ward -= soak;
+            dmg -= soak;
+            if (dmg <= 0) return;
+        }
         m.Hp -= dmg;
         m.HurtFlash = 0.2;
         m.LastHitType = type;
+        m.Conditions.Cure(ConditionId.Asleep);
         Alert(m);
         if (m.Hp > 0) return;
 
@@ -171,7 +257,7 @@ public sealed partial class GameEngine
         m.Action = MonsterAction.None;
         m.Attack = null;
         var re = m.Def.Special.FirstOrDefault(s => s.Kind == "reassemble");
-        if (re is not null && type != re.UnlessKilledBy)
+        if (re is not null && type != re.UnlessKilledBy && !m.Summoned)
         {
             m.State = MonsterState.Pile;
             m.PileLeft = re.Seconds;
@@ -179,13 +265,20 @@ public sealed partial class GameEngine
             return;
         }
         m.State = MonsterState.Dead;
+        if (m.Ally) { Say($"Your {m.Def.Name} is gone."); return; }
         Kills++;
-        Say($"The {m.Def.Name} is slain.");
+        Say($"The {m.Name} is slain.");
+        DropLoot(m);
+        MonsterDied?.Invoke(m);
         Event?.Invoke(GameEvent.MonsterDied);
     }
 
-    private static void Stagger(Monster m)
+    /// <summary>Raised when a creature is killed (bosses and champions listen).</summary>
+    public event Action<Monster>? MonsterDied;
+
+    internal static void Stagger(Monster m)
     {
+        if (m.Def.Has("unyielding") || m.Affixes.Contains("unyielding")) return;
         m.Attack = null;
         m.Action = MonsterAction.Staggered;
         m.ActionLeft = m.ActionTotal = StaggerSeconds;
@@ -197,50 +290,83 @@ public sealed partial class GameEngine
         var a = m.Attack!;
         m.Attack = null;
         m.Action = MonsterAction.Recovering;
-        m.ActionLeft = m.ActionTotal = a.Recovery;
+        m.ActionLeft = m.ActionTotal = a.Recovery * m.RecoveryFactor;
         m.StrikeTime = 0.2;
         if (a.Range > 1)
         {
             _projectiles.Add(new Projectile(m, a, m.Facing));
             return;
         }
-        if (m.Cell.Step(m.Facing) != PartyCell)
+        var front = m.Cell.Step(m.Facing);
+        if (m.Ally || front != PartyCell)
         {
-            // The party stepped out of reach during the tell.
-            var (x, y) = m.Position();
-            Float?.Invoke(new FloatText(x, y, FloatZ(m), "whiff", TextKind.Miss));
+            // An ally strikes the creature ahead of it; a foe whose target moved off whiffs.
+            if (MonstersAt(front).FirstOrDefault(o => o.Ally != m.Ally) is { } victim) MonsterHitsMonster(m, a, victim);
+            else
+            {
+                var (x, y) = m.Position();
+                Float?.Invoke(new FloatText(x, y, FloatZ(m), "whiff", TextKind.Miss));
+            }
             return;
         }
-        HitHero(m, a, m.Cell);
+        if (a.Area) foreach (var c in Party.Standing.ToList()) HitHero(m, a, m.Cell, c);
+        else HitHero(m, a, m.Cell);
     }
 
-    /// <summary>A creature's blow or missile reaches the hero, coming from cell <paramref name="from"/>.</summary>
-    private void HitHero(Monster m, CreatureAttackDef a, Cell from)
+    private void MonsterHitsMonster(Monster attacker, CreatureAttackDef a, Monster victim)
     {
-        var adv = Hero.Conditions.AttackedWithAdvantage ? Advantage.Advantage : Advantage.None;
-        var res = Combat.Attack(Rng.Combat, a.ToHit, Hero.ArmourClass, adv);
+        if (!Combat.Attack(Rng.Combat, a.ToHit + attacker.ToHitBonus, victim.Ac).Hit)
+        {
+            var (x, y) = victim.Position();
+            Float?.Invoke(new FloatText(x, y, FloatZ(victim), "miss", TextKind.Miss));
+            return;
+        }
+        int dmg = (int)Math.Max(1, Dice.Parse(a.Damage).Roll(Rng.Combat) * attacker.DamageFactor);
+        DamageMonster(victim, Combat.ApplyAffinity(dmg, victim.Resistances.For(a.Type)), a.Type);
+    }
+
+    /// <summary>Which side of the formation a blow from cell <paramref name="from"/> comes from.</summary>
+    private RelativeSide SideOf(Cell from)
+    {
+        var d = DirTo(PartyCell, from);
+        if (d == Facing || d is null) return RelativeSide.Ahead;
+        if (d == Facing.Left()) return RelativeSide.Left;
+        if (d == Facing.Right()) return RelativeSide.Right;
+        return RelativeSide.Behind;
+    }
+
+    /// <summary>A creature's blow or missile reaches the party, coming from cell <paramref name="from"/>.</summary>
+    private void HitHero(Monster m, CreatureAttackDef a, Cell from, Character? target = null)
+    {
+        var side = SideOf(from);
+        var exposed = Party.Exposed(side);
+        if (exposed.Count == 0) return;
+        var c = target ?? (exposed.Count == 1 ? exposed[0] : exposed[Rng.Combat.Next(exposed.Count)]);
+        var adv = c.Conditions.AttackedWithAdvantage ? Advantage.Advantage : Advantage.None;
+        if (Invisible > 0) adv = AdvantageRules.Combine(adv, Advantage.Disadvantage);
+        var res = Combat.Attack(Rng.Combat, a.ToHit + m.ToHitBonus, c.ArmourClass, adv);
         if (!res.Hit)
         {
             FloatAtHero("miss", TextKind.Miss);
             return;
         }
         var dice = Dice.Parse(a.Damage);
-        int dmg = Math.Max(1, dice.RollDice(Rng.Combat) + (res.Critical ? dice.RollDice(Rng.Combat) : 0) + dice.Bonus);
-        dmg = Combat.ApplyAffinity(dmg, Hero.Resistances.For(a.Type));
+        int dmg = Math.Max(1, (int)((dice.RollDice(Rng.Combat) + (res.Critical ? dice.RollDice(Rng.Combat) : 0) + dice.Bonus) * m.DamageFactor));
+        dmg = Combat.ApplyAffinity(dmg, c.Resistances.For(a.Type));
+        dmg = AbsorbWithWard(c, dmg);
 
-        bool fromFront = from == PartyCell.Step(Facing) || (a.Range > 1 && DirTo(PartyCell, from) == Facing);
-        if (Blocking && fromFront && dmg > 0)
+        if (side == RelativeSide.Ahead && IsBlocking(c) && dmg > 0)
         {
             int blocked;
-            if (LeftHand.HeldFor <= PerfectBlockWindow)
+            if (c.LeftHand.HeldFor <= PerfectBlockWindow)
             {
                 blocked = dmg;
                 if (a.Range == 1) Stagger(m);
                 FloatAtHero("perfect block", TextKind.Blocked);
             }
-            else if (Hero.SpendStamina(BlockStamina))
+            else if (c.SpendStamina(BlockStamina))
             {
-                double pct = Math.Min(90, Hero.OffHand!.BlockPercent + Hero.Rank(SkillId.Block) / 4.0);
+                double pct = Math.Min(90, c.OffHand!.BlockPercent + c.SkillLevel(SkillId.Block) / 4.0 + c.PerkTotal("blockPct"));
                 blocked = (int)Math.Round(dmg * pct / 100);
                 FloatAtHero($"blocked {blocked}", TextKind.Blocked);
             }
@@ -248,64 +374,80 @@ public sealed partial class GameEngine
             dmg -= blocked;
             if (blocked > 0)
             {
-                Hero.UseSkill(SkillId.Block, blocked, XpSource.Against(m.Def.Level));
+                c.UseSkill(SkillId.Block, blocked, XpSource.Against(m.Def.Level));
+                c.RiposteUntil = Time + 2;
                 Event?.Invoke(GameEvent.Blocked);
             }
         }
         if (dmg <= 0) return;
 
-        Hero.TakeDamage(dmg);
+        c.TakeDamage(dmg);
+        c.HurtFlash = 0.3;
         HeroHurt = 0.3;
         FloatAtHero(res.Critical ? $"-{dmg}!" : $"-{dmg}", TextKind.HeroHurt);
-        Hero.UseSkill(Hero.ArmourSkill, dmg, XpSource.Against(m.Def.Level));
+        c.UseSkill(c.ArmourSkill, dmg, XpSource.Against(m.Def.Level));
         Event?.Invoke(GameEvent.HeroHurt);
-        if (a.OnHit is { } on && !Hero.IsDown && Rng.Combat.Chance(on.Chance))
-        {
-            var attr = Content.Condition(on.Condition).Save ?? Attribute.Con;
-            string? against = on.Condition == ConditionId.Poisoned ? "poison" : null;
-            if (!Hero.Save(Rng.Combat, attr, on.Dc, against: against) && Hero.ApplyCondition(on.Condition, on.Dc, on.Seconds))
-                Say($"You are {Content.Condition(on.Condition).Name.ToLowerInvariant()}!");
-        }
-        if (Hero.IsDown) Die();
+        if (m.Affixes.Contains("vampiric") || m.Affixes.Contains("bloodthirsty")) m.Hp = Math.Min(m.MaxHp, m.Hp + Math.Max(1, dmg / 2));
+        if (a.OnHit is { } on && !c.IsDown && Rng.Combat.Chance(on.Chance)) Afflict(c, on.Condition, on.Dc, on.Seconds);
+        foreach (var cond in m.OnHitConditions)
+            if (!c.IsDown) Afflict(c, cond, 12 + m.Def.Level / 2, null);
+        if (c.IsDown) Say($"{c.Name} falls!");
+        if (Party.AllDown) Die();
+    }
+
+    /// <summary>A condition that a save may resist, on a hero.</summary>
+    internal void Afflict(Character c, ConditionId id, int dc, double? seconds)
+    {
+        var attr = Content.Condition(id).Save ?? Attribute.Con;
+        string? against = id == ConditionId.Poisoned ? "poison" : id is ConditionId.Frightened or ConditionId.Asleep ? "illusion" : null;
+        if (!c.Save(Rng.Combat, attr, dc, against: against) && c.ApplyCondition(id, dc, seconds))
+            Say($"{c.Name} is {Content.Condition(id).Name.ToLowerInvariant()}!");
     }
 
     private void TickProjectiles()
     {
         foreach (var p in _projectiles.ToList())
         {
-            double step = p.Attack.ProjectileSpeed * TickSeconds;
+            double step = p.Speed * TickSeconds;
             p.X += p.Dir.Dx() * step;
             p.Y += p.Dir.Dy() * step;
             p.Travelled += step;
             var cell = new Cell((int)Math.Floor(p.X), (int)Math.Floor(p.Y));
             if (cell == p.LastCell) continue;
             p.LastCell = cell;
-            if (Level.KindAt(cell) == CellKind.Wall || (Level.DoorAt(cell) is { } d && !d.IsPassable) || p.Travelled > p.Attack.Range + 0.5)
+            if (Level.KindAt(cell) == CellKind.Wall || (Level.DoorAt(cell) is { } d && !d.IsPassable) || p.Travelled > p.Range + 0.5)
             {
                 _projectiles.Remove(p);
+                p.OnExpire?.Invoke(p.LastCell.Step(p.Dir.Opposite()));
                 continue;
             }
-            if (cell == PartyCell)
+            if (cell == PartyCell && !p.FromParty)
             {
                 _projectiles.Remove(p);
-                HitHero(p.Source, p.Attack, cell.Step(p.Dir.Opposite()));
+                if (p.Attack is { } atk) HitHero(p.Source!, atk, cell.Step(p.Dir.Opposite()));
                 continue;
             }
-            if (MonstersAt(cell).FirstOrDefault(m => m != p.Source) is { } victim)
+            if (MonstersAt(cell).FirstOrDefault(m => m != p.Source && (!p.FromParty || !m.Ally)) is { } victim)
             {
+                _projectiles.Remove(p);
+                if (p.OnHit is { } hit) { hit(victim, cell); continue; }
                 // Stones don't care whose head they find.
-                _projectiles.Remove(p);
-                if (Combat.Attack(Rng.Combat, p.Attack.ToHit, victim.Def.Ac).Hit)
-                    DamageMonster(victim, Combat.ApplyAffinity(Dice.Parse(p.Attack.Damage).Roll(Rng.Combat), victim.Resistances.For(p.Attack.Type)), p.Attack.Type);
+                if (p.Attack is { } atk && Combat.Attack(Rng.Combat, atk.ToHit, victim.Ac).Hit)
+                    DamageMonster(victim, Combat.ApplyAffinity(Dice.Parse(atk.Damage).Roll(Rng.Combat), victim.Resistances.For(atk.Type)), atk.Type);
             }
         }
     }
 
-    private void TickHero()
+    private void TickParty()
     {
-        int dot = Hero.Update(TickSeconds, Rng.Combat);
-        if (dot > 0) FloatAtHero($"-{dot}", TextKind.HeroHurt);
-        if (Hero.IsDown) Die(); // however the hero fell
+        foreach (var c in Party.Members)
+        {
+            bool wasDown = c.IsDown;
+            int dot = c.Update(TickSeconds, Rng.Combat);
+            if (dot > 0) FloatAtHero($"-{dot}", TextKind.HeroHurt);
+            if (c.IsDown && !wasDown) Say($"{c.Name} falls!");
+        }
+        if (Party.AllDown) Die(); // however they fell
     }
 
     private void UpdateFight(bool anyAware)
@@ -313,20 +455,37 @@ public sealed partial class GameEngine
         if (anyAware)
         {
             _calm = 0;
-            if (!Hero.InFight) Hero.BeginFight();
+            if (!_inFight)
+            {
+                _inFight = true;
+                foreach (var c in Party.Members) c.BeginFight();
+            }
         }
-        else if (Hero.InFight)
+        else if (_inFight)
         {
             _calm += TickSeconds;
-            if (_calm >= CalmSeconds) Hero.EndFight();
+            if (_calm >= CalmSeconds) EndFight();
         }
+    }
+
+    private void EndFight()
+    {
+        _inFight = false;
+        foreach (var c in Party.Members) c.EndFight();
+        // The fallen get up with 1 HP if anyone is still standing (spec 9.5).
+        if (!Party.AllDown)
+            foreach (var c in Party.Members.Where(c => c.IsDown && !c.IsDead))
+            {
+                c.GetUp();
+                Say($"{c.Name} staggers back up.");
+            }
     }
 
     /// <summary>A blow is loud: anything within <paramref name="range"/> cells hears it, through doors and round corners.</summary>
     private void AlertWithin(int range)
     {
         foreach (var m in _monsters)
-            if (m.IsAlive && !m.IsAware && m.Cell.Distance(PartyCell) <= range)
+            if (m.IsAlive && !m.IsAware && !m.Ally && m.Cell.Distance(PartyCell) <= range)
                 Alert(m);
     }
 
@@ -334,11 +493,15 @@ public sealed partial class GameEngine
     {
         if (Mode != GameMode.Playing) return;
         Mode = GameMode.Dead;
-        Say($"{Hero.Name} has fallen in the dark.");
+        Say(Party.Count == 1 ? $"{Hero.Name} has fallen in the dark." : "The whole party has fallen in the dark.");
+        GameOver?.Invoke();
     }
 
+    /// <summary>Raised when the party is wiped out (Ironman deletes its save).</summary>
+    public event Action? GameOver;
+
     /// <summary>Where over a creature its numbers appear: above a rat's back, or a goblin's head.</summary>
-    private static double FloatZ(Monster m) => m.IsSmall ? 0.4 : 0.8;
+    private static double FloatZ(Monster m) => m.IsSmall ? 0.4 : m.Def.Size == CreatureSize.Large ? 1.0 : 0.8;
 
     private void FloatAtHero(string text, TextKind kind)
     {

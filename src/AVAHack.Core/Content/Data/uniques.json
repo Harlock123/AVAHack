@@ -1,0 +1,108 @@
+// Relics and set pieces: fixed named items (spec 13.3).
+[
+ {
+  "id": "relic.wardensMace",
+  "name": "The Warden's Mace",
+  "base": "mace",
+  "rarity": "relic",
+  "affixes": {
+   "holy": 3,
+   "ofTheHammer": 8,
+   "ofTheOx": 2
+  },
+  "text": "Carried by the cellar warden who sealed the Hollow, the first time."
+ },
+ {
+  "id": "relic.ratcatcher",
+  "name": "Ratcatcher",
+  "base": "shortsword",
+  "rarity": "relic",
+  "affixes": {
+   "keen": 3,
+   "swift": -15,
+   "ofTheFox": 2
+  },
+  "text": "Notched from a thousand small throats."
+ },
+ {
+  "id": "relic.cinderBrand",
+  "name": "Cinder Brand",
+  "base": "longsword",
+  "rarity": "relic",
+  "affixes": {
+   "flaming": 5,
+   "brutal": 20
+  },
+  "minLevel": 4,
+  "text": "Still warm to the touch, years after the forge went out."
+ },
+ {
+  "id": "relic.veilOfAsh",
+  "name": "Veil of Ash",
+  "base": "cloak",
+  "rarity": "relic",
+  "affixes": {
+   "ofShadows": 10,
+   "fireproof": 1
+  },
+  "text": "It drinks the light around it."
+ },
+ {
+  "id": "relic.oathRing",
+  "name": "The Oath Ring",
+  "base": "ring",
+  "rarity": "relic",
+  "affixes": {
+   "ofVigour": 10,
+   "ofTheLion": 2
+  },
+  "text": "Engraved: I WILL NOT YIELD."
+ },
+ {
+  "id": "relic.longReach",
+  "name": "Longreach",
+  "base": "halberd",
+  "rarity": "relic",
+  "affixes": {
+   "keen": 2,
+   "brutal": 15,
+   "ofTheBear": 2
+  },
+  "minLevel": 3,
+  "text": "A watch-sergeant's halberd, polished to a mirror."
+ },
+ {
+  "id": "set.watch.helm",
+  "name": "Watch Helm",
+  "base": "ironHelm",
+  "rarity": "set",
+  "set": "watch",
+  "affixes": {
+   "sturdy": 1,
+   "ofVigour": 4
+  },
+  "text": "Part of the Harrowgate Watch's old kit."
+ },
+ {
+  "id": "set.watch.gauntlets",
+  "name": "Watch Gauntlets",
+  "base": "gauntlets",
+  "rarity": "set",
+  "set": "watch",
+  "affixes": {
+   "ofTheBlade": 4
+  },
+  "text": "Part of the Harrowgate Watch's old kit."
+ },
+ {
+  "id": "set.watch.boots",
+  "name": "Watch Boots",
+  "base": "ironBoots",
+  "rarity": "set",
+  "set": "watch",
+  "affixes": {
+   "ofWind": 12
+  },
+  "text": "Part of the Harrowgate Watch's old kit."
+ }
+]

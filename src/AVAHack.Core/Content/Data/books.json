@@ -1,0 +1,157 @@
+// Skill books (spec 7.2): each title gives +1 rank once per hero.
+[
+ {
+  "id": "book.blade",
+  "title": "The Hollow Blade",
+  "skill": "blade",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.blunt",
+  "title": "On the Breaking of Bones",
+  "skill": "blunt",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.twoHanded",
+  "title": "The Long Reach",
+  "skill": "twoHanded",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.archery",
+  "title": "Fletcher's Hand",
+  "skill": "archery",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.unarmed",
+  "title": "The Empty Fist",
+  "skill": "unarmed",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.block",
+  "title": "The Wall of One",
+  "skill": "block",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.heavyArmour",
+  "title": "Iron Skin",
+  "skill": "heavyArmour",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.lightArmour",
+  "title": "The Moving Shadow",
+  "skill": "lightArmour",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.athletics",
+  "title": "Climb, Swim, Run",
+  "skill": "athletics",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.destruction",
+  "title": "Fire and How to Throw It",
+  "skill": "destruction",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.restoration",
+  "title": "The Mending Word",
+  "skill": "restoration",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.warding",
+  "title": "Lines Not Crossed",
+  "skill": "warding",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.conjuration",
+  "title": "Doors to Elsewhere",
+  "skill": "conjuration",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.illusion",
+  "title": "What the Eye Believes",
+  "skill": "illusion",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.enchanting",
+  "title": "The Bound Spark",
+  "skill": "enchanting",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.stealth",
+  "title": "Footfalls",
+  "skill": "stealth",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.lockpicking",
+  "title": "Pins and Tumblers",
+  "skill": "lockpicking",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.traps",
+  "title": "The Careful Hand",
+  "skill": "traps",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.alchemy",
+  "title": "Root and Vial",
+  "skill": "alchemy",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.smithing",
+  "title": "The Anvil's Song",
+  "skill": "smithing",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.survival",
+  "title": "Eating in the Dark",
+  "skill": "survival",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ },
+ {
+  "id": "book.lore",
+  "title": "A Grammar of Old Stones",
+  "skill": "lore",
+  "value": 40,
+  "text": "A worn book. Reading it once teaches a rank of a skill."
+ }
+]

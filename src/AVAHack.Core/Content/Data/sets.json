@@ -1,0 +1,16 @@
+// Item sets: bonuses for wearing several pieces.
+[
+ {
+  "id": "watch",
+  "name": "The Harrowgate Watch",
+  "bonuses": {
+   "2": {
+    "sturdy": 1
+   },
+   "3": {
+    "ofTheOx": 2,
+    "keen": 2
+   }
+  }
+ }
+]

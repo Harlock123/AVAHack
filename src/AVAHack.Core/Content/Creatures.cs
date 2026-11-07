@@ -32,6 +32,8 @@ public sealed record CreatureAttackDef
     /// <summary>Cells a second a projectile flies.</summary>
     public double ProjectileSpeed { get; init; } = 6;
     public OnHitDef? OnHit { get; init; }
+    /// <summary>Hits every hero, not one (a sweep, a breath).</summary>
+    public bool Area { get; init; }
 }
 
 /// <summary>Something a creature does that isn't an attack (e.g. bones that reassemble).</summary>
@@ -70,6 +72,8 @@ public sealed record CreatureDef
     /// <summary>Flees below this share of its HP, in percent (with the hero's CHA). 0 never flees.</summary>
     public double FleeAtPercent { get; init; }
     public CreatureSpecialDef[] Special { get; init; } = [];
+    /// <summary>The loot table rolled when it dies, if any.</summary>
+    public string? Loot { get; init; }
     public required string Sprite { get; init; }
     public required string Text { get; init; }
 
@@ -81,6 +85,7 @@ public static class Behaviours
     public static readonly IReadOnlySet<string> All = new HashSet<string>
     {
         "wander", "guard", "ambush", "patrol", "chase", "melee", "ranged", "flee", "opener", "pack", "mindless",
+        "flier", "swimmer", "phaser", "unyielding", "caster",
     };
 }
 
@@ -97,9 +102,15 @@ public sealed record WeaponDef
     public required double Recovery { get; init; }
     /// <summary>Finesse weapons may use DEX instead of STR.</summary>
     public bool Finesse { get; init; }
-    /// <summary>A dagger, for sneak attack multipliers.</summary>
+    /// <summary>dagger (sneak attacks), reach (strikes from the back row) or bow (shoots down the line).</summary>
     public string Kind { get; init; } = "";
+    public bool TwoHanded { get; init; }
+    /// <summary>Cells a bow reaches.</summary>
+    public int Range { get; init; } = 1;
+    /// <summary>The lowest natural roll that is a critical.</summary>
+    public int CritRange { get; init; } = 20;
     public double WeightKg { get; init; }
+    public int Value { get; init; } = 10;
     public required string Text { get; init; }
 }
 
@@ -114,6 +125,7 @@ public sealed record ShieldDef
     public required string BashDamage { get; init; }
     public required double BashRecovery { get; init; }
     public double WeightKg { get; init; }
+    public int Value { get; init; } = 10;
     public required string Text { get; init; }
 }
 
@@ -127,5 +139,6 @@ public sealed record ArmourDef
     /// <summary>The most DEX it lets count, or null for no limit.</summary>
     public int? DexCap { get; init; }
     public double WeightKg { get; init; }
+    public int Value { get; init; } = 10;
     public required string Text { get; init; }
 }

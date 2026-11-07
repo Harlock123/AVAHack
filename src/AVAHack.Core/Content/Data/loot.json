@@ -1,0 +1,147 @@
+// Loot tables (spec 13.3): rolled on death and when a chest opens.
+[
+ {
+  "id": "vermin",
+  "rolls": "1",
+  "entries": [
+   {
+    "nothing": true,
+    "weight": 8
+   },
+   {
+    "gold": "1d4",
+    "weight": 2
+   },
+   {
+    "item": "bandage",
+    "weight": 1
+   }
+  ]
+ },
+ {
+  "id": "undead.lesser",
+  "rolls": "1",
+  "entries": [
+   {
+    "nothing": true,
+    "weight": 4
+   },
+   {
+    "gold": "2d6",
+    "weight": 3
+   },
+   {
+    "category": "weapon",
+    "weight": 1
+   },
+   {
+    "category": "armour",
+    "weight": 0.5
+   },
+   {
+    "item": "potionHealing",
+    "weight": 1
+   }
+  ]
+ },
+ {
+  "id": "goblin.lesser",
+  "rolls": "1",
+  "entries": [
+   {
+    "nothing": true,
+    "weight": 3
+   },
+   {
+    "gold": "2d8",
+    "weight": 4
+   },
+   {
+    "category": "weapon",
+    "weight": 1
+   },
+   {
+    "category": "consumable",
+    "weight": 2
+   },
+   {
+    "category": "gear",
+    "weight": 0.5
+   }
+  ]
+ },
+ {
+  "id": "chest.cellar",
+  "rolls": "1d2+1",
+  "rarityBonus": 10,
+  "entries": [
+   {
+    "gold": "4d10",
+    "weight": 3
+   },
+   {
+    "category": "weapon",
+    "weight": 2
+   },
+   {
+    "category": "armour",
+    "weight": 1.5
+   },
+   {
+    "category": "shield",
+    "weight": 0.6
+   },
+   {
+    "category": "gear",
+    "weight": 2
+   },
+   {
+    "category": "consumable",
+    "weight": 3
+   },
+   {
+    "category": "book",
+    "weight": 0.7
+   },
+   {
+    "item": "potionHealing",
+    "weight": 2
+   }
+  ]
+ },
+ {
+  "id": "chest.rich",
+  "rolls": "1d2+2",
+  "rarityBonus": 25,
+  "entries": [
+   {
+    "gold": "6d10",
+    "weight": 2
+   },
+   {
+    "category": "weapon",
+    "weight": 2
+   },
+   {
+    "category": "armour",
+    "weight": 1.5
+   },
+   {
+    "category": "gear",
+    "weight": 2.5
+   },
+   {
+    "category": "book",
+    "weight": 1
+   },
+   {
+    "item": "potionGreaterHealing",
+    "weight": 1
+   },
+   {
+    "item": "scrollIdentify",
+    "weight": 1
+   }
+  ]
+ }
+]

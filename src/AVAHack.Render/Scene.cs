@@ -43,7 +43,34 @@ public static class Scene
                 Tint: 0xFFFF2010, TintAmount: m.HurtFlash > 0 ? 0.6 : 0, Glow: glow));
         }
         foreach (var p in g.Projectiles)
-            list.Add(new SpriteInstance(p.X, p.Y, 0.42, 0.12, 0.12, art.Stone()));
+            list.Add(p.Look == "stone"
+                ? new SpriteInstance(p.X, p.Y, 0.42, 0.12, 0.12, art.Stone())
+                : new SpriteInstance(p.X, p.Y, 0.36, 0.24, 0.24, art.Bolt(p.Look), SelfLit: true));
+        foreach (var c in g.Level.Chests)
+            list.Add(new SpriteInstance(c.Cell.X + 0.5, c.Cell.Y + 0.5, 0, 0.62, 0.62, art.Chest(c.Opened)));
+        foreach (var (cell, items) in g.Level.Piles)
+        {
+            for (int i = 0; i < Math.Min(items.Count, 4); i++)
+            {
+                double ox = (i & 1) == 0 ? -0.15 : 0.15, oy = (i & 2) == 0 ? -0.12 : 0.15;
+                list.Add(new SpriteInstance(cell.X + 0.5 + ox, cell.Y + 0.5 + oy, 0, 0.2, 0.2, art.ItemIcon(IconKind(g, items[i]))));
+            }
+        }
         return list;
+    }
+
+    public static string IconKind(GameEngine g, AVAHack.Items.Item item)
+    {
+        var b = g.Content.Base(item.BaseId);
+        return b.Kind switch
+        {
+            Content.ItemKind.Weapon => "weapon",
+            Content.ItemKind.Shield => "shield",
+            Content.ItemKind.Armour => "armour",
+            Content.ItemKind.Consumable when b.Consumable?.Heal is not null || b.Consumable?.Mana > 0 || b.Consumable?.Stamina > 0 => "potion",
+            Content.ItemKind.Book or Content.ItemKind.Tome or Content.ItemKind.Scroll => "book",
+            Content.ItemKind.Gold => "gold",
+            _ => "other",
+        };
     }
 }

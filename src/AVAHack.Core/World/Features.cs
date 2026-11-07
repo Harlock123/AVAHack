@@ -11,6 +11,8 @@ public sealed class Pit(Cell cell, Cell landing, int hideDc)
     /// <summary>0 for an open pit anyone can see.</summary>
     public int HideDc { get; } = hideDc;
     public bool Spotted { get; internal set; } = hideDc == 0;
+    /// <summary>In a generated Delve a pit drops to the next level down instead of a cell here.</summary>
+    public bool ToNextLevel { get; init; }
 }
 
 public enum PlateMode
@@ -36,6 +38,22 @@ public sealed class Note(Cell cell, string text)
     public Cell Cell { get; } = cell;
     public string Text { get; } = text;
     public bool Read { get; internal set; }
+}
+
+/// <summary>A chest standing in a cell. It blocks the way; Use, facing it, opens it.</summary>
+public sealed class Chest(Cell cell, string table, int lockDc = 0, string? key = null)
+{
+    public Cell Cell { get; } = cell;
+    /// <summary>The loot table it holds.</summary>
+    public string Table { get; } = table;
+    /// <summary>0 if unlocked; otherwise the Lockpicking DC.</summary>
+    public int LockDc { get; internal set; } = lockDc;
+    /// <summary>A key that opens it, if any.</summary>
+    public string? Key { get; } = key;
+    public bool Opened { get; internal set; }
+    /// <summary>A mimic waits inside some chests.</summary>
+    public bool Mimic { get; init; }
+    internal List<Items.Item> Contents { get; } = [];
 }
 
 /// <summary>A monster to place when the level starts.</summary>

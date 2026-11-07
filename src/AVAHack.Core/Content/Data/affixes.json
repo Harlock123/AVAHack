@@ -1,0 +1,431 @@
+// Item affixes (spec 13.3). A value is min–max plus perLevel × item level. Curses stick until lifted.
+[
+ {
+  "id": "keen",
+  "name": "Keen",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "toHit",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.15
+ },
+ {
+  "id": "brutal",
+  "name": "Brutal",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "damagePct",
+  "scope": "all",
+  "min": 8,
+  "max": 15,
+  "perLevel": 1
+ },
+ {
+  "id": "swift",
+  "name": "Swift",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "recoveryPct",
+  "min": -10,
+  "max": -6,
+  "perLevel": -0.3
+ },
+ {
+  "id": "flaming",
+  "name": "Flaming",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "extraDamage",
+  "scope": "fire",
+  "min": 1,
+  "max": 3,
+  "perLevel": 0.3
+ },
+ {
+  "id": "frosted",
+  "name": "Frosted",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "extraDamage",
+  "scope": "cold",
+  "min": 1,
+  "max": 3,
+  "perLevel": 0.3
+ },
+ {
+  "id": "shocking",
+  "name": "Shocking",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "extraDamage",
+  "scope": "lightning",
+  "min": 1,
+  "max": 3,
+  "perLevel": 0.3
+ },
+ {
+  "id": "holy",
+  "name": "Hallowed",
+  "prefix": true,
+  "on": [
+   "weapon"
+  ],
+  "kind": "extraDamage",
+  "scope": "radiant",
+  "min": 1,
+  "max": 3,
+  "perLevel": 0.3
+ },
+ {
+  "id": "sturdy",
+  "name": "Sturdy",
+  "prefix": true,
+  "on": [
+   "armour",
+   "shield",
+   "gear"
+  ],
+  "kind": "ac",
+  "min": 1,
+  "max": 1,
+  "perLevel": 0.1
+ },
+ {
+  "id": "fireproof",
+  "name": "Fireproof",
+  "prefix": true,
+  "on": [
+   "armour",
+   "shield",
+   "gear"
+  ],
+  "kind": "resist",
+  "scope": "fire",
+  "min": 1,
+  "max": 1,
+  "perLevel": 0
+ },
+ {
+  "id": "frostproof",
+  "name": "Frostproof",
+  "prefix": true,
+  "on": [
+   "armour",
+   "shield",
+   "gear"
+  ],
+  "kind": "resist",
+  "scope": "cold",
+  "min": 1,
+  "max": 1,
+  "perLevel": 0
+ },
+ {
+  "id": "venomproof",
+  "name": "Venomproof",
+  "prefix": true,
+  "on": [
+   "armour",
+   "gear"
+  ],
+  "kind": "resist",
+  "scope": "poison",
+  "min": 1,
+  "max": 1,
+  "perLevel": 0
+ },
+ {
+  "id": "ofTheBear",
+  "name": "of the Bear",
+  "prefix": false,
+  "on": [
+   "weapon",
+   "armour",
+   "gear",
+   "shield"
+  ],
+  "kind": "attribute",
+  "scope": "str",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.08
+ },
+ {
+  "id": "ofTheFox",
+  "name": "of the Fox",
+  "prefix": false,
+  "on": [
+   "weapon",
+   "armour",
+   "gear"
+  ],
+  "kind": "attribute",
+  "scope": "dex",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.08
+ },
+ {
+  "id": "ofTheOx",
+  "name": "of the Ox",
+  "prefix": false,
+  "on": [
+   "armour",
+   "gear",
+   "shield"
+  ],
+  "kind": "attribute",
+  "scope": "con",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.08
+ },
+ {
+  "id": "ofTheSage",
+  "name": "of the Sage",
+  "prefix": false,
+  "on": [
+   "gear",
+   "weapon"
+  ],
+  "kind": "attribute",
+  "scope": "int",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.08
+ },
+ {
+  "id": "ofTheOwl",
+  "name": "of the Owl",
+  "prefix": false,
+  "on": [
+   "gear",
+   "armour"
+  ],
+  "kind": "attribute",
+  "scope": "wis",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.08
+ },
+ {
+  "id": "ofTheLion",
+  "name": "of the Lion",
+  "prefix": false,
+  "on": [
+   "gear"
+  ],
+  "kind": "attribute",
+  "scope": "cha",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.08
+ },
+ {
+  "id": "ofVigour",
+  "name": "of Vigour",
+  "prefix": false,
+  "on": [
+   "armour",
+   "gear",
+   "shield"
+  ],
+  "kind": "maxHp",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.6
+ },
+ {
+  "id": "ofWind",
+  "name": "of Wind",
+  "prefix": false,
+  "on": [
+   "armour",
+   "gear"
+  ],
+  "kind": "maxStamina",
+  "min": 8,
+  "max": 15,
+  "perLevel": 1
+ },
+ {
+  "id": "ofTheMind",
+  "name": "of the Mind",
+  "prefix": false,
+  "on": [
+   "gear",
+   "weapon"
+  ],
+  "kind": "maxMana",
+  "min": 8,
+  "max": 15,
+  "perLevel": 1
+ },
+ {
+  "id": "ofMending",
+  "name": "of Mending",
+  "prefix": false,
+  "on": [
+   "armour",
+   "gear"
+  ],
+  "kind": "hpRegen",
+  "min": 1,
+  "max": 2,
+  "perLevel": 0.1
+ },
+ {
+  "id": "ofLearning",
+  "name": "of Learning",
+  "prefix": false,
+  "on": [
+   "gear"
+  ],
+  "kind": "skillXpPct",
+  "min": 5,
+  "max": 10,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofTheBlade",
+  "name": "of the Duellist",
+  "prefix": false,
+  "on": [
+   "weapon",
+   "gear"
+  ],
+  "kind": "skill",
+  "scope": "blade",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofTheHammer",
+  "name": "of the Hammer",
+  "prefix": false,
+  "on": [
+   "weapon",
+   "gear"
+  ],
+  "kind": "skill",
+  "scope": "blunt",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofTheHunt",
+  "name": "of the Hunt",
+  "prefix": false,
+  "on": [
+   "weapon",
+   "gear"
+  ],
+  "kind": "skill",
+  "scope": "archery",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofShadows",
+  "name": "of Shadows",
+  "prefix": false,
+  "on": [
+   "armour",
+   "gear"
+  ],
+  "kind": "skill",
+  "scope": "stealth",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofTheBulwark",
+  "name": "of the Bulwark",
+  "prefix": false,
+  "on": [
+   "shield",
+   "armour"
+  ],
+  "kind": "skill",
+  "scope": "block",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofFire",
+  "name": "of Flame",
+  "prefix": false,
+  "on": [
+   "gear",
+   "weapon"
+  ],
+  "kind": "skill",
+  "scope": "destruction",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "ofHealing",
+  "name": "of Healing",
+  "prefix": false,
+  "on": [
+   "gear"
+  ],
+  "kind": "skill",
+  "scope": "restoration",
+  "min": 3,
+  "max": 6,
+  "perLevel": 0.3
+ },
+ {
+  "id": "cursedHeavy",
+  "name": "Leaden",
+  "prefix": true,
+  "on": [
+   "weapon",
+   "armour",
+   "shield",
+   "gear"
+  ],
+  "kind": "recoveryPct",
+  "min": 10,
+  "max": 15,
+  "curse": true,
+  "perLevel": 0
+ },
+ {
+  "id": "cursedFrail",
+  "name": "of Frailty",
+  "prefix": false,
+  "on": [
+   "weapon",
+   "armour",
+   "shield",
+   "gear"
+  ],
+  "kind": "maxHp",
+  "min": -6,
+  "max": -3,
+  "curse": true,
+  "perLevel": 0
+ }
+]

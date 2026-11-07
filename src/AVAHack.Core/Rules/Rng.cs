@@ -23,7 +23,16 @@ public abstract class Rng
 public sealed class Pcg32 : Rng
 {
     private ulong _state;
-    private readonly ulong _inc;
+    private ulong _inc;
+
+    /// <summary>The generator's whole state, for saves.</summary>
+    public (ulong State, ulong Inc) GetState() => (_state, _inc);
+
+    public void SetState(ulong state, ulong inc)
+    {
+        _state = state;
+        _inc = inc;
+    }
 
     public Pcg32(ulong seed, ulong stream = 54)
     {
@@ -67,6 +76,9 @@ public sealed class RngStreams(ulong runSeed)
     public Pcg32 Loot { get; } = new(Mix(runSeed, 2), 2);
     public Pcg32 Combat { get; } = new(Mix(runSeed, 3), 3);
     public Pcg32 Ai { get; } = new(Mix(runSeed, 4), 4);
+
+    public ulong Seed { get; } = runSeed;
+    public Pcg32[] All => [World, Loot, Combat, Ai];
 
     /// <summary>SplitMix64 of the seed and a salt.</summary>
     public static ulong Mix(ulong seed, ulong salt)

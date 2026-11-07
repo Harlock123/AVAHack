@@ -1,0 +1,155 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
+using AVAHack.App.Views;
+using AVAHack.Characters;
+using AVAHack.Content;
+using AVAHack.Game;
+using AVAHack.Items;
+using AVAHack.Saves;
+using AVAHack.World;
+
+namespace AVAHack.App.Tests;
+
+/// <summary>The title, making a party, the inventory, the party bar and saving, driven like a player would.</summary>
+public sealed class MenuTests
+{
+    private static readonly ContentDb Db = ContentDb.LoadBuiltIn();
+
+    private static (Window W, GameView V) Open(GameView v)
+    {
+        var w = new Window { Width = 1280, Height = 800, Content = v };
+        w.Show();
+        Pump();
+        return (w, v);
+    }
+
+    private static void Pump()
+    {
+        for (int i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
+    }
+
+    /// <summary>Clicks a canvas point (1280×800 canvas in a 1280×800 window: the same coordinates).</summary>
+    private static void Click(Window w, double x, double y, MouseButton button = MouseButton.Left)
+    {
+        Pump();
+        w.MouseMove(new Point(x, y));
+        w.MouseDown(new Point(x, y), button);
+        w.MouseUp(new Point(x, y), button);
+        Pump();
+    }
+
+    private static void Shot(Window w, string name)
+    {
+        Pump();
+        var frame = w.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is not { Length: > 0 } dir) return;
+        Directory.CreateDirectory(dir);
+        frame.Save(Path.Combine(dir, $"AVAHack-{name}.png"), PngBitmapEncoderOptions.Default);
+    }
+
+    private static SaveStore TempStore() => new(Path.Combine(Path.GetTempPath(), "avahack-menu-" + Guid.NewGuid().ToString("N")));
+
+    [AvaloniaFact]
+    public void Quick_start_from_the_title_begins_with_four_heroes()
+    {
+        var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));
+        Assert.Equal(Screen.Title, v.Screen);
+        Shot(w, "title");
+        Click(w, 640, 344); // Quick start
+        Assert.Equal(Screen.Play, v.Screen);
+        Assert.Equal(4, v.Engine.Party.Count);
+        Assert.Equal("longsword", v.Engine.Party[Slot.FrontLeft]!.MainHand!.Id);
+        Shot(w, "party");
+    }
+
+    [AvaloniaFact]
+    public void Making_a_party_of_two()
+    {
+        var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));
+        Click(w, 640, 408); // Make a party
+        Assert.Equal(Screen.Create, v.Screen);
+        Click(w, 180, 216); // + Add a hero (under the first)
+        Click(w, 520, 110); // the name box
+        foreach (var _ in "Brannoc") w.KeyPressQwerty(PhysicalKey.Backspace, RawInputModifiers.None);
+        w.KeyTextInput("Vessa");
+        w.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Click(w, 803, 260); // next ancestry ▶ (on the calling row? the ancestry row is at y 160)
+        Shot(w, "create");
+        Click(w, 1120, 753); // Begin the descent
+        Assert.Equal(Screen.Play, v.Screen);
+        Assert.Equal(2, v.Engine.Party.Count);
+        Assert.Contains(v.Engine.Party.Members, h => h.Name == "Vessa");
+        Assert.False(v.Engine.Hero.LoneDelver);
+    }
+
+    [AvaloniaFact]
+    public void The_inventory_wears_and_drops_things()
+    {
+        var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(Db), Db);
+        var (w, v) = Open(new GameView(g, startLoop: false, store: TempStore()));
+        var hero = g.Hero;
+        Array.Clear(hero.Backpack);
+        hero.AddToBackpack(new Item { BaseId = "ironHelm", Rarity = Rarity.Fine, Affixes = [new("ofVigour", 4)] });
+        int hp = hero.MaxHp;
+        w.KeyPressQwerty(PhysicalKey.I, RawInputModifiers.None);
+        Assert.Equal(Overlay.Inventory, v.Overlay);
+        Click(w, 332, 96); // the first backpack slot
+        Assert.Equal("ironHelm", hero.ItemIn(EquipSlot.Head)!.BaseId);
+        Assert.Equal(hp + 4, hero.MaxHp);
+        w.MouseMove(new Point(60, 96)); // hover the helm on the doll for its tooltip
+        Shot(w, "inventory");
+        Click(w, 60, 96); // the head slot: take it off again
+        Assert.Null(hero.ItemIn(EquipSlot.Head));
+        Click(w, 332, 96, MouseButton.Right); // drop it
+        Assert.Single(g.Level.PileAt(g.PartyCell));
+        // The game doesn't run while the inventory is open.
+        long t = g.TickCount;
+        v.Advance(0.5);
+        Assert.Equal(t, g.TickCount);
+    }
+
+    [AvaloniaFact]
+    public void Saving_from_the_menu_and_loading_it_back()
+    {
+        var store = TempStore();
+        var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(Db), Db);
+        var (w, v) = Open(new GameView(g, startLoop: false, store: store));
+        g.Press(GameAction.StepForward);
+        for (int i = 0; i < 30; i++) v.Advance(0.05);
+        var at = g.PartyCell;
+        w.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Assert.Equal(Overlay.Menu, v.Overlay);
+        Shot(w, "menu");
+        Click(w, 640, 248); // save to slot 1
+        Assert.True(store.Exists("slot1"));
+        g.Press(GameAction.StepForward);
+        for (int i = 0; i < 30; i++) v.Advance(0.05);
+        Assert.NotEqual(at, g.PartyCell);
+        Assert.True(v.LoadSlot("slot1"));
+        Assert.Equal(at, v.Engine.PartyCell);
+        Assert.NotSame(g, v.Engine);
+    }
+
+    [AvaloniaFact]
+    public void Each_heros_hand_keys_and_tab_and_swapping()
+    {
+        var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(Db), Db);
+        var (w, v) = Open(new GameView(g, startLoop: false, store: TempStore()));
+        var pell = g.Party[Slot.FrontRight]!;
+        w.KeyPressQwerty(PhysicalKey.Digit4, RawInputModifiers.None);
+        w.KeyReleaseQwerty(PhysicalKey.Digit4, RawInputModifiers.None);
+        Assert.False(pell.RightHand.Ready);
+        w.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.None);
+        Assert.Same(pell, g.Selected);
+        w.KeyPressQwerty(PhysicalKey.Digit3, RawInputModifiers.Control);
+        Assert.Equal(Slot.BackLeft, g.Party.SlotOf(pell));
+        Click(w, 46, 660); // the first card's portrait selects that hero
+        Assert.Same(g.Party[Slot.FrontLeft], g.Selected);
+    }
+}

@@ -1,0 +1,119 @@
+// Things used up (spec 13.2). "special" uses: identify, light, oil, food, water.
+[
+ {
+  "id": "potionHealing",
+  "name": "Potion of Healing",
+  "heal": "2d4+2",
+  "weightKg": 0.3,
+  "value": 25,
+  "text": "Red, and tastes of iron."
+ },
+ {
+  "id": "potionGreaterHealing",
+  "name": "Potion of Greater Healing",
+  "heal": "4d4+4",
+  "weightKg": 0.3,
+  "value": 75,
+  "text": "Deep red, and warm."
+ },
+ {
+  "id": "potionStamina",
+  "name": "Draught of Vigour",
+  "stamina": 40,
+  "weightKg": 0.3,
+  "value": 20,
+  "text": "Green, fizzing."
+ },
+ {
+  "id": "potionMana",
+  "name": "Potion of Clear Thought",
+  "mana": 30,
+  "weightKg": 0.3,
+  "value": 40,
+  "text": "Blue, cold as snow."
+ },
+ {
+  "id": "antidote",
+  "name": "Antidote",
+  "cures": [
+   "poisoned"
+  ],
+  "heal": "1",
+  "weightKg": 0.2,
+  "value": 15,
+  "text": "Bitter. It works."
+ },
+ {
+  "id": "bandage",
+  "name": "Bandage",
+  "cures": [
+   "bleeding"
+  ],
+  "heal": "2",
+  "weightKg": 0.1,
+  "value": 3,
+  "text": "Clean linen."
+ },
+ {
+  "id": "elixirCleansing",
+  "name": "Elixir of Cleansing",
+  "cures": [
+   "poisoned",
+   "diseased",
+   "bleeding",
+   "burning",
+   "chilled",
+   "shocked",
+   "blinded",
+   "frightened",
+   "weakened"
+  ],
+  "weightKg": 0.3,
+  "value": 90,
+  "text": "Ends most ills."
+ },
+ {
+  "id": "scrollIdentify",
+  "name": "Scroll of Identify",
+  "special": "identify",
+  "weightKg": 0.1,
+  "value": 30,
+  "text": "Read it to learn every unknown item the party carries."
+ },
+ {
+  "id": "torch",
+  "name": "Torch",
+  "special": "light",
+  "amount": 600,
+  "weightKg": 0.5,
+  "value": 1,
+  "text": "Burns for ten minutes."
+ },
+ {
+  "id": "lampOil",
+  "name": "Flask of Oil",
+  "special": "oil",
+  "amount": 1200,
+  "weightKg": 0.5,
+  "value": 3,
+  "text": "Refills a lantern for twenty minutes."
+ },
+ {
+  "id": "ration",
+  "name": "Ration",
+  "special": "food",
+  "amount": 50,
+  "weightKg": 0.5,
+  "value": 2,
+  "text": "Hard bread and harder cheese."
+ },
+ {
+  "id": "waterskin",
+  "name": "Waterskin",
+  "special": "water",
+  "amount": 60,
+  "weightKg": 1,
+  "value": 2,
+  "text": "Three good drinks."
+ }
+]

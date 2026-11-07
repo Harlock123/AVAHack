@@ -15,7 +15,7 @@ public readonly record struct ArmourWorn(int Armour = 0, int? DexCap = null, int
 /// level-up choices; HP, Stamina and Mana; conditions. The rules of spec sections 5–8 live here and in
 /// <see cref="Progression"/>, <see cref="Checks"/> and <see cref="Combat"/>.
 /// </summary>
-public sealed class Character
+public sealed partial class Character
 {
     private readonly int[] _rank = new int[Enum.GetValues<SkillId>().Length];
     private readonly double[] _xp = new double[Enum.GetValues<SkillId>().Length];
@@ -51,18 +51,16 @@ public sealed class Character
     public double Stamina { get; private set; }
     public double Mana { get; private set; }
     public bool IsDown => Hp <= 0;
+    /// <summary>Dead, not just down: failed death saves. Only a shrine or Recall Soul brings them back.</summary>
+    public bool IsDead { get; internal set; }
+    /// <summary>A Riposte perk's window: the next blade hit before this time is a critical.</summary>
+    public double RiposteUntil { get; internal set; } = -1;
+    /// <summary>Damage soaked before HP, from a Ward spell.</summary>
+    public double Ward { get; internal set; }
 
     public bool InFight { get; private set; }
     public bool LuckUsed { get; private set; }
     public bool RelentlessUsed { get; private set; }
-    public ArmourWorn Armour { get; set; } = ArmourWorn.None;
-
-    /// <summary>What is in the right hand (null is a bare fist).</summary>
-    public WeaponDef? MainHand { get; private set; }
-    /// <summary>What is on the left arm.</summary>
-    public ShieldDef? OffHand { get; private set; }
-    public ArmourDef? Body { get; private set; }
-
     /// <summary>
     /// Playing alone (spec 4): +50% HP, +2 to every save and twice the skill XP. Setting it adjusts
     /// <see cref="ExtraSkillXpPercent"/> and keeps the hero's share of HP.
@@ -80,18 +78,6 @@ public sealed class Character
         }
     }
     private bool _lone;
-
-    /// <summary>Puts on weapon, shield and armour, and works out the armour class from them.</summary>
-    public void Equip(WeaponDef? mainHand, ShieldDef? offHand, ArmourDef? body)
-    {
-        MainHand = mainHand;
-        OffHand = offHand;
-        Body = body;
-        Armour = new ArmourWorn(body?.Ac ?? 0, body?.DexCap, offHand?.Ac ?? 0);
-    }
-
-    /// <summary>The armour skill that being hit trains: Heavy Armour in heavy armour, Light Armour otherwise.</summary>
-    public SkillId ArmourSkill => Body?.Kind == ArmourKind.Heavy ? SkillId.HeavyArmour : SkillId.LightArmour;
 
     public ConditionSet Conditions { get; }
 
@@ -122,11 +108,13 @@ public sealed class Character
 
     // ---- Attributes (spec 6.1) ----
 
-    /// <summary>The score: base, plus ancestry, plus level-up increases, at most 20.</summary>
+    /// <summary>The score: base, plus ancestry, plus level-up increases (at most 20), plus items (at most 24).</summary>
     public int Score(Attribute a)
     {
         int ancestry = ContentDb.AttributeBonuses(Ancestry).Where(x => x.Attribute == a).Sum(x => x.Bonus);
-        return Math.Min(AttributeSet.Cap, BaseAttributes[a] + ancestry + _increases[a]);
+        int own = Math.Min(AttributeSet.Cap, BaseAttributes[a] + ancestry + _increases[a]);
+        int items = (int)ItemTotal("attribute", Character.AttrKey(a));
+        return Math.Clamp(own + items, 1, Math.Max(own, AttributeSet.ItemCap));
     }
 
     public int Mod(Attribute a) => AttributeSet.Modifier(Score(a));
@@ -141,13 +129,14 @@ public sealed class Character
             int die = Calling.HitDie;
             int hp = die + (Level - 1) * Progression.HitDieAverage(die) + Level * Mod(Attribute.Con) + 5 * HealthChoices;
             hp = Math.Max(Level, hp);
-            return LoneDelver ? hp * 3 / 2 : hp;
+            hp = LoneDelver ? hp * 3 / 2 : hp;
+            return Math.Max(1, hp + (int)ItemTotal("maxHp"));
         }
     }
 
-    public int MaxStamina => Math.Max(10, 50 + 5 * Mod(Attribute.Con) + 10 * StaminaChoices);
+    public int MaxStamina => Math.Max(10, 50 + 5 * Mod(Attribute.Con) + 10 * StaminaChoices + (int)ItemTotal("maxStamina"));
 
-    public int MaxMana => Math.Max(0, 20 + 5 * Math.Max(Mod(Attribute.Int), Mod(Attribute.Wis)) + 10 * ManaChoices);
+    public int MaxMana => Math.Max(0, 20 + 5 * Math.Max(Mod(Attribute.Int), Mod(Attribute.Wis)) + 10 * ManaChoices + (int)ItemTotal("maxMana"));
 
     /// <summary>10 + armour + DEX (up to the armour's cap) + shield + other. A Saurian's hide counts as 2 armour when unarmoured.</summary>
     public int ArmourClass
@@ -157,13 +146,13 @@ public sealed class Character
             var w = Armour;
             int armour = w.Armour == 0 && HasTrait(Traits.ScaledHide) ? 2 : w.Armour;
             int dex = w.DexCap is { } cap ? Math.Min(Mod(Attribute.Dex), cap) : Mod(Attribute.Dex);
-            return 10 + armour + dex + w.Shield + w.Other;
+            return 10 + armour + dex + w.Shield + w.Other + (int)ItemTotal("ac");
         }
     }
 
     /// <summary>10 + WIS + floor(Survival / 10). Keen senses add 5 (advantage) when looking for secret doors.</summary>
     public int PassivePerception(bool secretDoors = false) =>
-        10 + Mod(Attribute.Wis) + Rank(SkillId.Survival) / 10 + (secretDoors && HasTrait(Traits.KeenSenses) ? 5 : 0);
+        10 + Mod(Attribute.Wis) + SkillLevel(SkillId.Survival) / 10 + (secretDoors && HasTrait(Traits.KeenSenses) ? 5 : 0);
 
     public int CarryCapacityKg => 15 * Score(Attribute.Str);
 
@@ -205,17 +194,32 @@ public sealed class Character
 
     /// <summary>Attack bonus with a weapon skill: the attribute, floor(skill / 10), minus Weakened's penalty on STR attacks.</summary>
     public int AttackBonus(SkillId weaponSkill, Attribute attribute, int other = 0) =>
-        Combat.AttackBonus(Mod(attribute) - (attribute == Attribute.Str ? Conditions.StrengthPenalty : 0), Rank(weaponSkill), other);
+        Combat.AttackBonus(Mod(attribute) - (attribute == Attribute.Str ? Conditions.StrengthPenalty : 0), SkillLevel(weaponSkill),
+                           other + (int)ItemTotal("toHit"));
 
     /// <summary>Rolls an attack, taking advantage from the situation and disadvantage from this character's conditions.</summary>
-    public AttackResult Attack(Rng rng, SkillId weaponSkill, Attribute attribute, int targetAc, Advantage situation = Advantage.None)
+    public AttackResult Attack(Rng rng, SkillId weaponSkill, Attribute attribute, int targetAc, Advantage situation = Advantage.None, int other = 0)
     {
         var adv = AdvantageRules.Combine(situation, Conditions.AttacksAtDisadvantage ? Advantage.Disadvantage : Advantage.None);
-        return Combat.Attack(rng, AttackBonus(weaponSkill, attribute), targetAc, natural: RollD20(rng, adv));
+        return Combat.Attack(rng, AttackBonus(weaponSkill, attribute, other), targetAc, natural: RollD20(rng, adv));
+    }
+
+    /// <summary>A downed hero stands up again with 1 HP (after a fight, or a healing spell).</summary>
+    public void GetUp()
+    {
+        if (IsDead || !IsDown) return;
+        Hp = 1;
+    }
+
+    /// <summary>Brings back the dead (a shrine, Recall Soul): up with a quarter of their HP.</summary>
+    public void Revive(double share = 0.25)
+    {
+        IsDead = false;
+        Hp = Math.Max(1, MaxHp * share);
     }
 
     /// <summary>The perk multiplier on damage for a scope (a weapon skill or damage type): 1 + damagePct / 100.</summary>
-    public double DamageMultiplier(string scope) => 1 + PerkTotal("damagePct", scope) / 100.0;
+    public double DamageMultiplier(string scope) => 1 + (PerkTotal("damagePct", scope) + ItemTotal("damagePct", "all")) / 100.0;
 
     /// <summary>Spell power: INT for arcane schools, WIS for divine ones, the better of INT and CHA for Illusion.</summary>
     public int CastingMod(SkillId school) => school switch
@@ -225,8 +229,8 @@ public sealed class Character
         _ => Mod(Attribute.Int),
     };
 
-    public int SpellSaveDc(SkillId school) => Checks.SpellSaveDc(CastingMod(school), Rank(school));
-    public int SpellAttackBonus(SkillId school) => Checks.SpellAttackBonus(CastingMod(school), Rank(school));
+    public int SpellSaveDc(SkillId school) => Checks.SpellSaveDc(CastingMod(school), SkillLevel(school));
+    public int SpellAttackBonus(SkillId school) => Checks.SpellAttackBonus(CastingMod(school), SkillLevel(school));
 
     /// <summary>
     /// How long a weapon takes to recover, as a factor: −3% per DEX point, 10% faster per extra-attack level for
@@ -236,7 +240,7 @@ public sealed class Character
     {
         double f = 1 - 0.03 * Mod(Attribute.Dex);
         if (weaponSkill == BestWeaponSkill) f *= Math.Pow(0.9, RecoverySpeedUps);
-        f *= 1 + PerkTotal("recoveryPct", SkillKey(weaponSkill)) / 100.0;
+        f *= 1 + (PerkTotal("recoveryPct", SkillKey(weaponSkill)) + ItemTotal("recoveryPct")) / 100.0;
         return f * Conditions.RecoveryFactor;
     }
 
@@ -250,6 +254,7 @@ public sealed class Character
             var r = new Resistances();
             if (HasTrait(Traits.PoisonResistance)) r.Resist(DamageType.Poison);
             if (HasTrait(Traits.FireResistance)) r.Resist(DamageType.Fire);
+            foreach (var t in ItemScopes("resist")) if (Enum.TryParse<DamageType>(t, true, out var d)) r.Resist(d);
             return r;
         }
     }
@@ -263,6 +268,13 @@ public sealed class Character
     public void TakeDamage(int amount)
     {
         if (amount <= 0 || IsDown) return;
+        if (Ward > 0)
+        {
+            double soak = Math.Min(Ward, amount);
+            Ward -= soak;
+            amount -= (int)soak;
+            if (amount <= 0) return;
+        }
         Conditions.Cure(ConditionId.Asleep);
         Hp -= amount;
         if (Hp <= 0 && HasTrait(Traits.Relentless) && !RelentlessUsed)
@@ -325,6 +337,7 @@ public sealed class Character
     {
         double scale = InFight ? 0.25 : 1;
         if (!InFight && !IsDown && !Conditions.StopsRegeneration) Hp = Math.Min(MaxHp, Hp + MaxHp * 0.01 * seconds);
+        if (!IsDown && ItemTotal("hpRegen") is > 0 and var regen) Hp = Math.Min(MaxHp, Hp + regen / 10.0 * seconds);
         Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * scale * seconds);
         double manaRate = Math.Max(0, 0.03 + 0.005 * Mod(Attribute.Wis));
         Mana = Math.Min(MaxMana, Mana + MaxMana * manaRate * scale * seconds);
@@ -356,6 +369,9 @@ public sealed class Character
     // ---- Skills (spec 7.1, 7.2, 7.5) ----
 
     public int Rank(SkillId s) => _rank[(int)s];
+
+    /// <summary>The skill as the rules use it: the rank plus item bonuses, at most 100. Progress uses the bare rank.</summary>
+    public int SkillLevel(SkillId s) => Math.Min(Progression.MaxSkill, _rank[(int)s] + (int)ItemTotal("skill", SkillKey(s)));
     public double Xp(SkillId s) => _xp[(int)s];
     public int SkillCeiling => Progression.SkillCeiling(Level);
 
@@ -408,7 +424,7 @@ public sealed class Character
         if (group == SkillGroup.Combat && source.TargetIsObjectOrAlly) return 0;
         if (group == SkillGroup.Magic && !source.SpellHadEffect) return 0;
         if (source.TargetLevel is { } tl && tl < Level - Progression.TrivialTargetGap) xp *= 0.10;
-        double pct = (HasTrait(Traits.Versatile) ? 10 : 0) + ExtraSkillXpPercent;
+        double pct = (HasTrait(Traits.Versatile) ? 10 : 0) + ExtraSkillXpPercent + ItemTotal("skillXpPct");
         return Math.Max(0, xp * (1 + pct / 100));
     }
 
@@ -556,6 +572,8 @@ public sealed class Character
         Respecs++;
         return true;
     }
+
+    public static string AttrKey(Attribute a) => a.ToString().ToLowerInvariant();
 
     /// <summary>The scope string for a skill in content files: camelCase, e.g. twoHanded.</summary>
     public static string SkillKey(SkillId s)

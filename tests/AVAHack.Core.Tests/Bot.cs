@@ -11,7 +11,7 @@ namespace AVAHack.Core.Tests;
 internal sealed class Bot(GameEngine g, int seed = 1)
 {
     // A person reacts late and misjudges tells: the bot does too.
-    private readonly Random _r = new(seed);
+    private readonly AVAHack.Rules.Pcg32 _r = new((ulong)seed, 99);
     private double _blockAt = -1;
     private double _swingDelay;
     private readonly HashSet<Lever> _pulled = new();
@@ -19,6 +19,24 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     private bool _resting;
 
     public string? Goal { get; private set; }
+
+    private double Next() => _r.Next(1_000_000) / 1_000_000.0;
+
+    /// <summary>Takes on another bot's memory and dice, so a loaded game's bot carries on as the original would.</summary>
+    public void CopyMemory(Bot other)
+    {
+        _pulled.Clear();
+        foreach (var l in other._pulled)
+            if (g.Level.LeverAt(l.Cell, l.Face) is { } mine) _pulled.Add(mine);
+        _pressed.Clear();
+        foreach (var p in other._pressed)
+            if (g.Level.PlateAt(p.Cell) is { } mine) _pressed.Add(mine);
+        _resting = other._resting;
+        _blockAt = other._blockAt;
+        _swingDelay = other._swingDelay;
+        var (st, inc) = other._r.GetState();
+        _r.SetState(st, inc);
+    }
 
     public void Think()
     {
@@ -40,7 +58,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (m.Action == MonsterAction.WindingUp)
             {
                 // Half the time it sees the tell; when it does, it raises the shield somewhere in the last half second.
-                if (_blockAt < 0) _blockAt = _r.NextDouble() < 0.5 ? 0.05 + _r.NextDouble() * 0.45 : 0;
+                if (_blockAt < 0) _blockAt = Next() < 0.5 ? 0.05 + Next() * 0.45 : 0;
                 if (_blockAt > 0 && m.ActionLeft <= _blockAt && !g.LeftHand.Held && g.Hero.Stamina > 10) g.HandDown(HandSide.Left);
             }
             else
@@ -50,7 +68,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             }
             if (g.RightHand.Ready && !g.LeftHand.Held)
             {
-                if (_swingDelay <= 0) _swingDelay = 0.15 + _r.NextDouble() * 0.35;
+                if (_swingDelay <= 0) _swingDelay = 0.15 + Next() * 0.35;
                 _swingDelay -= GameEngine.TickSeconds;
                 if (_swingDelay <= 0)
                 {
@@ -58,13 +76,22 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                     g.HandUp(HandSide.Right);
                 }
             }
+            // The rest of the party joins in: the front row with whatever it holds, the back row only with reach or a bow.
+            foreach (var c in g.Party.Standing.Where(c => c != g.Hero))
+            {
+                var w = c.MainHand;
+                bool canReach = g.Party.IsFront(c) || w?.Kind is "reach" or "bow";
+                if (canReach && c.RightHand.Ready && Next() < 0.05) { g.HandDown(c, HandSide.Right); g.HandUp(c, HandSide.Right); }
+                if (g.Party.IsFront(c) && c.OffWeapon is not null && c.LeftHand.Ready && Next() < 0.05) { g.HandDown(c, HandSide.Left); g.HandUp(c, HandSide.Left); }
+            }
             return;
         }
         if (g.LeftHand.Held) g.HandUp(HandSide.Left);
 
         // Rest when hurt and nothing is coming.
-        bool danger = g.Monsters.Any(x => x.IsAware && x.Cell.Distance(g.PartyCell) <= 6);
-        if (!danger && (g.Hero.Hp < g.Hero.MaxHp * 0.5 || (_resting && g.Hero.Hp < g.Hero.MaxHp * 0.9)))
+        bool danger = g.Monsters.Any(x => x.IsAware && !x.Ally && x.Cell.Distance(g.PartyCell) <= 6);
+        double worst = g.Party.Standing.Min(c => c.Hp / c.MaxHp);
+        if (!danger && (worst < 0.5 || (_resting && worst < 0.9)))
         {
             _resting = true;
             return;

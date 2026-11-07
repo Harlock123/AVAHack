@@ -1,5 +1,6 @@
 using AVAHack.Characters;
 using AVAHack.Content;
+using AVAHack.Items;
 using AVAHack.Rules;
 using AVAHack.World;
 
@@ -39,7 +40,11 @@ public sealed partial class GameEngine
 
     public Level Level { get; }
     public ContentDb Content { get; }
-    public Character Hero { get; }
+    public Party Party { get; }
+    /// <summary>The first hero: the one the single-hero parts of the game (and older tests) talk to.</summary>
+    public Character Hero => Party.Leader;
+    public LootGenerator Loot { get; }
+    public MagicItems Magic { get; init; } = MagicItems.Normal;
     public RngStreams Rng { get; }
     public Cell PartyCell { get; private set; }
     public Dir Facing { get; private set; }
@@ -48,6 +53,10 @@ public sealed partial class GameEngine
     public bool HeadBob { get; set; } = true;
     public GameMode Mode { get; private set; } = GameMode.Playing;
     public bool Paused { get; private set; }
+
+    /// <summary>How bright the party's light is, for the view: a lit torch is full; magic and items change it.</summary>
+    public double LightStrength => LightLevel?.Invoke() ?? 1.05;
+    internal Func<double>? LightLevel;
 
     /// <summary>True while a step, turn or bump is playing.</summary>
     public bool IsMoving => _motion is not null;
@@ -66,14 +75,23 @@ public sealed partial class GameEngine
     /// Delver) with a longsword, a round shield and chain mail.
     /// </summary>
     public GameEngine(Level level, ulong seed = 1, Character? hero = null, ContentDb? content = null)
+        : this(level, seed, new Party(hero ?? DefaultHero(content ?? ContentDb.LoadBuiltIn())), content) { }
+
+    /// <param name="spawn">False when restoring a save: the save brings its own creatures and loot.</param>
+    public GameEngine(Level level, ulong seed, Party party, ContentDb? content = null, bool spawn = true)
     {
         Level = level;
         Content = content ?? ContentDb.LoadBuiltIn();
         Rng = new RngStreams(seed);
-        Hero = hero ?? DefaultHero(Content);
+        Loot = new LootGenerator(Content);
+        Party = party;
         PartyCell = level.Start;
         Facing = level.StartFacing;
-        SpawnMonsters();
+        if (spawn)
+        {
+            SpawnMonsters();
+            FillChests();
+        }
         EnterCell(PartyCell);
     }
 
@@ -81,7 +99,6 @@ public sealed partial class GameEngine
     {
         var h = CharacterBuilder.QuickStartParty(content)[0];
         h.Equip(content.Weapon("longsword"), content.Shield("roundShield"), content.ArmourPiece("chainMail"));
-        h.LoneDelver = true;
         return h;
     }
 
@@ -122,7 +139,8 @@ public sealed partial class GameEngine
         TickMonsters();
         TickProjectiles();
         UpdatePlates();
-        TickHero();
+        TickParty();
+        TickLight();
     }
 
     /// <summary>Freezes or resumes the game (Space). Nothing moves while paused.</summary>
@@ -138,6 +156,11 @@ public sealed partial class GameEngine
         if (action == GameAction.Use)
         {
             UseAhead();
+            return;
+        }
+        if (action == GameAction.PickUp)
+        {
+            if (PickUpAll() == 0) Say("There is nothing here to pick up.");
             return;
         }
         if (_queue.Count >= QueueLimit) return;
@@ -203,11 +226,11 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Whether the party may step into a cell: open floor or an open door, with no creature in it.</summary>
-    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && !Monsters.Any(m => m.IsAlive && m.Cell == c);
+    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && !Monsters.Any(m => m.IsAlive && m.Cell == c);
 
     private void StartNext()
     {
-        if (!Hero.Conditions.CanAct || Hero.IsDown)
+        if (!Party.Standing.Any(c => c.Conditions.CanAct))
         {
             _queue.Clear();
             return;
@@ -242,9 +265,19 @@ public sealed partial class GameEngine
                         _ => Facing.Right(),
                     };
                     var target = PartyCell.Step(dir);
+                    double load = Party.Members.Max(c => c.Encumbrance);
+                    if (load > 1.5 && CanPartyEnter(target))
+                    {
+                        Say("Someone is carrying far too much to move. Drop something.");
+                        _queue.Clear();
+                        return;
+                    }
                     if (CanPartyEnter(target))
                     {
-                        _motion = new Motion(MotionKind.Step, StepTicks) { From = PartyCell };
+                        int ticks = load > 1 ? StepTicks * 3 / 2 : StepTicks;
+                        if (load > 1)
+                            foreach (var c in Party.Members.Where(c => c.Encumbrance > 1)) c.UseSkill(SkillId.Athletics, 0, XpSource.Plain);
+                        _motion = new Motion(MotionKind.Step, ticks) { From = PartyCell };
                         PartyCell = target;
                         EnterCell(target);
                         Event?.Invoke(GameEvent.Stepped);
@@ -268,7 +301,8 @@ public sealed partial class GameEngine
             Pull(lever);
             return;
         }
-        if (Level.DoorAt(PartyCell.Step(Facing)) is { } door) TryWorkDoor(door);
+        if (Level.DoorAt(PartyCell.Step(Facing)) is { } door) { TryWorkDoor(door); return; }
+        if (Level.ChestAt(PartyCell.Step(Facing)) is { } chest) OpenChest(chest);
     }
 
     private void Pull(Lever lever)
@@ -315,7 +349,7 @@ public sealed partial class GameEngine
         }
     }
 
-    internal void Say(string text)
+    public void Say(string text)
     {
         LastMessage = text;
         _log.Add(text);

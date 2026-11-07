@@ -14,7 +14,11 @@ public sealed partial class GameEngine
 
     private readonly HashSet<Cell> _explored = new();
 
-    public int Kills { get; private set; }
+    public int Kills { get; internal set; }
+
+    /// <summary>A Delve takes over the stairs and the pits that lead down (multi-level dungeons).</summary>
+    internal Func<Cell, bool>? StairsHook;
+    public event Action<Pit>? FellThrough;
 
     /// <summary>Cells the party has seen, for the automap: those within <see cref="MapSight"/> with a clear view.</summary>
     public IReadOnlySet<Cell> Explored => _explored;
@@ -46,14 +50,15 @@ public sealed partial class GameEngine
             note.Read = true;
             Say(note.Text);
         }
-        int perception = Hero.PassivePerception();
+        int perception = Party.Best(h => h.PassivePerception());
+        var spotter = Party.Standing.MaxBy(h => h.PassivePerception());
         foreach (var pit in Level.Pits)
         {
             if (pit.Spotted || pit.Cell.Distance(c) > SpotRange) continue;
             if (perception >= pit.HideDc)
             {
                 Level.Spot(pit);
-                Hero.UseSkill(SkillId.Survival, 0, XpSource.Plain);
+                spotter?.UseSkill(SkillId.Survival, 0, XpSource.Plain);
                 Say("You notice a loose, hollow-sounding flagstone. A pit!");
                 Event?.Invoke(GameEvent.Spotted);
             }
@@ -67,19 +72,27 @@ public sealed partial class GameEngine
         if (Level.PitAt(PartyCell) is { } pit)
         {
             Level.Spot(pit);
-            int dmg = Dice.Parse("2d6").Roll(Rng.Combat);
-            Say($"The floor gives way! You fall into the cellar below ({dmg} damage).");
-            Hero.TakeDamage(dmg);
-            FloatAtHero($"-{dmg}", TextKind.HeroHurt);
+            Say("The floor gives way! You fall into the dark below.");
+            foreach (var c in Party.Standing.ToList())
+            {
+                int dmg = Dice.Parse("2d6").Roll(Rng.Combat);
+                c.TakeDamage(dmg);
+                FloatAtHero($"-{dmg}", TextKind.HeroHurt);
+            }
             Event?.Invoke(GameEvent.Fell);
-            PartyCell = pit.Landing;
-            _queue.Clear();
-            EnterCell(PartyCell);
-            if (Hero.IsDown) Die();
+            FellThrough?.Invoke(pit);
+            if (Party.AllDown) { Die(); return; }
+            if (!pit.ToNextLevel)
+            {
+                PartyCell = pit.Landing;
+                _queue.Clear();
+                EnterCell(PartyCell);
+            }
             return;
         }
         if (Level.IsStairs(PartyCell))
         {
+            if (StairsHook is { } next && next(PartyCell)) return;
             Mode = GameMode.Won;
             Say("You find the stairs down. The cellars are behind you.");
         }

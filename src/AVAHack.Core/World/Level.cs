@@ -14,6 +14,8 @@ public sealed class Level
     private readonly Dictionary<Cell, Note> _notes = new();
     private readonly HashSet<Cell> _stairs = new();
     private readonly List<Spawn> _spawns = new();
+    private readonly Dictionary<Cell, Chest> _chests = new();
+    private readonly Dictionary<Cell, List<Items.Item>> _piles = new();
 
     public string Name { get; }
     public int Width { get; }
@@ -28,6 +30,13 @@ public sealed class Level
     public IEnumerable<Note> Notes => _notes.Values;
     public IEnumerable<Cell> Stairs => _stairs;
     public IReadOnlyList<Spawn> Spawns => _spawns;
+    public IEnumerable<Chest> Chests => _chests.Values;
+    /// <summary>Items lying on the floor, by cell.</summary>
+    public IReadOnlyDictionary<Cell, List<Items.Item>> Piles => _piles;
+    /// <summary>Where the level came from, for saves: built-in:name, or gen:seed:depth.</summary>
+    public string Source { get; internal set; } = "";
+    /// <summary>How deep it is (1 for the first): the item level and the monsters' tier.</summary>
+    public int Depth { get; internal set; } = 1;
 
     internal Level(string name, int width, int height, CellKind[] cells, Cell start, Dir startFacing)
     {
@@ -60,6 +69,18 @@ public sealed class Level
     };
 
     public Pit? PitAt(Cell c) => _pits.GetValueOrDefault(c);
+    public Chest? ChestAt(Cell c) => _chests.GetValueOrDefault(c);
+
+    /// <summary>The items on the floor of a cell (an empty list if none).</summary>
+    public List<Items.Item> PileAt(Cell c) => _piles.TryGetValue(c, out var p) ? p : [];
+
+    public void Drop(Cell c, Items.Item item)
+    {
+        if (!_piles.TryGetValue(c, out var p)) _piles[c] = p = new List<Items.Item>();
+        p.Add(item);
+    }
+
+    public void ClearPile(Cell c) => _piles.Remove(c);
     public Plate? PlateAt(Cell c) => _plates.GetValueOrDefault(c);
     public Note? NoteAt(Cell c) => _notes.GetValueOrDefault(c);
     public bool IsStairs(Cell c) => _stairs.Contains(c);
@@ -80,6 +101,8 @@ public sealed class Level
     internal void AddNote(Note n) => _notes[n.Cell] = n;
     internal void AddStairs(Cell c) => _stairs.Add(c);
     internal void AddSpawn(Spawn s) => _spawns.Add(s);
+    internal void AddChest(Chest c) => _chests[c.Cell] = c;
+    internal void RemoveChest(Cell c) => _chests.Remove(c);
 
     /// <summary>Marks a hidden pit as found.</summary>
     public void Spot(Pit p) => p.Spotted = true;

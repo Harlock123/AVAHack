@@ -33,6 +33,7 @@
 22. Implementation decisions (M0)
 23. Implementation decisions (M1)
 24. Implementation decisions (M2)
+25. Implementation decisions (M3)
 
 ---
 
@@ -1112,7 +1113,7 @@ Each milestone is finished when its exit test passes.
 | **M0** | Skeleton and view. *Done (2026-11-06)* | Solution, CI, the software renderer, a handmade test level, step and turn tweens, doors and a lever | Walk a 16×16 test level at 60 fps; golden images pass. *Result:* a frame takes about 2.3 ms at 640×400 on an 8-core ARM machine; 7 golden images pass |
 | **M1** | Rules core. *Done (2026-11-06)* | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8. *Result:* 94 new Core tests (120 in all) |
 | **M2** | One hero, one fight. *Built (2026-11-06); the exit test waits on the user's play* | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play. *So far:* the balance bot wins The Cellars 10 times in 12, in about 2.6 minutes of game time |
-| **M3** | Party and creation | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it |
+| **M3** | Party and creation. *Done (2026-11-06)* | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it. *Result:* the quick-start party (bot) gets through The Cellars about 9 times in 12; the creation screens make any party of one to four |
 | **M4** | Progression | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling |
 | **M5** | Magic | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play |
 | **M6** | Generator | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable |
@@ -1165,6 +1166,7 @@ is built.
 
 ## 23. Implementation decisions (M1)
 24. Implementation decisions (M2)
+25. Implementation decisions (M3)
 
 - **22 skills, not 20.** The table in section 7.1 always listed 22 (Survival and Lore are in the craft group). The
   count elsewhere was corrected to match.
@@ -1232,6 +1234,7 @@ is built.
 ---
 
 ## 24. Implementation decisions (M2)
+25. Implementation decisions (M3)
 
 - **One hero, as a Lone Delver.** M2 plays Brannoc, the quick-start dwarf fighter, alone, so the Lone Delver rules
   of section 4 apply: +50% HP, +2 to saves and twice the skill XP. He has a longsword, a round shield and chain
@@ -1317,4 +1320,66 @@ is built.
 
   It wins about 10 runs in 12, in about 2.6 minutes of game time. A first-time player exploring blind should
   take roughly 10–15 minutes.
+
+---
+
+## 25. Implementation decisions (M3)
+
+- **The party** (`Party`) has four slots: front left, front right, back left and back right. A party of one is a
+  Lone Delver.
+- **Who gets hit** depends on where a blow comes from: from ahead, the front row; from the left or right, that
+  column; from behind, the back row. If those are all down, anyone standing.
+- **Back-row attacks.** Melee only reaches from the front row; reach weapons and bows work from the back. A bow
+  shoots the first creature down the line ahead, within its range. Arrows are unlimited.
+- **The fallen.** A downed hero gets up with 1 HP when the fight ends, if anyone is still standing. The whole party
+  down ends the game.
+- **Every hero has their own two hands.** Keys 1–8 are heroes 1–4, left then right. Tab selects the next hero, and
+  Ctrl+1–4 moves the selected hero to a slot.
+- **Encumbrance (spec 9.6):** over 100% of capacity, steps take half as long again and train Athletics; over 150%,
+  the party can't move.
+- **Items** are instances (`Item`) of a base from any of the item files:
+  - weapons, shields, armour;
+  - gear: helms, gloves, boots, greaves, cloaks, belts, rings, amulets;
+  - consumables, and skill books (one per skill).
+
+  Each has a rarity, rolled affixes, whether it's identified, a quality (Smithing) and a count for stacks.
+- **The backpack** has 24 slots, one item per slot (big items don't take two). Gold is a party purse.
+- **Rarity** is rolled at Common 60, Fine 25, Enchanted 11, Masterwork 3.5 and Relic 0.5. The Delve's magic-items
+  option scales the weights, and chests add a bonus.
+  - Fine items have 1 affix, Enchanted 2, Masterwork 3–4. 15% of Masterwork items also carry a curse.
+  - There are 31 affixes: to hit, damage, recovery, extra elemental damage, AC, resistances, attributes, HP,
+    Stamina, Mana, regeneration, skill XP, skill bonuses and two curses. An affix's value grows with the item
+    level.
+  - Relics are fixed named items; there are 6. One set (the Harrowgate Watch, 3 pieces) has bonuses for 2 and 3
+    pieces worn. More of both come with the bestiary.
+- **Identifying.** Enchanted items need Lore 25 to identify; Masterwork items, relics and sets need Lore 50. The
+  party's best Lore identifies on pickup, and gains Lore XP for it. A scroll of Identify reveals everything
+  carried. Unidentified affixes still work.
+- **Curses.** A cursed item won't come off until a shrine or Dispel lifts the curse.
+- **Item bonuses:**
+  - Attributes can reach 24 with items, but only 20 without.
+  - **Skill bonuses** count for rolls (`SkillLevel`), but the bare rank still sets progress.
+- **Chests** (`chest: x y table [locked dc]` in a level) block their cell.
+  - Use, facing one, opens it, and the contents spill onto the floor in front of the party.
+  - The party's best lock picker rolls d20 + DEX + Lockpicking / 5 against a lock's DC.
+- **Loot.** Creatures drop their loot table where they die; elites and champions drop more. G picks up everything
+  in the party's cell.
+- **Saves** (`SaveGame`) hold:
+  - the party: every number, item, condition and hand cooldown;
+  - for each level, what has changed: doors, levers, plates, pits found, notes read, chests, floor items, explored
+    cells, and every creature with its current action and conditions;
+  - the four random streams.
+
+  A loaded game plays on exactly as the original would (a test checks this). A step in progress isn't saved.
+  Saves are JSON files in `AVAHACK_SAVE_DIR` or the user's local application data: three slots, quick (F5/F9)
+  and auto.
+- **The screens:**
+  - **Title:** quick start, make a party, continue, load, quit.
+  - **Making a party:** one to four heroes, each with a name, ancestry, calling, background, and point buy or
+    4d6, with a preview of HP, AC, best skills and kit.
+  - **The game** shows four hero cards in the party bar (portrait, bars, both hands with cooldowns, conditions),
+    with overlays for the inventory (I), the Esc menu (save, load, help, quit), the character sheet (C) and help
+    (F1). The game pauses under any overlay but help.
+- **Starting kit** (`StartingKit`): each calling's weapons and armour, a background item, two torches and two
+  bandages.
 

@@ -20,10 +20,49 @@ public sealed class Monster
     public Cell Cell { get; internal set; }
     public Dir Facing { get; internal set; }
     public int Hp { get; internal set; }
-    public int MaxHp { get; }
+    public int MaxHp { get; internal set; }
     public MonsterState State { get; internal set; } = MonsterState.Idle;
     public int Slot { get; internal set; }
     public Resistances Resistances { get; }
+    public ConditionSet Conditions { get; }
+
+    /// <summary>Fights for the party (a summon or a frenzied foe turned).</summary>
+    public bool Ally { get; internal set; }
+    /// <summary>Called up by a spell; it fades when its time runs out.</summary>
+    public bool Summoned { get; internal set; }
+    public double SummonLeft { get; internal set; }
+    /// <summary>A champion's affixes (spec 12.2), and an elite's tint.</summary>
+    public HashSet<string> Affixes { get; } = new();
+    public bool Elite { get; internal set; }
+    /// <summary>A champion's name ("Grisk the Vampiric"); otherwise the creature's.</summary>
+    public string Name => Title ?? Def.Name;
+    public string? Title { get; internal set; }
+    /// <summary>Damage soaked before HP, from a ward or a Shielded affix.</summary>
+    public int Ward { get; internal set; }
+    public int AcBonus { get; internal set; }
+    public int Ac => Def.Ac + AcBonus;
+    public int ToHitBonus { get; internal set; }
+    /// <summary>The Delve's monster strength and the creature's own (elite, champion).</summary>
+    public double DamageFactor { get; internal set; } = 1;
+    /// <summary>A boss's script, if it is one.</summary>
+    public string? Boss { get; internal set; }
+    internal double AffixTimer;
+    internal int Phase;
+
+    /// <summary>How long recoveries take: Frenzied champions are quicker, Chilled ones slower.</summary>
+    public double RecoveryFactor => (Affixes.Contains("frenzied") ? 0.6 : 1) * Conditions.RecoveryFactor;
+    public bool AttackedWithAdvantage => Conditions.AttackedWithAdvantage;
+
+    /// <summary>Conditions its blows carry because of its affixes.</summary>
+    public IEnumerable<ConditionId> OnHitConditions
+    {
+        get
+        {
+            if (Affixes.Contains("venomous")) yield return ConditionId.Poisoned;
+            if (Affixes.Contains("frostbound")) yield return ConditionId.Chilled;
+            if (Affixes.Contains("thunderous")) yield return ConditionId.Shocked;
+        }
+    }
 
     public MonsterAction Action { get; internal set; }
     internal double ActionLeft;
@@ -41,6 +80,7 @@ public sealed class Monster
     internal double FleeLeft;
     internal double IdleLeft;
     internal DamageType? LastHitType;
+    public double ActionLeftSeconds => ActionLeft;
 
     public bool IsAlive => State is MonsterState.Idle or MonsterState.Aware or MonsterState.Fleeing;
     public bool IsAware => State is MonsterState.Aware or MonsterState.Fleeing;
@@ -49,8 +89,9 @@ public sealed class Monster
     /// <summary>How far through its current action it is, 0 to 1.</summary>
     public double ActionProgress => ActionTotal <= 0 ? 1 : Math.Clamp(1 - ActionLeft / ActionTotal, 0, 1);
 
-    internal Monster(int id, CreatureDef def, Cell cell, Dir facing, int hp)
+    internal Monster(int id, CreatureDef def, Cell cell, Dir facing, int hp, ContentDb content)
     {
+        Conditions = new ConditionSet(content);
         Id = id;
         Def = def;
         Cell = From = cell;
@@ -81,17 +122,28 @@ public sealed class Monster
         return (x, y);
     }
 
+    public int SaveBonus(Rules.Attribute a) => Def.Saves.TryGetValue(a.ToString().ToLowerInvariant(), out int v) ? v : 0;
+
     public override string ToString() => $"{Def.Name} #{Id} at {Cell} facing {Facing} ({State}, {Hp}/{MaxHp})";
 }
 
-/// <summary>A thrown stone or the like, flying straight along a row or column of the grid.</summary>
+/// <summary>A thrown stone, an arrow or a spell, flying straight along a row or column of the grid.</summary>
 public sealed class Projectile
 {
     public double X { get; internal set; }
     public double Y { get; internal set; }
     public Dir Dir { get; }
-    public Monster Source { get; }
-    public CreatureAttackDef Attack { get; }
+    public Monster? Source { get; }
+    public CreatureAttackDef? Attack { get; }
+    /// <summary>How it looks: stone, arrow, fire, frost, spark, acid, light, dark.</summary>
+    public string Look { get; init; } = "stone";
+    public double Speed { get; init; } = 6;
+    public double Range { get; init; } = 6;
+    public bool FromParty { get; init; }
+    /// <summary>What happens when it reaches a creature (spells), instead of a creature's attack.</summary>
+    internal Action<Monster, Cell>? OnHit { get; init; }
+    /// <summary>What happens when it stops against a wall or runs out (spell blasts).</summary>
+    internal Action<Cell>? OnExpire { get; init; }
     internal double Travelled;
     internal Cell LastCell;
 
@@ -100,9 +152,21 @@ public sealed class Projectile
         Source = source;
         Attack = attack;
         Dir = dir;
+        Speed = attack.ProjectileSpeed;
+        Range = attack.Range;
         X = source.Cell.X + 0.5;
         Y = source.Cell.Y + 0.5;
         LastCell = source.Cell;
+    }
+
+    /// <summary>A projectile from the party's cell.</summary>
+    internal Projectile(Cell from, Dir dir)
+    {
+        Dir = dir;
+        FromParty = true;
+        X = from.X + 0.5;
+        Y = from.Y + 0.5;
+        LastCell = from;
     }
 }
 

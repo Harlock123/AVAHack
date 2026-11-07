@@ -121,9 +121,11 @@ public sealed class WindowTests
     public void Keys_map_to_actions(PhysicalKey key, GameAction action) => Assert.Equal(action, InputHandler.Map(key));
 
     [Theory]
-    [InlineData(PhysicalKey.Digit1, HandSide.Left)]
-    [InlineData(PhysicalKey.Digit2, HandSide.Right)]
-    public void Keys_1_and_2_are_the_hands(PhysicalKey key, HandSide side) => Assert.Equal(side, InputHandler.MapHand(key));
+    [InlineData(PhysicalKey.Digit1, 0, HandSide.Left)]
+    [InlineData(PhysicalKey.Digit2, 0, HandSide.Right)]
+    [InlineData(PhysicalKey.Digit5, 2, HandSide.Left)]
+    [InlineData(PhysicalKey.Digit8, 3, HandSide.Right)]
+    public void Keys_1_to_8_are_the_heroes_hands(PhysicalKey key, int hero, HandSide side) => Assert.Equal((hero, side), InputHandler.MapHand(key));
 
     [Fact]
     public void Caps_lock_and_shift_do_nothing() // Shift's release can arrive as CapsLock on some desktops

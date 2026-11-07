@@ -1,4 +1,36 @@
+// Shields (spec 13.2).
 [
-  { "id": "roundShield", "name": "Round Shield", "ac": 2, "blockPercent": 40, "bashDamage": "1d4", "bashRecovery": 1.5, "weightKg": 3,
-    "text": "Oak with an iron rim. Hold it up to block; tap it to bash." }
+ {
+  "id": "buckler",
+  "name": "Buckler",
+  "ac": 1,
+  "blockPercent": 30,
+  "bashDamage": "1d3",
+  "bashRecovery": 1.2,
+  "weightKg": 1.5,
+  "value": 8,
+  "text": "Small and quick."
+ },
+ {
+  "id": "roundShield",
+  "name": "Round Shield",
+  "ac": 2,
+  "blockPercent": 40,
+  "bashDamage": "1d4",
+  "bashRecovery": 1.5,
+  "weightKg": 3,
+  "value": 12,
+  "text": "Oak with an iron rim. Hold it up to block; tap it to bash."
+ },
+ {
+  "id": "towerShield",
+  "name": "Tower Shield",
+  "ac": 3,
+  "blockPercent": 55,
+  "bashDamage": "1d6",
+  "bashRecovery": 1.9,
+  "weightKg": 7,
+  "value": 30,
+  "text": "A door you carry."
+ }
 ]

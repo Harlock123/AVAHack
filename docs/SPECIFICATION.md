@@ -2247,8 +2247,12 @@ The second new region, levels 17–20, after the Stacks. Where deep runs used to
   - it hacks through a tangle in its way;
   - it waits for a pod ahead to burst;
   - it treats tangles and pods as open when finding its way.
-- **Results**: the 24-level deep report is still to be read for this region; the 4- and 12-level Delves are
-  unaffected (their reports pass).
+- **Results** (6 seeds, 24-level Delves, clearing bot):
+  - average depth 17.2 (16.8 before), best 20; heroes at level 23–39;
+  - four of the six parties die in the Rootdark, and one reaches the Mycel Crown and falls to it;
+  - none wins: the Rootdark is now the wall, as the placeholder was. Tuning it is open.
+
+  The 4- and 12-level Delves are unaffected; their reports pass.
 - **Tests.**
   - Rootdark levels with their families, pods, tangles, root walls, the Crown and its three nodes.
   - A pod bursting for the party, and for a creature but not a thrall. Fire setting a cloud off, burning a creature

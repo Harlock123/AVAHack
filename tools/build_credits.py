@@ -16,7 +16,8 @@ for s in manifest["sources"]:
               f"- Changes: {s['changes']}",
               f"- Files: {len(s['files'])} (listed in `assets.manifest.json`)", ""]
 lines += ["## Everything else", "",
-          "The creatures, items, doors, levers, pits, plates, stairs and markings are drawn in code, and the code is "
+          "The creatures, items, portraits, doors, levers, pits, plates, stairs and markings are drawn in code. Every sound "
+          "effect and ambience loop is synthesised by `tools/make_sounds.py`. Both are original to AVAHack, and the code is "
           "under the licence in `LICENSE`.", ""]
 open(os.path.join(root, "CREDITS.md"), "w").write("\n".join(lines))
 print(f"{len(manifest['sources'])} sources")

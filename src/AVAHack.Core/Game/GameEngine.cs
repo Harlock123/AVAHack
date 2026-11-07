@@ -129,6 +129,7 @@ public sealed partial class GameEngine
     {
         if (Mode != GameMode.Playing) return;
         TickCount++;
+        ListenForLevels();
         foreach (var door in Level.Doors) MoveDoor(door);
 
         if (_motion is { } m)
@@ -295,6 +296,7 @@ public sealed partial class GameEngine
                         EnterCell(PartyCell);
                         Say("The party vaults the pit.");
                         Event?.Invoke(GameEvent.Stepped);
+                        CueHere("step");
                         return;
                     }
                     double load = Party.Members.Max(c => c.Encumbrance);
@@ -320,12 +322,14 @@ public sealed partial class GameEngine
                         PartyCell = target;
                         EnterCell(target);
                         Event?.Invoke(GameEvent.Stepped);
+                        CueHere(Level.FloorAt(target.X, target.Y) == FloorLook.Water ? "step.water" : "step", Sneaking ? 0.45 : 1);
                     }
                     else
                     {
                         _motion = new Motion(MotionKind.Bump, BumpTicks) { BumpDir = dir };
                         _queue.Clear();
                         Event?.Invoke(GameEvent.Bumped);
+                        CueHere("bump");
                     }
                     return;
                 }
@@ -364,7 +368,9 @@ public sealed partial class GameEngine
         {
             var d = Level.DoorAt(c)!;
             d.Opening = !d.Opening;
+            Cue(d.Kind == DoorKind.Portcullis ? "portcullis" : d.Opening ? "door.open" : "door.close", c);
         }
+        CueHere("lever");
         Say(lever.Down ? "The lever clanks down. Somewhere, chains rattle." : "The lever grinds back up.");
         Event?.Invoke(GameEvent.LeverPulled);
     }
@@ -384,6 +390,7 @@ public sealed partial class GameEngine
         }
         door.Opening = !door.Opening;
         Event?.Invoke(door.Opening ? GameEvent.DoorOpening : GameEvent.DoorClosing);
+        Cue(door.Opening ? "door.open" : "door.close", door.Cell);
         return true;
     }
 

@@ -244,7 +244,7 @@ public sealed partial class GameView
     private void DrawMenu(DrawingContext dc)
     {
         dc.FillRectangle(Shadow, new Rect(0, 0, CanvasWidth, CanvasHeight));
-        var box = new Rect(240, 60, 800, 540);
+        var box = new Rect(240, 50, 800, 660);
         dc.DrawRectangle(PanelBrush, new Pen(PanelEdge, 3), box, 8, 8);
         DrawText(dc, "Menu", box.Center.X, box.Y + 16, 30, Gold, centre: true, face: Bold);
         double y = box.Y + 70;
@@ -281,6 +281,7 @@ public sealed partial class GameView
             Button(dc, new Rect(box.X + 40, y, 720, 36), $"{slot}: {summary}", () => LoadSlot(slot), size: 14);
             y += 42;
         }
+        DrawSoundRow(dc, box, box.Bottom - 104);
         DrawText(dc, "F10 quick save · F11 quick load", box.X + 40, box.Bottom - 30, 13, Dim);
     }
 
@@ -412,7 +413,7 @@ public sealed partial class GameView
         if (b.Slots.Length > 0)
         {
             if (h.WhyNotEquip(index) is { } why) Engine.Say(why);
-            else h.Equip(index);
+            else { h.Equip(index); Audio.PlayEffect("equip"); }
             return;
         }
         if (Engine.UseItem(h, index) is null) Engine.Say($"{h.Name} can't use the {b.Name} like that.");

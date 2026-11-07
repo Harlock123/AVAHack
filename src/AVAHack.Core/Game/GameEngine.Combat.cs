@@ -207,6 +207,7 @@ public sealed partial class GameEngine
     private void Strike(Character c, Monster? target, SkillId skill, Attribute attr, Dice dice, DamageType type, double multiplier,
                         double staggerChance, int critRange, int toHit, EquipSlot? hand, string weaponKind)
     {
+        CueHere(weaponKind is "bow" ? "shoot" : _power ? "swing.heavy" : "swing", 0.7);
         var ahead = PartyCell.Step(Facing);
         AlertWithin(NoiseRange);
         target ??= MonstersAt(ahead).FirstOrDefault(m => !m.Ally);
@@ -233,6 +234,7 @@ public sealed partial class GameEngine
         {
             Float?.Invoke(new FloatText(x, y, FloatZ(target), "miss", TextKind.Miss));
             Event?.Invoke(GameEvent.Missed);
+            Cue("miss", target.Cell);
             return;
         }
         double sneak = unaware ? SneakMultiplier(c, weaponKind) : 1;
@@ -246,6 +248,7 @@ public sealed partial class GameEngine
             foreach (var (t, amount) in c.ExtraDamage(h))
                 dmg += Combat.ApplyAffinity(amount, target.Resistances.For(t));
         Event?.Invoke(GameEvent.Hit);
+        Cue(crit ? "hit.crit" : HitSoundFor(target), target.Cell);
         c.UseSkill(skill, dmg, XpSource.Against(target.Def.Level));
         if (unaware) c.UseSkill(SkillId.Stealth, 0, XpSource.Against(target.Def.Level));
         OnHeroHit?.Invoke(c, target, crit);
@@ -303,6 +306,7 @@ public sealed partial class GameEngine
         {
             pile.State = MonsterState.Dead;
             Kills++;
+            Cue("die.bones", pile.Cell);
             AwardKill(pile);
             Float?.Invoke(new FloatText(x, y, 0.2, "crushed", TextKind.Critical));
             Say($"You grind the {pile.Def.Name}'s bones to splinters. It won't rise again.");
@@ -353,6 +357,8 @@ public sealed partial class GameEngine
         if (m.Ally) { Say($"Your {m.Def.Name} is gone."); return; }
         Kills++;
         Say($"{m.TheName} is slain.");
+        Cue(DeathSoundFor(m), m.Cell);
+        if (m.Boss is not null && m.Def.Id == Level.Boss) CueHere("sting.victory");
         AwardKill(m);
         if (!(m.Boss == "choir" && m.Raised)) DropLoot(m);
         MonsterDied?.Invoke(m);
@@ -394,6 +400,7 @@ public sealed partial class GameEngine
         m.Action = MonsterAction.Recovering;
         m.ActionLeft = m.ActionTotal = a.Recovery * m.RecoveryFactor;
         m.StrikeTime = 0.2;
+        Cue(a.Range > 1 ? "shoot" : "swing", m.Cell, 0.8);
         if (a.Range > 1)
         {
             _projectiles.Add(new Projectile(m, a, m.Facing));
@@ -485,6 +492,7 @@ public sealed partial class GameEngine
                 c.UseSkill(SkillId.Block, blocked, XpSource.Against(m.Def.Level));
                 c.RiposteUntil = Time + 2;
                 Event?.Invoke(GameEvent.Blocked);
+                CueHere("block");
             }
         }
         if (dmg <= 0) return;
@@ -516,6 +524,7 @@ public sealed partial class GameEngine
         FloatAtHero(res.Critical ? $"-{dmg}!" : $"-{dmg}", TextKind.HeroHurt);
         c.UseSkill(c.ArmourSkill, dmg, XpSource.Against(m.Def.Level));
         Event?.Invoke(GameEvent.HeroHurt);
+        CueHere(c.IsDown ? "hero.down" : "hero.hurt");
         if (m.Affixes.Contains("vampiric") || m.Affixes.Contains("bloodthirsty")) m.Hp = Math.Min(m.MaxHp, m.Hp + Math.Max(1, dmg / 2));
         if (a.OnHit is { } on && !c.IsDown && Rng.Combat.Chance(on.Chance)) Afflict(c, on.Condition, on.Dc, on.Seconds);
         foreach (var cond in m.OnHitConditions)
@@ -547,12 +556,14 @@ public sealed partial class GameEngine
             if (Level.KindAt(cell) == CellKind.Wall || (Level.DoorAt(cell) is { } d && !d.IsPassable) || p.Travelled > p.Range + 0.5)
             {
                 _projectiles.Remove(p);
+                Cue(ImpactFor(p.Look, null), p.LastCell.Step(p.Dir.Opposite()), 0.7);
                 p.OnExpire?.Invoke(p.LastCell.Step(p.Dir.Opposite()));
                 continue;
             }
             if (cell == PartyCell && !p.FromParty)
             {
                 _projectiles.Remove(p);
+                if (p.Look is not ("arrow" or "stone")) CueHere(ImpactFor(p.Look, null));
                 if (p.Attack is { } atk && Turning > 0)
                 {
                     // Spell Turning: back it goes.
@@ -571,6 +582,7 @@ public sealed partial class GameEngine
             if (MonstersAt(cell).FirstOrDefault(m => m != p.Source && (!p.FromParty || !m.Ally)) is { } victim)
             {
                 _projectiles.Remove(p);
+                Cue(ImpactFor(p.Look, victim), cell);
                 if (p.OnHit is { } hit) { hit(victim, cell); continue; }
                 // Stones don't care whose head they find.
                 if (p.Attack is { } atk && Combat.Attack(Rng.Combat, atk.ToHit, victim.Ac).Hit)
@@ -635,6 +647,7 @@ public sealed partial class GameEngine
     {
         if (Mode != GameMode.Playing) return;
         Mode = GameMode.Dead;
+        CueHere("party.dead");
         Say(Party.Count == 1 ? $"{Hero.Name} has fallen in the dark." : "The whole party has fallen in the dark.");
         GameOver?.Invoke();
     }

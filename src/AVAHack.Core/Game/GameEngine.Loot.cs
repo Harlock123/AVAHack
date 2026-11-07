@@ -29,6 +29,7 @@ public sealed partial class GameEngine
     /// <summary>Opens a chest ahead: its contents spill onto the floor in front of the party.</summary>
     private void OpenChest(Chest chest)
     {
+        Cue("chest", chest.Cell);
         if (chest.Opened)
         {
             Say("The chest is empty.");
@@ -48,6 +49,8 @@ public sealed partial class GameEngine
         Say(n == 0 ? "The chest creaks open. Nothing but dust." : $"The chest creaks open. {n} thing{(n == 1 ? "" : "s")} spill out at your feet (G to pick up).");
     }
 
+    private bool _tookGold;
+
     /// <summary>Picks up everything in the party's cell: gold to the purse, the rest to whoever has room.</summary>
     public int PickUpAll()
     {
@@ -56,6 +59,8 @@ public sealed partial class GameEngine
         foreach (var item in pile.ToList())
             if (TakeFromFloor(item, Selected)) taken++;
         if (taken > 0) IdentifyAll();
+        if (taken > 0) CueHere(_tookGold ? "gold" : "pickup");
+        _tookGold = false;
         return taken;
     }
 
@@ -66,6 +71,7 @@ public sealed partial class GameEngine
         if (!pile.Contains(item)) return false;
         if (item.BaseId == "gold")
         {
+            _tookGold = true;
             Party.Gold += item.Count;
             pile.Remove(item);
             Say($"{item.Count} gold.");
@@ -108,7 +114,16 @@ public sealed partial class GameEngine
         if (it.BaseId == ItemBase.BrewId && it.Effects.Count > 0) said ??= DrinkBrew(c, index);
         said ??= SpellItemHook?.Invoke(c, index);
         said ??= c.Use(index, Rng.Combat);
-        if (said is not null) Say(said);
+        if (said is not null)
+        {
+            Say(said);
+            CueHere(b.Kind switch
+            {
+                ItemKind.Food or ItemKind.Reagent => "eat",
+                ItemKind.Book or ItemKind.Tome or ItemKind.Scroll => "read",
+                _ => b.Consumable?.Special is "light" or "oil" ? "torch" : b.Consumable?.Special == "identify" ? "read" : "drink",
+            });
+        }
         return said;
     }
 

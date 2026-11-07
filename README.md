@@ -50,7 +50,7 @@ dotnet run --project src/AVAHack.App -c Release
 | Quick spells | F1–F8 |
 | Sneak / rest | X / R |
 | Pause | Space |
-| Menu (save, load, quit) / help | Esc / H |
+| Menu (save, load, quit, sound) / help | Esc / H |
 | Quick save / quick load | F10 / F11 |
 | Frame rate and render time | F12 |
 
@@ -108,6 +108,27 @@ The heroes' portraits are drawn the same way:
 made from it by `tools/build_credits.py`. Because there is no GPU in the path, the
 tests render real frames and compare them with golden images. A frame takes about 1–3 ms on an 8-core ARM
 machine.
+
+## How it sounds
+
+Every sound is made by `tools/make_sounds.py`, a standard-library Python script that synthesises them from
+oscillators, noise and filters with fixed seeds. There are 86 effects (96 takes, since the common ones have several),
+and an ambience loop for each region:
+- dripping cellars;
+- the Works' machinery;
+- the Drowned Choir's hum;
+- the Unmade Heart's drone and heartbeat.
+
+Sound is positional and travels along the passages:
+- it fades with the steps it has to go, and a shut door muffles it;
+- solid rock stops it, and nothing carries past 16 steps;
+- it is panned to the side it comes from.
+
+You hear a creature's footsteps and its cry before you see it, and spikes and blades cycling round the next corner.
+Bosses have a sting when they wake and a chord when they fall.
+
+Playback is OpenAL Soft. In a virtual machine the game picks a bigger mixing buffer so the sound doesn't break up.
+The Menu (Esc) sets the volume, the ambience and the buffer size.
 
 ## Building and testing
 

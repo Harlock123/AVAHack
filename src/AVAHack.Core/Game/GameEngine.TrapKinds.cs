@@ -86,6 +86,7 @@ public sealed partial class GameEngine
             t.Disarmed = true;
             hands.UseSkill(SkillId.Traps, t.DisarmDc, XpSource.Plain);
             Say($"{hands.Name} disarms {TrapName(t.Kind)}.");
+            CueHere("unlock");
             if (hands.HasPerkFlag("salvage")) Level.Drop(PartyCell, new Items.Item { BaseId = "gold", Count = 5 + t.Depth * 3 });
             return true;
         }
@@ -121,6 +122,7 @@ public sealed partial class GameEngine
             case TrapKind.DartWall:
             case TrapKind.Tripwire when t.Variant == "darts":
                 Say("Click. Darts hiss out of the walls!");
+                Cue("trap.dart", t.Cell);
                 for (int i = 0; i < 3; i++)
                 {
                     if (m is not null) { if (m.IsAlive) DamageMonster(m, Dice.Parse("1d4").Roll(Rng.Combat) + d / 3, DamageType.Piercing); continue; }
@@ -136,12 +138,14 @@ public sealed partial class GameEngine
             case TrapKind.Tripwire:
             case TrapKind.AlarmPlate:
                 Say("A bell clangs somewhere in the dark. Everything nearby knows you're here.");
+                Cue("trap.alarm", t.Cell);
                 foreach (var o in _monsters.Where(o => o.IsAlive && !o.Ally && o.Cell.Distance(t.Cell) <= 12)) { Alert(o); o.LastSeen = Time; }
                 t.Sprung = true;
                 break;
             case TrapKind.FireSpout:
             {
                 Say("Fire roars out of the wall!");
+                Cue("trap.fire", t.Cell);
                 var cells = new List<Cell> { t.Cell };
                 for (var c = t.Cell.Step(t.Facing); cells.Count < 3 && Level.KindAt(c) != CellKind.Wall; c = c.Step(t.Facing)) cells.Add(c);
                 foreach (var c in cells)
@@ -161,6 +165,7 @@ public sealed partial class GameEngine
             }
             case TrapKind.FrostGlyph:
                 Say("A glyph flares blue under your feet!");
+                Cue("impact.frost", t.Cell);
                 if (m is not null) m.Conditions.Apply(ConditionId.Frozen, 12 + d / 2, 4);
                 else foreach (var c in Party.Standing) if (!c.Save(Rng.Combat, Attribute.Dex, 12 + d / 2)) { c.ApplyCondition(ConditionId.Frozen, 12 + d / 2, 4); Say($"{c.Name} is frozen solid!"); }
                 t.Sprung = true;
@@ -170,6 +175,7 @@ public sealed partial class GameEngine
                 var metal = Party.Standing.Where(c => c.Body?.Kind == ArmourKind.Heavy).ToList();
                 if (m is null && metal.Count == 0) break; // nothing to call the lightning
                 Say("The rune answers the iron you carry: lightning!");
+                Cue("trap.lightning", t.Cell);
                 if (m is not null) DamageMonster(m, Dice.Parse("4d6").Roll(Rng.Combat) + d, DamageType.Lightning);
                 foreach (var c in metal) HurtHero(c, Combat.ApplyAffinity(Dice.Parse("4d6").Roll(Rng.Combat) + d, c.Resistances.For(DamageType.Lightning)), DamageType.Lightning);
                 foreach (var c in Party.Standing.Except(metal).ToList()) HurtHero(c, Dice.Parse("1d6").Roll(Rng.Combat), DamageType.Lightning);
@@ -178,6 +184,7 @@ public sealed partial class GameEngine
             }
             case TrapKind.GasVent:
                 Say(t.Variant == "sleep" ? "A sweet-smelling mist hisses from the floor." : "Green gas billows up from a vent!");
+                Cue("trap.gas", t.Cell);
                 _gas.Add(new GasCloud
                 {
                     Cells = [.. Enumerable.Range(-1, 3).SelectMany(dy => Enumerable.Range(-1, 3).Select(dx => new Cell(t.Cell.X + dx, t.Cell.Y + dy)))],
@@ -187,6 +194,7 @@ public sealed partial class GameEngine
                 break;
             case TrapKind.CollapsingCeiling:
                 Say("The ceiling gives way!");
+                Cue("trap.boulder", t.Cell);
                 if (m is not null) DamageMonster(m, Dice.Parse("4d10").Roll(Rng.Combat), DamageType.Bludgeoning);
                 else foreach (var c in Party.Standing.ToList())
                 {
@@ -200,6 +208,7 @@ public sealed partial class GameEngine
                 if (t.Target is { } from && DirTo(from, t.Cell) is { } dir)
                 {
                     Say("Something heavy starts to roll, up the slope behind you!");
+                    Cue("trap.boulder", from);
                     _boulders.Add(new Boulder { X = from.X + 0.5, Y = from.Y + 0.5, Dir = dir, Depth = d, LastCell = from });
                 }
                 t.Sprung = true;
@@ -212,6 +221,7 @@ public sealed partial class GameEngine
                     break;
                 }
                 Say("The sigil flares. The world lurches, and you are somewhere else.");
+                CueHere("trap.teleport");
                 Stand(to, Facing);
                 EnterCell(to);
                 moved = true;
@@ -232,6 +242,7 @@ public sealed partial class GameEngine
                 t.Timer = 0;
                 t.Sprung = true;
                 Say("The door slams shut behind you, and water starts to pour in! Find the drain.");
+                CueHere("trap.flood");
                 break;
         }
         if (m is null && Party.AllDown) Die();
@@ -270,6 +281,7 @@ public sealed partial class GameEngine
                 t.Active = t.Timer % cycle >= cycle - window;
                 if (t.Active && !was)
                 {
+                    Cue(t.Kind == TrapKind.SpikeFloor ? "trap.spikes" : "trap.blade", t.Cell, 0.7); // you hear it cycle before you reach it
                     var dice = t.Kind == TrapKind.SpikeFloor ? "3d6" : "3d8";
                     if (PartyCell == t.Cell)
                     {
@@ -349,6 +361,7 @@ public sealed partial class GameEngine
         int gold = Dice.Parse("3d20").Roll(Rng.Loot) * altar.Depth;
         Party.Gold += gold;
         Say($"You take the offering: {gold} gold.");
+        CueHere("gold");
         if (Rng.Combat.Chance(60))
         {
             var who = Party.Standing.FirstOrDefault();

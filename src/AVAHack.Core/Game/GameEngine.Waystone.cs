@@ -33,6 +33,7 @@ public sealed partial class GameEngine
 
     private void TouchWaystone()
     {
+        CueHere("waystone");
         Say("The Waystone hums. The air here is still and safe. A merchant, a trainer and a shrine-keeper wait in its light.");
         WaystoneTouched?.Invoke();
     }

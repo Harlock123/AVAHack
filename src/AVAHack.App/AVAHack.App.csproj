@@ -14,6 +14,13 @@
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Silk.NET.OpenAL" />
+    <PackageReference Include="Silk.NET.OpenAL.Soft.Native" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The sounds tools/make_sounds.py makes, embedded so the single-file build carries them. -->
+    <EmbeddedResource Include="Assets\Sounds\*.wav" LogicalName="AVAHack.App.Sounds.%(Filename)%(Extension)" />
+    <None Remove="Audio\native\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AVAHack.Core\AVAHack.Core.csproj" />

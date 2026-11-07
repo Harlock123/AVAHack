@@ -54,6 +54,8 @@ implicit usings, invariant globalization and central package versions. Package v
     - `.Levels`: difficulty, changing level and winning.
     - `.Waystone`: merchant, trainer, shrine and stash.
     - `.Crafting`: food, rest, Alchemy, cooking, Smithing and Enchanting.
+    - `.Sound`: the `Sound` cues and `Hearing`. Sound fades along the passages, shut doors muffle it, and it is
+      panned to its side.
     - `.Save`.
     - The rest:
       - `Delve`: the run across levels, the Unmade Heart, and seed codes.
@@ -93,7 +95,11 @@ implicit usings, invariant globalization and central package versions. Package v
   - the sheet, magic and the Delve options;
   - the Waystone and crafting.
 
-  `Input/InputHandler` maps keys.
+  `Input/InputHandler` maps keys. `Audio/` plays the engine's cues through OpenAL Soft (Silk.NET):
+  - the sounds, embedded from `Assets/Sounds` and made by `tools/make_sounds.py`;
+  - a bigger mixing period in a VM;
+  - Windows' MinGW `soft_oal.dll`, swapped in by `Directory.Build.targets`;
+  - the settings, in `sound.settings` in the saves folder.
 - `tests/AVAHack.Core.Tests`: every rule and formula.
   - Subject tests: combat, traps, Cellars, party, items, saves, perks, magic, the generator, the Delve, the bestiary
     and crafting.
@@ -140,6 +146,9 @@ implicit usings, invariant globalization and central package versions. Package v
   and its licence file ships beside it. Run `tools/build_credits.py` to remake `CREDITS.md`. `AssetTests` fails if a
   shipped texture isn't listed. Prefer CC0 or CC-BY, never share-alike, and never art taken from another game.
   Textures are made by scripts in `tools/` (`import-sbs-textures.sh`), not edited by hand.
+- **Every sound has a maker.** A new cue gets its sound in `tools/make_sounds.py` (run it, and commit the WAVs). The
+  App's `SoundTests` fail if a cue the engine raises has no sound, or a sound is never played. Cues never change
+  the game: a test plays the same game with and without a listener.
 - **Never trim.** Avalonia loads XAML by reflection, so `PublishTrimmed` stays false.
 - **Tests never touch the user's folders.** Anything a test writes goes to a temp folder or to the folder in
   `AVAHACK_SHOTS`.

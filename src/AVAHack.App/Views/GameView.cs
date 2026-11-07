@@ -55,7 +55,17 @@ public sealed partial class GameView : Control, ICustomHitTest
     public GameEngine Engine { get; private set; }
     public SoftwareViewRenderer Renderer { get; }
     public Screen Screen { get; private set; }
-    public Overlay Overlay { get; set; }
+    /// <summary>The screen over the view; opening one makes a soft sound.</summary>
+    public Overlay Overlay
+    {
+        get => _overlay;
+        set
+        {
+            if (value != Overlay.None && value != _overlay) Audio.PlayEffect("ui.open", 0.7f);
+            _overlay = value;
+        }
+    }
+    private Overlay _overlay;
 
     /// <summary>F3 shows frames per second and the render time.</summary>
     public bool ShowStats { get; set; }
@@ -104,6 +114,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     private void Hook(GameEngine g)
     {
         g.Float += OnFloat;
+        g.Sound += OnSound;
         g.WaystoneTouched += OpenWaystone;
         g.StationTouched += k => OpenCraft(k);
     }
@@ -141,6 +152,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     /// <summary>Runs the game forward <paramref name="seconds"/> and redraws. Menus and the inventory pause it.</summary>
     public void Advance(double seconds)
     {
+        KeepAmbience();
         if (Screen == Screen.Play && Overlay is Overlay.None or Overlay.Help) Engine.Update(seconds);
         if (!Engine.Paused)
         {
@@ -161,6 +173,7 @@ public sealed partial class GameView : Control, ICustomHitTest
     {
         if (_delve is not null && _delve.Engine != g) _delve = null;
         Engine.Float -= OnFloat;
+        Engine.Sound -= OnSound;
         Engine = g;
         Hook(g);
         _floats.Clear();
@@ -313,6 +326,7 @@ public sealed partial class GameView : Control, ICustomHitTest
         {
             var (r, left, rightAction) = _buttons[i];
             if (!r.Contains(p)) continue;
+            Audio.PlayEffect("ui.click", 0.6f);
             if (right) rightAction?.Invoke();
             else left();
             InvalidateVisual();

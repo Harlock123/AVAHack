@@ -158,6 +158,7 @@ public sealed partial class GameEngine
 
     private void Resolve(Character c, SpellDef s, int? skill)
     {
+        CueHere("cast." + s.School.ToString().ToLowerInvariant());
         double power = SpellPower(c, s, skill);
         int mod = c.CastingMod(s.School);
         int dc = Checks.SpellSaveDc(mod, skill ?? c.SkillLevel(s.School)) + (int)(c.PerkTotalFor("spellPowerPct", "illusion") / 15 * (s.School == SkillId.Illusion ? 1 : 0));

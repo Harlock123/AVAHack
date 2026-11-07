@@ -273,6 +273,7 @@ public sealed partial class GameEngine
             ReagentKnown[r.Id] = Math.Max(ReagentKnown.GetValueOrDefault(r.Id), last);
         }
         c.UseSkill(SkillId.Alchemy, 10 * shared.Count, XpSource.Plain);
+        CueHere("brew");
         Give(c, brew);
         return $"{c.Name} brews a {brew.Name(Content)}.";
     }
@@ -346,6 +347,7 @@ public sealed partial class GameEngine
         var r = Content.Recipe(recipeId);
         foreach (var g in r.Ingredients.GroupBy(i => i)) Spend(g.Key, g.Count());
         c.UseSkill(SkillId.Survival, 8 * r.Ingredients.Length, XpSource.Plain);
+        CueHere("cook");
         Give(c, new Item { BaseId = "meal:" + r.Id, Level = Math.Max(1, c.SkillLevel(SkillId.Survival) / 10) });
         return $"{c.Name} cooks a {r.Name.ToLowerInvariant()}.";
     }
@@ -386,6 +388,7 @@ public sealed partial class GameEngine
         if (!Spend("scrapIron", cost)) return $"That takes {cost} scrap iron.";
         item.Quality++;
         smith.UseSkill(SkillId.Smithing, 10 * item.Quality, XpSource.Plain);
+        CueHere("anvil");
         return $"{smith.Name} hammers the {Content.Base(item.BaseId).Name.ToLowerInvariant()} to +{item.Quality}.";
     }
 
@@ -399,6 +402,7 @@ public sealed partial class GameEngine
         int n = Math.Max(1, (int)Math.Round(Content.Base(it.BaseId).WeightKg));
         Give(smith, new Item { BaseId = "scrapIron", Count = n });
         smith.UseSkill(SkillId.Smithing, 3, XpSource.Plain);
+        CueHere("anvil");
         return $"{smith.Name} melts the {it.Name(Content).ToLowerInvariant()} into {n} scrap iron.";
     }
 
@@ -416,6 +420,7 @@ public sealed partial class GameEngine
         if (!Spend("scrapIron", opt.Scrap)) return $"That takes {opt.Scrap} scrap iron.";
         var item = new Item { BaseId = baseId, Quality = Math.Min(QualityCap(smith), smith.SkillLevel(SkillId.Smithing) / 30), Level = Level.Depth };
         smith.UseSkill(SkillId.Smithing, 15, XpSource.Plain);
+        CueHere("anvil");
         Give(smith, item);
         return $"{smith.Name} forges a {item.Name(Content).ToLowerInvariant()}.";
     }
@@ -437,6 +442,7 @@ public sealed partial class GameEngine
         var learnable = it.Affixes.Select(a => a.Affix).Where(a => !Content.Affix(a).Curse).ToList();
         e.Backpack[slot] = null;
         e.UseSkill(SkillId.Enchanting, 10, XpSource.Plain);
+        CueHere("enchant");
         var fresh = learnable.FirstOrDefault(a => !Enchantments.Contains(a));
         if (fresh is null) return learnable.Count == 0 ? "Only a curse was in it. It's gone now, with the item." : "The magic unravels, but you knew it already.";
         Enchantments.Add(fresh);
@@ -462,6 +468,7 @@ public sealed partial class GameEngine
         if (item.Rarity is Rarity.Common or Rarity.Fine) item.Rarity = Rarity.Enchanted;
         item.Identified = true;
         e.UseSkill(SkillId.Enchanting, 20, XpSource.Plain);
+        CueHere("enchant");
         return $"{e.Name} binds {a.Name} into the {b.Name.ToLowerInvariant()}.";
     }
 
@@ -473,6 +480,7 @@ public sealed partial class GameEngine
         if (!Spend("spiritShard", 1)) return "That takes a spirit shard.";
         it.Charges = Math.Max(it.Charges, 6 + e.SkillLevel(SkillId.Enchanting) / 10);
         e.UseSkill(SkillId.Enchanting, 8, XpSource.Plain);
+        CueHere("enchant");
         return $"The wand hums with {it.Charges:0} charges.";
     }
 

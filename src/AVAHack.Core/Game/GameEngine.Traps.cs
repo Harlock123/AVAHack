@@ -90,6 +90,7 @@ public sealed partial class GameEngine
                 FloatAtHero($"-{dmg}", TextKind.HeroHurt);
             }
             Event?.Invoke(GameEvent.Fell);
+            CueHere("pit");
             FellThrough?.Invoke(pit);
             if (Party.AllDown) { Die(); return; }
             if (!pit.ToNextLevel)
@@ -105,9 +106,11 @@ public sealed partial class GameEngine
             if (LivingBoss is { } boss)
             {
                 Say($"The way down is sealed. {boss.Name} still stands.");
+                CueHere("locked");
                 if (!boss.IsAware) Alert(boss);
                 return;
             }
+            CueHere("stairs");
             if (StairsHook is { } next && next(PartyCell)) return;
             Mode = GameMode.Won;
             Say("You find the stairs down. The cellars are behind you.");
@@ -122,6 +125,7 @@ public sealed partial class GameEngine
             bool pressed = PartyCell == plate.Cell || Monsters.Any(m => m.IsAlive && m.Cell == plate.Cell);
             if (pressed == plate.Pressed) continue;
             plate.Pressed = pressed;
+            if (pressed) Cue("plate", plate.Cell);
             foreach (var c in plate.Targets)
             {
                 var door = Level.DoorAt(c)!;

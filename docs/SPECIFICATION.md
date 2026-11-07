@@ -44,6 +44,7 @@
 33. Implementation decisions (M9: the creatures redrawn)
 34. Implementation decisions (M9: item icons)
 35. Implementation decisions (M9: hero portraits)
+36. Implementation decisions (M9: audio)
 
 ---
 
@@ -1002,7 +1003,7 @@ held keys by `PhysicalKey`, because on this desktop Shift's KeyUp arrives as Cap
 - Sound effects are synthesised by a standard-library Python tool, `tools/make_sounds.py`, or taken from CC0
   packs listed in the manifest.
 - Use the 2048-frame OpenAL period through ALSOFT_CONF, as the other AVA games do, to stop choppy audio in the
-  VM.
+  VM. (As built: 4096 frames in a VM by default; section 36.)
 
 ---
 
@@ -2007,3 +2008,63 @@ The first piece of M9's "art from the manifest": real textures for walls, floors
   standing and downed. It checks that each portrait fills its frame, that the same hero always draws the same, and
   that different names differ. It writes `portraits.png` to `AVAHACK_SHOTS`; `Images/AVAHack-portraits.png` is
   that sheet at half size.
+
+## 36. Implementation decisions (M9: audio)
+
+- **The engine raises cues; the App plays them.**
+  - `GameEngine.Sound` raises a `SoundCue` (an id, a world position, a gain, or "at the party") at each event:
+    - steps (in water too), bumps, swings and power attacks, shots;
+    - hits by what was struck (flesh, bone, metal or slime), critical hits, misses and blocks;
+    - heroes hurt and downed, and the party's death;
+    - a creature's cry when it notices the party, and a softer one with each tell;
+    - its footsteps (heavy for large creatures and constructs);
+    - its death by what it is made of;
+    - doors, portcullises, levers, plates, locks, secrets, chests, pits and stairs;
+    - every trap, including spikes and blades heard cycling;
+    - pickups and gold, drinking, eating, reading and torches;
+    - spells by school, and where a bolt lands by its element;
+    - level-ups, the Waystone and each craft;
+    - a sting when a boss wakes and a chord when it falls;
+    - the Bellwright's bell and the Knell.
+  - Cues never touch the game's state or dice. A test plays the same presses with and without a listener and gets
+    the same game.
+- **Hearing** (`GameEngine.Hearing`), deterministic and tested:
+  - **Distance.** Sound travels along the passages, looking for the way with the fewest shut doors first, then the
+    fewest steps. Its gain is 1 / (1 + 0.22 × steps), so 5 steps away is about half.
+  - **Doors and rock.** Each shut door on the way lets 35% through. Rock stops it, and nothing carries past 16
+    steps.
+  - **Direction.** The pan comes from the source's direction against the party's facing (±0.8 at most), and a
+    sound behind is 15% quieter.
+- **The sounds** are all made by `tools/make_sounds.py`:
+  - **Synthesis.** Standard-library Python: oscillators, white and brown noise, one-pole and biquad filters,
+    envelopes, inharmonic partials for metal and bells, formant-filtered sawtooth "voices" for grunts and cries,
+    and a small Schroeder reverb.
+  - **Reproducible.** Fixed seeds: running it twice gives identical files.
+  - **Contents.** 86 effects (96 takes: 2–3 of the common ones, such as steps, swings, hits and hurts), plus four seamless
+    20-second ambience loops (cellar, works, choir, heart). They are 22,050 Hz mono 16-bit WAVs, 7.4 MB in all,
+    embedded in the App.
+  - **Levels.** Effects are peak-normalised; the loops are brought to −24 dB RMS so the regions match.
+- **Playback** (`OpenAlAudioEngine`), adapted from AVARadiance's:
+  - **Voices.** Effects play on a pool of 24 voices placed left or right of the listener for the pan, with
+    distance rolloff off (the engine already worked it out). Each play gets ±4% pitch so repeats don't sound alike.
+  - **Ambience.** A looping buffer on one of two sources, crossfaded over about a second when the region changes.
+    It plays under the title screen too.
+  - **Clicks.** Buttons click, and opening a screen gives a soft cue.
+  - **Settings.** The Menu sets the volume, the ambience and the buffer. They are kept in `sound.settings` in the
+    saves folder (the saves list reads only `*.json`).
+  - **Buffer.** Automatic means 4096 frames in a virtual machine (the AVAWizardry finding), and OpenAL's default
+    otherwise. A change takes effect at the next start.
+  - **Windows.** x64 and x86 get the official MinGW OpenAL Soft, swapped in by `Directory.Build.targets`.
+  - **No sound.** If OpenAL can't start, the game is silent and the Menu says why.
+- **Tests.**
+  - **Core:** hearing fades with steps, shut doors muffle, sound goes round by the passages and not through rock,
+    the pan follows the facing, the main events raise their cues, and cues don't change the game.
+  - **App:**
+    - every cue the engine or App can raise has a sound, and every sound is used;
+    - each take reads as mono 22,050 Hz;
+    - the view plays cues and the region's ambience, a creature to the right is heard on the right, and the
+      settings round-trip;
+    - an opt-in smoke test (`AVAHACK_AUDIO_SMOKE=1`) opens the real device and plays every take at zero volume.
+      It passed on this machine.
+- **Not done.** No music beyond the stings, as the spec asks. Nobody has listened to the sounds yet: they were
+  designed by ear-less numbers (lengths, levels, onsets), so a listening pass by the user is the real test.

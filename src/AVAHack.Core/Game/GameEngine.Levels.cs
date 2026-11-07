@@ -89,16 +89,19 @@ public sealed partial class GameEngine
                         h.Backpack[i] = null;
                         door.Locked = false;
                         Say($"{h.Name}'s key turns. The door unlocks.");
+                        Cue("unlock", door.Cell);
                         return true;
                     }
         if (door.Arcane && !Party.Standing.Any(h => h.HasPerkFlag("keymaster")))
         {
             Say("The door is sealed by magic. Dispel might open it.");
+            Cue("locked", door.Cell);
             return false;
         }
         if (door.LockDc <= 0)
         {
             Say("The door is locked, and has no keyhole you could pick. There must be a key.");
+            Cue("locked", door.Cell);
             return false;
         }
         var picker = Party.Standing.MaxBy(h => h.SkillLevel(SkillId.Lockpicking) / 5 + h.Mod(Rules.Attribute.Dex) + (int)h.PerkTotal("lockBonus"));
@@ -109,10 +112,12 @@ public sealed partial class GameEngine
             door.Locked = false;
             picker.UseSkill(SkillId.Lockpicking, door.LockDc, XpSource.Plain);
             Say($"{picker.Name} picks the lock (DC {door.LockDc}).");
+            Cue("unlock", door.Cell);
             return true;
         }
         if (!picker.HasPerkFlag("quickPick")) AlertWithin(3);
         Say($"{picker.Name} can't pick this lock (DC {door.LockDc}). The key must be somewhere on this level.");
+        Cue("locked", door.Cell);
         return false;
     }
 
@@ -129,6 +134,7 @@ public sealed partial class GameEngine
             Level.Reveal(s);
             Party.Standing.MaxBy(h => h.PassivePerception(true))?.UseSkill(SkillId.Survival, 0, XpSource.Plain);
             Say("A draught from a crack in the wall... a hidden door!");
+            Cue("secret", s.Cell);
         }
     }
 
@@ -142,6 +148,7 @@ public sealed partial class GameEngine
             {
                 Level.Reveal(s);
                 Say($"{best.Name} presses a loose stone. A section of wall swings open!");
+                Cue("secret", s.Cell);
                 return true;
             }
             Say("You run your hands over the stones and find nothing. Or nothing yet.");

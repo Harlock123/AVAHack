@@ -23,6 +23,20 @@
         "src/AVAHack.Render/Assets/Textures/works-floor.png",
         "src/AVAHack.Render/Assets/Textures/works-wall.png"
       ]
+    },
+    {
+      "id": "openal-soft",
+      "title": "OpenAL Soft 1.23.1 for Windows (x64, x86)",
+      "url": "https://github.com/kcat/openal-soft/releases/tag/1.23.1",
+      "retrieved": "2026-11-07",
+      "licence": "LGPL-2.0-or-later",
+      "licenceFile": "src/AVAHack.App/Audio/native/COPYING-openal-soft.txt",
+      "authors": "Chris Robinson and the OpenAL Soft contributors",
+      "changes": "None: the official MinGW builds, which need no Visual C++ runtime, swapped in for Silk.NET's by Directory.Build.targets (see src/AVAHack.App/Audio/native/README.md). Other platforms use Silk.NET.OpenAL.Soft.Native's builds.",
+      "files": [
+        "src/AVAHack.App/Audio/native/win-x64/soft_oal.dll",
+        "src/AVAHack.App/Audio/native/win-x86/soft_oal.dll"
+      ]
     }
   ]
 }

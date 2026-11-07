@@ -193,6 +193,7 @@ public sealed partial class GameEngine
                     Level.Spot(pit);
                     Kills++;
                     Say($"{m.TheKind} blunders into the pit and is gone.");
+                    Cue("pit", m.Cell);
                     AwardKill(m);
                     Event?.Invoke(GameEvent.MonsterDied);
                     return;
@@ -288,6 +289,11 @@ public sealed partial class GameEngine
         if (!m.IsAlive || m.IsAware) return;
         m.State = MonsterState.Aware;
         m.LastSeen = Time;
+        if (!m.Ally)
+        {
+            Cue(BarkFor(m), m.Cell);
+            if (m.Boss is not null && m.Def.Id == Level.Boss) CueHere("sting.boss");
+        }
         if (!m.Def.Has("pack")) return;
         foreach (var o in _monsters)
             if (o != m && o.IsAlive && !o.IsAware && o.Def.Id == m.Def.Id && o.Cell.Distance(m.Cell) <= PackRange)
@@ -366,6 +372,7 @@ public sealed partial class GameEngine
     {
         m.Attack = attack;
         m.Action = MonsterAction.WindingUp;
+        if (!m.Ally) Cue(BarkFor(m), m.Cell, 0.45); // the tell has a sound too
         m.ActionLeft = m.ActionTotal = attack.Windup;
     }
 
@@ -376,6 +383,7 @@ public sealed partial class GameEngine
         {
             // An opener lifts the latch and waits for the door to rise.
             door.Opening = true;
+            Cue("door.open", target);
             m.Facing = d;
             m.Action = MonsterAction.Opening;
             m.ActionLeft = m.ActionTotal = 0.5;
@@ -387,6 +395,7 @@ public sealed partial class GameEngine
         m.Slot = FreeSlot(target);
         m.Action = MonsterAction.Stepping;
         m.ActionLeft = m.ActionTotal = m.Def.StepSeconds;
+        if (!m.Ally) Cue(m.Def.Size == AVAHack.Content.CreatureSize.Large || m.Def.Family == "constructs" ? "step.heavy" : "step.monster", target, m.IsAware ? 0.6 : 0.4);
         UpdatePlates();
     }
 

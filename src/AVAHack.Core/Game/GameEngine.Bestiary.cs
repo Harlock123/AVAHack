@@ -275,6 +275,7 @@ public sealed partial class GameEngine
                 if (m.SpecialTimer >= 10)
                 {
                     m.SpecialTimer = 0;
+                    Cue("bell", m.Cell); // heard all over the level, nearer by its passages
                     if (m.Cell.Distance(PartyCell) <= 2)
                     {
                         Say("The great bell tolls. Lightning runs through the floor!");
@@ -309,7 +310,8 @@ public sealed partial class GameEngine
                     foreach (var a in borrowed) AddAffix(m, a);
                     Say($"The Unmaker remembers every champion you killed. It is {string.Join(", ", borrowed.Select(Label))} now.");
                 }
-                if (m.Phase == 1 && share <= 1.0 / 3) { m.Phase = 2; m.SpecialTimer = 0; Say("The Knell tolls. The room begins to move."); }
+                if (m.Phase == 1 && share <= 1.0 / 3) { m.Phase = 2; m.SpecialTimer = 0; Say("The Knell tolls. The room begins to move.");
+                    CueHere("bell"); }
                 if (m.Phase == 2 && m.SpecialTimer >= 15)
                 {
                     m.SpecialTimer = 0;
@@ -318,6 +320,7 @@ public sealed partial class GameEngine
                     {
                         PlaceParty(spots[Rng.Ai.Next(spots.Count)], Facing);
                         Say("The Knell tolls, and the room rearranges itself around you.");
+                    CueHere("bell");
                     }
                 }
                 break;

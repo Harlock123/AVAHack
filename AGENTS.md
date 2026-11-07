@@ -43,7 +43,24 @@ implicit usings, invariant globalization and central package versions. Package v
     - `GameEngine`: the fixed 60 Hz `Tick`, `Update` and `Alpha`, the action queue, the step, turn and bump
       motions, `Camera(alpha)`, doors and levers, `Press(GameAction)` and `ClickWorld(WorldTarget)`.
     - `GameAction`, `CameraPose` and `WorldTarget`.
-  - `Content/Levels/*.txt`: built-in levels, embedded as resources (`test-hall`).
+  - `Rules/` (spec 6):
+    - `Rng`: `Pcg32`, `RngStreams` and `ScriptedRng` for tests.
+    - `Dice`: parses expressions such as `2d6+3`.
+    - `Attributes`: `AttributeSet`, modifiers, point buy, and 4d6 drop the lowest.
+    - `Checks`: d20 rolls, advantage, proficiency, spell DCs.
+    - `Damage`: `Combat.Attack` and `Combat.Damage`, damage types, `Resistances`.
+    - `Conditions`: `ConditionSet`, with saves every 3 s, damage over time and cures.
+  - `Characters/` (spec 5, 7 and 8):
+    - `Character`: one hero's attributes, derived statistics, saves, attacks, pools and regeneration, skills and
+      skill XP, books and trainers, levels and level-up choices, and perks and respecs.
+    - `Progression`: the formulas as pure functions.
+    - `CharacterBuilder`: creation checks and the quick-start party.
+    - `SkillId`.
+  - `Content/`:
+    - `Definitions.cs`: the record shape of each data file.
+    - `ContentDb`: strict loading and `Validate`.
+    - `Data/*.json`: skills, ancestries, callings, backgrounds, perks and conditions.
+    - `Levels/*.txt`: built-in levels.
 - `src/AVAHack.Render/`: the first-person view, depending only on Core.
   - `IViewRenderer`.
   - `SoftwareViewRenderer`: the column ray caster, doors, light and picking.
@@ -52,7 +69,10 @@ implicit usings, invariant globalization and central package versions. Package v
   - `Views/GameView`: the frame loop (`RequestAnimationFrame`), copying the framebuffer to a `WriteableBitmap`,
     fitting the view at 16:10, the compass, messages, F3 stats, and clicks.
   - `Input/InputHandler`: keys to actions.
-- `tests/AVAHack.Core.Tests`: levels, movement, the queue, timing, doors, levers and determinism.
+- `tests/AVAHack.Core.Tests`:
+  - levels, movement, the queue, timing, doors, levers and determinism (M0);
+  - every formula in spec sections 6–8, conditions, and the content's strictness and validation (M1).
+  - `Heroes` makes the quick-start heroes and levels them up.
 - `tests/AVAHack.Render.Tests`: golden images in `Golden/` (compared by `GoldenImage`, PNG I/O through
   SkiaSharp), full coverage from every cell and facing, and a frame-time check.
 - `tests/AVAHack.App.Tests`: the real `GameView` in an Avalonia.Headless window, with keys and clicks.
@@ -61,6 +81,11 @@ implicit usings, invariant globalization and central package versions. Package v
 
 - **The engine first, the drawing second.** Gameplay belongs in Core. Render and App only read state and send
   commands. Anything a player can do must be doable through `GameEngine` in a test.
+- **Rules are data where they can be.** Ancestries, callings, backgrounds, skills' use XP, perks and conditions
+  live in `Content/Data/*.json`. A new field needs its record in `Definitions.cs`, and a new cross-file rule
+  needs a check in `ContentDb.Validate` and a case in `ContentTests`. Code that looks for a trait, effect or flag
+  uses the names in `Traits` (Definitions.cs), so the validator knows them.
+- **Every formula has a test.** When a rule in spec sections 6–8 changes, change its test and the spec together.
 - **Deterministic.** The same level and the same presses give the same run (a test checks this). Content made
   in code (textures, and later levels) uses integer hashing or seeded generators, never `Random.Shared` or the
   clock.

@@ -7,8 +7,10 @@ skills rise as you use them, and perk trees hang off each skill.
 
 The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 
-**Status: milestone M0.** The view, movement, doors and levers work in a 16×16 test level. There are no
-monsters, party or items yet.
+**Status: milestone M1.** The view, movement, doors and levers work in a 16×16 test level (M0). Under the
+hood, the rules core is in (M1): attributes, d20 checks and saves, attacks and damage, the 14 conditions, the
+skill XP and level curves, perks, and creating heroes from 8 ancestries, 10 callings and 8 backgrounds. None of
+the rules is on screen yet. There are no monsters, party or items in the game yet.
 
 ![The start room](Images/AVAHack-start.png)
 

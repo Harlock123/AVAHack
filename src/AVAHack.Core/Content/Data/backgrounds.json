@@ -1,0 +1,11 @@
+// The eight backgrounds (spec 5.4): +10 to one skill and a small item.
+[
+  { "id": "gravedigger",  "name": "Gravedigger",  "skill": "athletics",   "item": "ironShovel",   "text": "You know where the dead keep their things. An iron shovel digs up buried caches." },
+  { "id": "cutpurse",     "name": "Cutpurse",     "skill": "lockpicking", "item": "lockpicks5",   "text": "Light fingers and five good lockpicks." },
+  { "id": "acolyte",      "name": "Acolyte",      "skill": "lore",        "item": "holySymbol",   "text": "Raised in the chapel. A holy symbol adds 1 to Restoration spell power." },
+  { "id": "mercenary",    "name": "Mercenary",    "skill": "block",       "item": "batteredShield", "text": "Paid to stand in the way of things. A battered shield." },
+  { "id": "apothecary",   "name": "Apothecary",   "skill": "alchemy",     "item": "mortar",       "text": "A mortar, a pestle and three reagents of uncertain use." },
+  { "id": "hedgeWitch",   "name": "Hedge-witch",  "skill": "illusion",    "item": "evilEyeCharm", "text": "A charm against the evil eye: +1 to saves against curses." },
+  { "id": "miner",        "name": "Miner",        "skill": "smithing",    "item": "pick",         "text": "A pick that breaks cracked walls, and a feel for stone." },
+  { "id": "cartographer", "name": "Cartographer", "skill": "survival",    "item": "mapCase",      "text": "A map case: spotted traps are noted on the automap." }
+]

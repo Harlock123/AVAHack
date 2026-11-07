@@ -1,0 +1,25 @@
+// The 22 skills (spec 7.1). Use XP per use is base + per × amount ("of" names the amount), never below 0.
+[
+  { "id": "blade",       "name": "Blade",        "group": "combat", "raisedBy": "Hits with swords and daggers",              "useXp": { "base": 1,    "per": 0.1,  "of": "damage" } },
+  { "id": "blunt",       "name": "Blunt",        "group": "combat", "raisedBy": "Hits with maces, hammers and flails",       "useXp": { "base": 1,    "per": 0.1,  "of": "damage" } },
+  { "id": "twoHanded",   "name": "Two-handed",   "group": "combat", "raisedBy": "Hits with greatswords, greataxes and polearms", "useXp": { "base": 1, "per": 0.1, "of": "damage" } },
+  { "id": "archery",     "name": "Archery",      "group": "combat", "raisedBy": "Hits with bows and crossbows",              "useXp": { "base": 1,    "per": 0.1,  "of": "damage" } },
+  { "id": "unarmed",     "name": "Unarmed",      "group": "combat", "raisedBy": "Unarmed hits",                              "useXp": { "base": 1,    "per": 0.1,  "of": "damage" } },
+  { "id": "block",       "name": "Block",        "group": "combat", "raisedBy": "Blocking damage with a shield or weapon",   "useXp": { "base": 1,    "per": 0.1,  "of": "damage" } },
+  { "id": "heavyArmour", "name": "Heavy Armour", "group": "combat", "raisedBy": "Being hit while wearing mostly heavy armour", "useXp": { "base": 0.5, "per": 0.05, "of": "damage" } },
+  { "id": "lightArmour", "name": "Light Armour", "group": "combat", "raisedBy": "Being hit while wearing mostly light armour", "useXp": { "base": 0.5, "per": 0.05, "of": "damage" } },
+  { "id": "athletics",   "name": "Athletics",    "group": "combat", "raisedBy": "Steps taken over-encumbered, climbing, swimming, forcing doors, power attacks", "useXp": { "base": 0.5, "of": "use" } },
+  { "id": "destruction", "name": "Destruction",  "group": "magic",  "raisedBy": "Damage dealt with Destruction spells",      "useXp": { "base": 0.5,  "per": 0.1,  "of": "damage" } },
+  { "id": "restoration", "name": "Restoration",  "group": "magic",  "raisedBy": "HP healed and conditions cured",            "useXp": { "base": 0,    "per": 0.25, "of": "healed" } },
+  { "id": "warding",     "name": "Warding",      "group": "magic",  "raisedBy": "Damage absorbed by wards; dispelling",      "useXp": { "base": 0,    "per": 0.2,  "of": "absorbed" } },
+  { "id": "conjuration", "name": "Conjuration",  "group": "magic",  "raisedBy": "Time that summons are active; binding weapons", "useXp": { "base": 0, "per": 0.2, "of": "seconds" } },
+  { "id": "illusion",    "name": "Illusion",     "group": "magic",  "raisedBy": "Mind effects that land (fear, calm, invisibility)", "useXp": { "base": 2, "per": 0.1, "of": "level" } },
+  { "id": "enchanting",  "name": "Enchanting",   "group": "magic",  "raisedBy": "Enchanting and disenchanting items; recharging", "useXp": { "base": 3, "per": 0.5, "of": "level" } },
+  { "id": "stealth",     "name": "Stealth",      "group": "craft",  "raisedBy": "Moving unseen near monsters that would otherwise notice you; sneak attacks", "useXp": { "base": 0.5, "per": 0.1, "of": "level" } },
+  { "id": "lockpicking", "name": "Lockpicking",  "group": "craft",  "raisedBy": "Locks opened (by difficulty)",              "useXp": { "base": -2.5, "per": 0.5,  "of": "dc" } },
+  { "id": "traps",       "name": "Traps",        "group": "craft",  "raisedBy": "Traps disarmed or reset; traps built (by difficulty)", "useXp": { "base": -2.5, "per": 0.5, "of": "dc" } },
+  { "id": "alchemy",     "name": "Alchemy",      "group": "craft",  "raisedBy": "Potions brewed; reagents tasted",           "useXp": { "base": 2,    "per": 0.25, "of": "level" } },
+  { "id": "smithing",    "name": "Smithing",     "group": "craft",  "raisedBy": "Items improved or forged",                  "useXp": { "base": 2,    "per": 0.5,  "of": "level" } },
+  { "id": "survival",    "name": "Survival",     "group": "craft",  "raisedBy": "Food cooked; tracks read; secret doors and traps found", "useXp": { "base": 1, "of": "use" } },
+  { "id": "lore",        "name": "Lore",         "group": "craft",  "raisedBy": "Items identified; carvings and scrolls read", "useXp": { "base": 1, "per": 0.25, "of": "level" } }
+]

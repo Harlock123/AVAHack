@@ -31,6 +31,7 @@
 20. Milestones
 21. Open questions
 22. Implementation decisions (M0)
+23. Implementation decisions (M1)
 
 ---
 
@@ -67,7 +68,7 @@ The rules are a hybrid:
 | Dungeon depth | 12 levels by default (options: 6, 12, 18, 24), plus a final level |
 | Ancestries | 8 |
 | Callings | 10 |
-| Skills | 20 |
+| Skills | 22 |
 | Perks | about 160 (6–10 per skill) |
 | Spells | 48 across 5 schools |
 | Monsters | about 60 base types, plus elites, champions and 5 bosses |
@@ -175,7 +176,8 @@ five steps.
 
 ### 5.2 Calling
 
-A calling sets the hit die, two save proficiencies, the starting skills (six at +15 and three at +5), starting
+A calling sets the hit die, two save proficiencies, the starting skills (six majors at +15 and three minors at
++5; the minors are listed in `callings.json`), starting
 gear and one **signature ability**. It does **not** restrict what the character can learn later.
 
 | Calling | Hit die | Saves | Major skills (+15) | Signature |
@@ -282,7 +284,7 @@ Each has a duration, a save to end it (rolled every 3 s), a portrait icon and a 
 
 ## 7. Skills and progression
 
-### 7.1 The 20 skills
+### 7.1 The 22 skills
 
 Each skill runs from 0 to 100. It starts at 5, plus bonuses from ancestry, calling and background (capped at 35
 at creation).
@@ -317,7 +319,7 @@ at creation).
 Each use gives **use XP**. The XP for the next rank is:
 
 ```
-xpToNext(rank) = 4 + 0.08 × rank^1.95        (rank 15 → about 15; rank 50 → about 172; rank 90 → about 520)
+xpToNext(rank) = 4 + 0.08 × rank^1.95        (rank 15 → about 20; rank 50 → about 168; rank 90 → about 521)
 ```
 
 Use XP per action is defined in `skills.json`. Examples:
@@ -1107,10 +1109,10 @@ Each milestone is finished when its exit test passes.
 | # | Milestone | Contents | Exit test |
 | --- | --- | --- | --- |
 | **M0** | Skeleton and view. *Done (2026-11-06)* | Solution, CI, the software renderer, a handmade test level, step and turn tweens, doors and a lever | Walk a 16×16 test level at 60 fps; golden images pass. *Result:* a frame takes about 2.3 ms at 640×400 on an 8-core ARM machine; 7 golden images pass |
-| **M1** | Rules core | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8 |
+| **M1** | Rules core. *Done (2026-11-06)* | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8. *Result:* 94 new Core tests (120 in all) |
 | **M2** | One hero, one fight | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play |
 | **M3** | Party and creation | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it |
-| **M4** | Progression | Use-based skills for all 20, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling |
+| **M4** | Progression | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling |
 | **M5** | Magic | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play |
 | **M6** | Generator | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable |
 | **M7** | The bestiary | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30 |
@@ -1157,4 +1159,71 @@ is built.
   embedded in Core under `Content/Levels/`. The vault format (section 14.3) will extend this one.
 - **Golden images** allow up to 0.5% of pixels to differ by more than 24 in a channel, for floating-point
   differences between machines. `AVAHACK_UPDATE_GOLDEN=1` rewrites them.
+
+---
+
+## 23. Implementation decisions (M1)
+
+- **22 skills, not 20.** The table in section 7.1 always listed 22 (Survival and Lore are in the craft group). The
+  count elsewhere was corrected to match.
+- **The content files are the schema.** Each file under `Content/Data/` is read into C# records
+  (`Content/Definitions.cs`) with strict options. The read fails on any of these:
+  - an unknown field;
+  - a missing required field;
+  - a null where none is allowed;
+  - an enum given as a number or an unknown name.
+
+  `ContentDb.Validate` then checks that the files agree with each other:
+  - ids are unique, and every skill and condition is defined;
+  - callings have six majors and three minors, two saves and a real hit die;
+  - perk prerequisites exist, are in the same tree and don't form a cycle;
+  - perk ranks rise;
+  - each tree has 6–10 perks, at least one of which changes play;
+  - traits, effects and dice are recognised.
+
+  `LoadBuiltIn` refuses content with any problem. This replaces separate JSON Schema files, which would have
+  needed a second copy of every shape.
+- **Minor skills** for each calling were chosen to fit its role. They are listed in `callings.json`.
+- **Random numbers.** PCG32 (checked against the reference sequence) with `RngStreams` for world, loot, combat
+  and AI, each seeded from the run seed by SplitMix64. Tests script dice with `ScriptedRng`, whose values are die
+  faces.
+- **Skill XP:**
+  - XP is banked toward the next rank, and any remainder carries over.
+  - At the skill ceiling, or once a skill has risen 3 ranks in the current fight, extra XP is thrown away, not
+    saved for later.
+  - Books and trainers also give a rank, and also give character XP. Both respect the ceiling.
+  - Trainer lessons reset at each level-up.
+- **The anti-grind rules** are only for combat and magic skills:
+  - Objects and allies teach combat skills nothing.
+  - A spell with no effect teaches nothing.
+  - A target more than 5 levels below teaches a tenth.
+
+  Craft skills are limited only by their DCs and the ceiling.
+- **Levels:**
+  - HP is worked out from the level, so a CON increase adds HP for every level so far, as in the tabletop game.
+  - New maximum HP arrives already healed.
+  - The 2 attribute points of a 4th level can go at most 2 into one attribute in that level. Scores stop at 20,
+    and the item cap of 24 waits for M3.
+- **Perk resets** cost 200 gold, doubling each time.
+- **Perk effects** are data. Each one has a kind (`damagePct`, `recoveryPct`, `manaCostPct`, `noisePct`,
+  `sneakMultiplier` or `flag`), a value and a scope. `PerkTotal` sums them by rank and `HasPerkFlag` finds the
+  named behaviours. Only the three sample trees are written so far (22 perks). The Stealth tree gained **Unseen
+  Hand** (rank 20: picking locks and disarming traps make no noise) to reach the minimum of six.
+- **Conditions** are data too (`conditions.json`):
+  - each has its duration, its save attribute, any damage per second, effect flags, penalties and its cures;
+  - Cursed has no save and no time limit, so only a cure ends it;
+  - Diseased isn't cured by rest;
+  - reapplying a condition keeps the longest duration, the highest DC and the biggest damage.
+- **Ancestry traits** in the rules so far:
+  - Halfling luck: the first natural 1 in a fight is rerolled.
+  - Dwarven poison resistance: advantage on the save and half damage.
+  - Gnome illusion ward: advantage on saves against illusion.
+  - Elven sleep immunity.
+  - Orc-blooded Relentless: once per rest, a blow that would drop them leaves them at 1 HP.
+  - Saurian hide: counts as 2 armour when unarmoured.
+  - Human Versatile: +10% skill XP, and the extra perk point.
+
+  Darkvision, holding breath, raw meat and the Spark cantrip are carried as traits for later milestones.
+- **A downed hero doesn't regenerate.** Getting up after a fight is part of combat (M2).
+- **Merchant prices** move 5% per CHA point, held between 0.5× and 1.5×.
 

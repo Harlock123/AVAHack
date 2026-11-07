@@ -1,0 +1,19 @@
+// The eight ancestries (spec 5.1).
+[
+  { "id": "human", "name": "Human", "attributes": { "str": 1, "dex": 1, "con": 1, "int": 1, "wis": 1, "cha": 1 },
+    "traits": ["versatile", "extraPerkPoint"], "text": "Versatile: +10% skill XP, and one extra perk point at level 1." },
+  { "id": "dwarf", "name": "Dwarf", "attributes": { "con": 2, "str": 1 }, "skills": { "smithing": 10 },
+    "traits": ["darkvision", "poisonResistance"], "text": "Darkvision to 2 cells; resists poison; +10 Smithing." },
+  { "id": "elf", "name": "Elf", "attributes": { "dex": 2, "int": 1 },
+    "traits": ["keenSenses", "sleepImmunity"], "text": "Keen senses: advantage on Perception for secret doors; can't be put to sleep." },
+  { "id": "halfling", "name": "Halfling", "attributes": { "dex": 2, "cha": 1 }, "skills": { "stealth": 10 },
+    "traits": ["lucky"], "text": "Lucky: reroll a natural 1 once per fight; +10 Stealth." },
+  { "id": "gnome", "name": "Gnome", "attributes": { "int": 2, "con": 1 }, "skills": { "lockpicking": 10, "traps": 10 },
+    "traits": ["illusionWard"], "text": "Tinker: +10 Lockpicking and Traps; advantage on saves against illusion." },
+  { "id": "orcBlooded", "name": "Orc-blooded", "attributes": { "str": 2, "con": 1 }, "skills": { "twoHanded": 10 },
+    "traits": ["relentless"], "text": "Relentless: at 0 HP, drop to 1 HP instead, once per rest; +10 Two-handed." },
+  { "id": "saurian", "name": "Saurian", "attributes": { "con": 2, "wis": 1 },
+    "traits": ["scaledHide", "holdBreath", "rawMeat"], "text": "Scaled hide: AC 12 + DEX unarmoured; holds breath three times as long; eats raw meat safely." },
+  { "id": "emberkin", "name": "Emberkin", "attributes": { "cha": 2, "int": 1 }, "skills": { "destruction": 10 },
+    "traits": ["fireResistance", "sparkCantrip"], "text": "Resists fire; knows the Spark cantrip; +10 Destruction." }
+]

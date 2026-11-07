@@ -1,0 +1,288 @@
+using AVAHack.Game;
+using AVAHack.World;
+
+namespace AVAHack.Render;
+
+/// <summary>
+/// A column-by-column ray caster for the grid. Each screen column casts one ray through the grid (a DDA walk):
+/// the first wall it meets is drawn as a textured strip, the floor and ceiling either side are cast row by row,
+/// and any doors the ray passed through are drawn over the top, nearest last. Doors stand in the middle of their
+/// cell and slide up; a portcullis's gaps are see-through. Light comes from the party's torch and fades with
+/// distance. Everything is plain arithmetic on the CPU, so tests can render real frames with no window or GPU.
+/// </summary>
+public sealed class SoftwareViewRenderer : IViewRenderer
+{
+    public const int DefaultWidth = 640;
+    public const int DefaultHeight = 400;
+
+    /// <summary>Horizontal field of view in degrees.</summary>
+    public const double FieldOfView = 75;
+
+    private const int MaxSteps = 32;
+    private const int MaxDoors = 4;
+    private const uint FogR = 6, FogG = 6, FogB = 10;
+
+    private readonly TextureSet _tex;
+    private readonly double _planeLength;
+    private readonly double _focal;
+    private readonly ColumnHit[] _columns;
+    private readonly DoorHit[] _doors = new DoorHit[MaxDoors];
+
+    public int Width { get; }
+    public int Height { get; }
+    public uint[] Pixels { get; }
+
+    /// <summary>
+    /// How far behind the party's position the eye sits, along the facing, in cells. Grid crawlers look from near
+    /// the back of the cell so the wall ahead is about a cell away, not half of one. Less than 0.5 keeps the eye
+    /// inside the party's own cell at every yaw, so no ray starts inside a wall.
+    /// </summary>
+    public double EyeBack { get; set; } = 0.4;
+
+    /// <summary>How bright the torch is at the eye, before flicker: 1 is full light.</summary>
+    public double TorchStrength { get; set; } = 1.05;
+
+    public SoftwareViewRenderer(TextureSet textures, int width = DefaultWidth, int height = DefaultHeight)
+    {
+        if (width < 16 || height < 16) throw new ArgumentOutOfRangeException(nameof(width), "The view must be at least 16×16.");
+        _tex = textures;
+        Width = width;
+        Height = height;
+        Pixels = new uint[width * height];
+        _columns = new ColumnHit[width];
+        _planeLength = Math.Tan(FieldOfView * Math.PI / 360);
+        _focal = width / 2.0 / _planeLength;
+    }
+
+    /// <summary>Torch light at distance <paramref name="d"/>, 0..256.</summary>
+    private int LightAt(double d, double flicker)
+    {
+        double l = TorchStrength / (1 + 0.3 * d * d) * flicker + 0.03;
+        return (int)(Math.Clamp(l, 0, 1) * 256);
+    }
+
+    private static uint Lit(uint c, int light)
+    {
+        int dark = 256 - light;
+        uint r = (((c >> 16) & 0xFF) * (uint)light + FogR * (uint)dark) >> 8;
+        uint g = (((c >> 8) & 0xFF) * (uint)light + FogG * (uint)dark) >> 8;
+        uint b = ((c & 0xFF) * (uint)light + FogB * (uint)dark) >> 8;
+        return 0xFF000000u | r << 16 | g << 8 | b;
+    }
+
+    public static double Flicker(double time) =>
+        time <= 0 ? 1 : 0.94 + 0.035 * Math.Sin(time * 11.3) + 0.025 * Math.Sin(time * 23.7 + 1.3);
+
+    public void Render(Level level, CameraPose camera, double time)
+    {
+        int w = Width, h = Height;
+        double dirX = camera.DirX, dirY = camera.DirY;
+        double px = camera.X - dirX * EyeBack, py = camera.Y - dirY * EyeBack;
+        double planeX = -dirY * _planeLength, planeY = dirX * _planeLength;
+        double eye = 0.5 + camera.Bob;
+        double horizon = h / 2.0;
+        double flicker = Flicker(time);
+        var pixels = Pixels;
+
+        for (int x = 0; x < w; x++)
+        {
+            double camX = 2 * (x + 0.5) / w - 1;
+            double rdx = dirX + planeX * camX, rdy = dirY + planeY * camX;
+            CastColumn(level, x, px, py, rdx, rdy, eye, horizon, flicker, pixels);
+        }
+    }
+
+    private void CastColumn(Level level, int x, double px, double py, double rdx, double rdy,
+                            double eye, double horizon, double flicker, uint[] pixels)
+    {
+        int w = Width, h = Height;
+        int mapX = (int)Math.Floor(px), mapY = (int)Math.Floor(py);
+        double deltaX = rdx == 0 ? 1e30 : Math.Abs(1 / rdx);
+        double deltaY = rdy == 0 ? 1e30 : Math.Abs(1 / rdy);
+        int stepX = rdx < 0 ? -1 : 1, stepY = rdy < 0 ? -1 : 1;
+        double sideX = rdx < 0 ? (px - mapX) * deltaX : (mapX + 1 - px) * deltaX;
+        double sideY = rdy < 0 ? (py - mapY) * deltaY : (mapY + 1 - py) * deltaY;
+
+        int doorCount = 0;
+        bool stoppedAtDoor = false;
+        if (level.DoorAt(mapX, mapY) is { } here) TryDoor(here, px, py, rdx, rdy, ref doorCount, ref stoppedAtDoor);
+
+        double dist = 1e30;
+        int side = 0, prevX = mapX, prevY = mapY;
+        bool hitWall = false;
+        for (int i = 0; i < MaxSteps && !stoppedAtDoor; i++)
+        {
+            prevX = mapX;
+            prevY = mapY;
+            if (sideX < sideY)
+            {
+                sideX += deltaX;
+                mapX += stepX;
+                side = 0;
+            }
+            else
+            {
+                sideY += deltaY;
+                mapY += stepY;
+                side = 1;
+            }
+            var kind = level.KindAt(mapX, mapY);
+            if (kind == CellKind.Wall)
+            {
+                dist = side == 0 ? sideX - deltaX : sideY - deltaY;
+                hitWall = true;
+                break;
+            }
+            if (kind == CellKind.Door) TryDoor(level.DoorAt(mapX, mapY)!, px, py, rdx, rdy, ref doorCount, ref stoppedAtDoor);
+        }
+
+        ref var col = ref _columns[x];
+        col = default;
+
+        // The far boundary: the wall, or a shut wooden door that ends the ray.
+        if (stoppedAtDoor) dist = _doors[doorCount - 1].Dist;
+        dist = Math.Max(dist, 0.02);
+        double topExact = horizon - (1 - eye) * _focal / dist;
+        double bottomExact = horizon + eye * _focal / dist;
+        int top = Math.Max(0, (int)Math.Ceiling(topExact - 0.5));
+        int bottom = Math.Min(h - 1, (int)Math.Floor(bottomExact - 0.5));
+
+        if (hitWall && !stoppedAtDoor)
+        {
+            var face = side == 0 ? (stepX > 0 ? Dir.East : Dir.West) : (stepY > 0 ? Dir.South : Dir.North);
+            var from = new Cell(prevX, prevY);
+            var lever = level.LeverAt(from, face);
+            var tex = lever is not null ? (lever.Down ? _tex.LeverDown : _tex.LeverUp)
+                    : level.KindAt(from) == CellKind.Door ? _tex.DoorFrame
+                    : _tex.Wall;
+            double hit = side == 0 ? py + dist * rdy : px + dist * rdx;
+            double u = hit - Math.Floor(hit);
+            if ((side == 0 && rdx < 0) || (side == 1 && rdy > 0)) u = 1 - u;
+            int texX = (int)(u * Texture.Size) & Texture.Mask;
+            int light = LightAt(dist, flicker);
+            if (side == 0) light = light * 13 / 16;
+            double span = bottomExact - topExact;
+            var tp = tex.Pixels;
+            for (int y = top; y <= bottom; y++)
+            {
+                int texY = (int)((y + 0.5 - topExact) / span * Texture.Size) & Texture.Mask;
+                pixels[y * w + x] = Lit(tp[texY * Texture.Size + texX], light);
+            }
+            col.HasWall = true;
+            col.WallTop = top;
+            col.WallBottom = bottom;
+            col.Wall = new WallFaceTarget(from.X, from.Y, face);
+        }
+        else if (!stoppedAtDoor)
+        {
+            // Nothing within reach: darkness.
+            for (int y = top; y <= bottom; y++) pixels[y * w + x] = 0xFF000000u | FogR << 16 | FogG << 8 | FogB;
+        }
+
+        // Ceiling above the wall and floor below it, cast row by row.
+        var ceil = _tex.Ceiling.Pixels;
+        for (int y = 0; y < top; y++)
+        {
+            double rowDist = (1 - eye) * _focal / (horizon - (y + 0.5));
+            if (rowDist <= 0) continue;
+            double wx = px + rowDist * rdx, wy = py + rowDist * rdy;
+            int tx = (int)((wx - Math.Floor(wx)) * Texture.Size) & Texture.Mask;
+            int ty = (int)((wy - Math.Floor(wy)) * Texture.Size) & Texture.Mask;
+            pixels[y * w + x] = Lit(ceil[ty * Texture.Size + tx], LightAt(rowDist, flicker) * 7 / 8);
+        }
+        var floor = _tex.Floor.Pixels;
+        for (int y = bottom + 1; y < h; y++)
+        {
+            double rowDist = eye * _focal / ((y + 0.5) - horizon);
+            if (rowDist <= 0) continue;
+            double wx = px + rowDist * rdx, wy = py + rowDist * rdy;
+            int tx = (int)((wx - Math.Floor(wx)) * Texture.Size) & Texture.Mask;
+            int ty = (int)((wy - Math.Floor(wy)) * Texture.Size) & Texture.Mask;
+            pixels[y * w + x] = Lit(floor[ty * Texture.Size + tx], LightAt(rowDist, flicker));
+        }
+
+        // Doors, farthest first, so nearer ones cover farther ones.
+        for (int i = doorCount - 1; i >= 0; i--)
+        {
+            ref var d = ref _doors[i];
+            double dd = Math.Max(d.Dist, 0.02);
+            double dTop = horizon - (1 - eye) * _focal / dd;
+            double dBottom = horizon + (eye - d.Door.Open) * _focal / dd;
+            int y0 = Math.Max(0, (int)Math.Ceiling(dTop - 0.5));
+            int y1 = Math.Min(h - 1, (int)Math.Floor(dBottom - 0.5));
+            if (y1 < y0) continue;
+            var tex = d.Door.Kind == DoorKind.Portcullis ? _tex.Portcullis : _tex.Door;
+            var tp = tex.Pixels;
+            int texX = (int)(d.U * Texture.Size) & Texture.Mask;
+            int light = LightAt(dd, flicker);
+            if (!d.Door.AlongX) light = light * 13 / 16;
+            for (int y = y0; y <= y1; y++)
+            {
+                // Height on the panel: z runs 0 (floor) to 1 (ceiling); the raised panel shows v from Open to 1.
+                double z = eye + (horizon - (y + 0.5)) * dd / _focal;
+                double v = 1 + d.Door.Open - z;
+                int texY = (int)(v * Texture.Size) & Texture.Mask;
+                uint c = tp[texY * Texture.Size + texX];
+                if (c >> 24 == 0) continue;
+                pixels[y * w + x] = Lit(c, light);
+            }
+            if (i == 0)
+            {
+                col.HasDoor = true;
+                col.DoorTop = y0;
+                col.DoorBottom = y1;
+                col.Door = new DoorTarget(d.Door.Cell.X, d.Door.Cell.Y);
+            }
+        }
+    }
+
+    /// <summary>Records where the ray crosses this door's panel, if it does, in front of the eye.</summary>
+    private void TryDoor(Door door, double px, double py, double rdx, double rdy, ref int count, ref bool stop)
+    {
+        if (count >= MaxDoors || stop) return;
+        double t, along;
+        if (door.AlongX)
+        {
+            if (rdy == 0) return;
+            t = (door.Cell.Y + 0.5 - py) / rdy;
+            along = px + t * rdx - door.Cell.X;
+        }
+        else
+        {
+            if (rdx == 0) return;
+            t = (door.Cell.X + 0.5 - px) / rdx;
+            along = py + t * rdy - door.Cell.Y;
+        }
+        if (t <= 0.001 || along < 0 || along >= 1) return;
+        if (door.Open >= 1) return; // fully raised: nothing to draw
+        // Seen from the far side, flip the texture so it isn't mirrored.
+        bool flip = door.AlongX ? rdy > 0 : rdx < 0;
+        _doors[count++] = new DoorHit { Door = door, Dist = t, U = flip ? 1 - along : along };
+        // A shut wooden door hides everything behind it.
+        if (door.Kind == DoorKind.Hand && door.Open <= 0) stop = true;
+    }
+
+    public WorldTarget? Pick(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= Width || y >= Height) return null;
+        ref var col = ref _columns[x];
+        if (col.HasDoor && y >= col.DoorTop && y <= col.DoorBottom) return col.Door;
+        if (col.HasWall && y >= col.WallTop && y <= col.WallBottom) return col.Wall;
+        return null;
+    }
+
+    private struct DoorHit
+    {
+        public Door Door;
+        public double Dist;
+        public double U;
+    }
+
+    private struct ColumnHit
+    {
+        public bool HasWall, HasDoor;
+        public int WallTop, WallBottom, DoorTop, DoorBottom;
+        public WallFaceTarget? Wall;
+        public DoorTarget? Door;
+    }
+}

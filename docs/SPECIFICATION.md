@@ -1,0 +1,1160 @@
+# AVAHack — Game Design Specification
+
+**Version:** 0.1 (draft, 2026-11-06)
+**Stack:** C# on .NET 10, Avalonia 12 (12.1.4), SkiaSharp, OpenAL Soft (Silk.NET), xUnit v3
+**Repo:** `AVAHack`, branch `main`
+**Reader:** the implementer (human or AI agent). Every formula here should get a unit test.
+
+---
+
+## Contents
+
+1. Overview
+2. Inspirations and boundaries
+3. World and story
+4. The Delve: run structure and options
+5. Character creation
+6. Attributes and the d20 core
+7. Skills and progression
+8. Perks
+9. Combat
+10. Magic
+11. Stealth, locks and traps
+12. Monsters
+13. Items, loot and crafting
+14. Dungeon generation
+15. The first-person view
+16. UI, controls and audio
+17. Saves and difficulty
+18. Technical architecture
+19. Testing
+20. Milestones
+21. Open questions
+22. Implementation decisions (M0)
+
+---
+
+## 1. Overview
+
+AVAHack is a real-time, grid-based, first-person dungeon crawler. A party of up to four heroes, made from a wide
+mix of ancestries and callings, descends through a dungeon. Each run's dungeon is generated from a seed, with
+handmade puzzle vaults stitched in. The party fights a large bestiary and gets past traps, locks and puzzles.
+
+The rules are a hybrid:
+
+- **Character building is like a tabletop d20 game.** There are six attributes, ancestries, starting classes
+  ("callings"), hit dice, armour class, saving throws and d20 attack rolls.
+- **Growth is like a modern open-world RPG.** Skills rise by being used. The character level comes from skill
+  gains, not from kills. Perk trees hang off each skill, and nobody is locked out of anything by their calling.
+
+### Design pillars
+
+1. **Step, turn, strike.** The dungeon is a square grid. Moving takes one step and turning takes 90°, both
+   animated smoothly. Fights are about positioning: you sidestep, back away, and dance around a monster on a
+   2×2 room ("the square dance") while weapons recharge.
+2. **Every room is a question.** Pressure plates, levers, secret buttons, pits, teleporters, spinners, timed doors
+   and riddles. The handmade vaults carry the puzzles, and the generator makes sure each one is solvable.
+3. **You become what you do.** A wizard who picks up an axe and keeps swinging it becomes good with axes. Callings
+   set where you start, never where you can go.
+4. **A plethora of things to meet.** About 60 monsters in 10 families, champion variants with affixes, and about
+   20 kinds of trap.
+5. **Replayable.** Seeded dungeons, a Delve options screen, Ironman mode and a shareable seed code.
+
+### Target scope (v1.0)
+
+| Item | Count |
+| --- | --- |
+| Dungeon depth | 12 levels by default (options: 6, 12, 18, 24), plus a final level |
+| Ancestries | 8 |
+| Callings | 10 |
+| Skills | 20 |
+| Perks | about 160 (6–10 per skill) |
+| Spells | 48 across 5 schools |
+| Monsters | about 60 base types, plus elites, champions and 5 bosses |
+| Trap kinds | 20 |
+| Handmade vaults | about 40 |
+| Item bases | about 120, plus affixes, uniques and sets |
+
+---
+
+## 2. Inspirations and boundaries
+
+AVAHack belongs to the genre of 1990s and 2010s grid crawlers. It borrows **mechanics that are common to the
+genre**: grid movement, real-time cooldown combat, a 2×2 party formation, procedural levels with options, use-based
+skills and perk trees. It does **not** recreate any particular game.
+
+The rules for this are:
+
+- **No names, characters, places, maps, art, music, text or UI layout from any existing game.** That includes
+  Legend of Grimrock, Dungeon Hack and The Elder Scrolls.
+- **No trademarked tabletop content.** Use no product-identity monsters or names. The d20 mechanics (six
+  attributes, modifiers, AC, saving throws, advantage) are generic, and the SRD 5.1 is under CC-BY-4.0, so these
+  are safe. If any SRD text is quoted, credit it in `CREDITS.md`. Write all monster names, spell names and lore
+  fresh.
+- **Original look.** Don't copy another game's screen layout. The UI is designed in section 16.
+
+---
+
+## 3. World and story
+
+### Premise
+
+The town of **Harrowgate** stands over **the Hollow**, an old dwarven delving that went wrong. Below the third
+cellar, the stone *moves*. Every time the town's iron bell, the **Knell**, tolls, the Hollow's passages rearrange
+themselves. (This is why each run is a new seed.)
+
+Something at the bottom, the **Unmaker**, is waking. With each toll the Hollow reaches closer to the surface.
+The town sends delvers down to silence it.
+
+### Structure
+
+- **The Upper Hollow (levels 1–4).** Cellars, crypts and flooded cisterns. Vermin, the restless dead and
+  goblin-kin.
+- **The Deep Works (levels 5–8).** Dwarven forges, mine rails and steam pipes. Constructs, oozes, deep folk and
+  fire.
+- **The Drowned Choir (levels 9–12).** A sunken temple and fungal caverns. Spore-kin, serpent cults and
+  aberrations.
+- **The Unmade Heart (final level).** Handmade, not generated. It leads to the Unmaker.
+
+### Bosses
+
+There is one boss at the bottom of each region, on a handmade arena level. They are covered in section 12.
+If the dungeon is set longer than 12 levels, the regions repeat in order, but the monster tiers keep rising.
+
+### Story delivery
+
+- Scraps of a lost delver's journal, found on levels 1–12. Collecting them gives a lore bonus (section 7).
+- Wall carvings, read with the Lore skill.
+- Three **Waystones**, after levels 4, 8 and 12. Each is a safe room with a merchant, a trainer, a shrine and a
+  stash. The ghost of the journal's author waits there.
+
+---
+
+## 4. The Delve: run structure and options
+
+A run is called a **Delve**. Before the first level, the Delve options screen sets:
+
+| Option | Values | Default |
+| --- | --- | --- |
+| Seed | Any text; random if blank. Shown as an 8-character share code | Random |
+| Depth | 6 / 12 / 18 / 24 levels | 12 |
+| Party | Party of 4 / Pair / Lone Delver | Party of 4 |
+| Monster strength | Gentle / Standard / Cruel / Brutal | Standard |
+| Monster density | Sparse / Normal / Swarming | Normal |
+| Traps | Few / Normal / Many | Normal |
+| Food and water | Off / On | On |
+| Ironman (one save, deleted on death) | Off / On | Off |
+| Pause in combat | Off / On (Space pauses; orders can be queued) | On |
+| Magic items | Rare / Normal / Plentiful | Normal |
+
+**Lone Delver** gives the hero +50% HP, +2 to all saves, and twice the skill XP. This keeps a party of one
+viable, in the style of single-hero crawlers.
+
+**The score**, shown at the end of a Delve, counts the depth reached, kills, secrets, vaults solved and time. The
+options apply a multiplier. Scores are kept locally in a hall of fame, one table per option set.
+
+---
+
+## 5. Character creation
+
+The party has up to four members, standing in a 2×2 formation: two front and two back. Each member is built in
+five steps.
+
+### 5.1 Ancestry
+
+| Ancestry | Attribute bonuses | Traits |
+| --- | --- | --- |
+| Human | +1 to all | Versatile: +10% skill XP; one extra perk point at level 1 |
+| Dwarf | CON +2, STR +1 | Darkvision 2 cells; poison resistance; +10 Smithing |
+| Elf | DEX +2, INT +1 | Keen senses: advantage on Perception for secret doors; sleep immunity |
+| Halfling | DEX +2, CHA +1 | Lucky: reroll a natural 1 once per fight; +10 Stealth |
+| Gnome | INT +2, CON +1 | Tinker: +10 Lockpicking and Traps; advantage on saves against illusion |
+| Orc-blooded | STR +2, CON +1 | Relentless: at 0 HP, drop to 1 HP once per rest; +10 Two-handed |
+| Saurian | CON +2, WIS +1 | Scaled hide: natural AC 12 + DEX; can hold breath 3× longer; eats raw meat safely |
+| Emberkin | CHA +2, INT +1 | Fire resistance; one free Spark cantrip; +10 Destruction |
+
+### 5.2 Calling
+
+A calling sets the hit die, two save proficiencies, the starting skills (six at +15 and three at +5), starting
+gear and one **signature ability**. It does **not** restrict what the character can learn later.
+
+| Calling | Hit die | Saves | Major skills (+15) | Signature |
+| --- | --- | --- | --- | --- |
+| Fighter | d10 | STR, CON | Blade, Blunt, Heavy Armour, Block, Athletics, Smithing | Second Wind: heal 1d10 + level, once per rest |
+| Barbarian | d12 | STR, CON | Two-handed, Blunt, Light Armour, Athletics, Unarmed, Survival | Rage: +2 damage and half physical damage for 15 s |
+| Ranger | d10 | STR, DEX | Archery, Blade, Light Armour, Survival, Stealth, Alchemy | Marked Prey: +1d6 damage to one marked target |
+| Rogue | d8 | DEX, INT | Blade, Archery, Light Armour, Stealth, Lockpicking, Traps | Sneak Attack: ×3 damage from stealth (×5 with a dagger) |
+| Cleric | d8 | WIS, CHA | Restoration, Blunt, Heavy Armour, Block, Warding, Lore | Turn Undead: undead within 2 cells save or flee |
+| Wizard | d6 | INT, WIS | Destruction, Warding, Conjuration, Illusion, Enchanting, Lore | Arcane Recovery: restore 25% mana once per rest |
+| Paladin | d10 | WIS, CHA | Blade, Heavy Armour, Block, Restoration, Warding, Athletics | Smite: spend mana for +2d8 radiant on a hit |
+| Druid | d8 | INT, WIS | Restoration, Conjuration, Alchemy, Survival, Blunt, Light Armour | Wild Shape: become a bear for 20 s (own HP pool) |
+| Monk | d8 | STR, DEX | Unarmed, Light Armour, Athletics, Stealth, Restoration, Block | Flurry: two extra unarmed strikes, 12 s cooldown |
+| Spellblade | d8 | CON, INT | Blade, Destruction, Light Armour, Warding, Enchanting, Block | Spellstrike: cast a touch spell through a weapon hit |
+
+### 5.3 Attributes
+
+Attributes are set by **point buy (27 points, scores 8–15)** or by **4d6, dropping the lowest**. The roll mode
+locks the result in and shows the rolls. Ancestry bonuses are added afterwards.
+
+### 5.4 Background
+
+There are 8 backgrounds. Each gives +10 to one skill, a small item and one line of flavour.
+
+| Background | Skill | Item |
+| --- | --- | --- |
+| Gravedigger | Athletics | Iron shovel, which can dig up buried caches |
+| Cutpurse | Lockpicking | 5 lockpicks |
+| Acolyte | Lore | Holy symbol (+1 Restoration spell power) |
+| Mercenary | Block | Battered shield |
+| Apothecary | Alchemy | Mortar and 3 reagents |
+| Hedge-witch | Illusion | Charm against the evil eye (+1 save against curses) |
+| Miner | Smithing | Pick, which can break cracked walls |
+| Cartographer | Survival | Map case: automap notes show traps that have been spotted |
+
+### 5.5 Portrait, name and voice
+
+There are 40 portraits (5 per ancestry), 4 voice sets for grunts and barks, a name, and a colour tag for the
+party bar.
+
+**Quick start:** a preset party of Fighter, Rogue, Cleric and Wizard, made of mixed ancestries, so a player can
+be walking within one click.
+
+---
+
+## 6. Attributes and the d20 core
+
+### 6.1 Attributes
+
+The **modifier** is `floor((score − 10) / 2)`. Scores are capped at 20, or 24 with items.
+
+| Attribute | Drives |
+| --- | --- |
+| STR | Melee to-hit (non-finesse) and damage; carrying capacity (15 × STR kg); breaking doors; Athletics |
+| DEX | Ranged and finesse to-hit; AC (capped by armour); weapon recovery speed (−3% per modifier point); Stealth |
+| CON | HP per level; Stamina pool and regeneration; poison and disease saves |
+| INT | Mana pool; arcane spell power (Destruction, Conjuration, Illusion); Lore; Enchanting |
+| WIS | Divine spell power (Restoration, Warding); mana regeneration; passive Perception (finding traps and secrets) |
+| CHA | Merchant prices (±5% per modifier point); the chance that wounded monsters flee; Illusion's mind effects; Command words |
+
+### 6.2 Derived statistics
+
+| Statistic | Formula |
+| --- | --- |
+| Max HP | Level 1: hit-die maximum + CON mod. Each later level: average hit die (rounded up) + CON mod, plus the level-up choice (section 7.4) |
+| Max Stamina | 50 + 5 × CON mod + level-up choices |
+| Max Mana | 20 + 5 × INT mod (arcane) or WIS mod (divine), whichever is higher, + level-up choices |
+| AC | 10 + armour + min(DEX mod, armour's cap) + shield + other bonuses |
+| Passive Perception | 10 + WIS mod + floor(Survival / 10) |
+| Saves | d20 + attribute mod + (proficient ? 2 + floor(level / 4) : 0) |
+| Initiative (fight start only) | d20 + DEX mod; it sets who has their first swing ready |
+
+Regeneration per second, out of combat: HP 1% of max, Stamina 10%, Mana 3% + WIS mod × 0.5%. In combat these are
+quartered. HP doesn't regenerate in combat unless a perk or spell says so.
+
+### 6.3 Attack resolution
+
+```
+to-hit  = d20 + attribute mod + floor(weapon skill / 10) + item and perk bonuses
+hit     if to-hit ≥ target AC; a natural 20 always hits and crits; a natural 1 always misses
+damage  = (weapon dice + attribute mod) × (1 + weapon skill / 200) × perk multipliers
+crit    = weapon dice rolled twice (plus any crit perks)
+```
+
+- **Advantage or disadvantage** means roll 2d20 and keep the higher or lower. Advantage comes from attacking from
+  a flank or from behind, from a target that is stunned or asleep, or from stealth. Disadvantage comes from
+  darkness without darkvision, from being blinded, or from attacking from the back row with a short weapon (that
+  isn't allowed at all; see section 9).
+- **Spells** use spell attack = d20 + casting mod + floor(school skill / 10), or a save DC =
+  8 + casting mod + floor(school skill / 10).
+- **Resistance** halves damage, **vulnerability** doubles it and **immunity** zeroes it. They apply after
+  multipliers.
+- **Damage types:** slashing, piercing, bludgeoning, fire, cold, lightning, acid, poison, radiant, necrotic,
+  psychic, force.
+
+### 6.4 Conditions
+
+There are 14 conditions: Poisoned, Diseased, Bleeding, Burning, Chilled (slower recovery), Frozen, Shocked
+(spell failure 25%), Stunned, Asleep, Blinded, Frightened, Paralysed, Cursed and Weakened.
+
+Each has a duration, a save to end it (rolled every 3 s), a portrait icon and a cure (a spell, potion or rest).
+
+---
+
+## 7. Skills and progression
+
+### 7.1 The 20 skills
+
+Each skill runs from 0 to 100. It starts at 5, plus bonuses from ancestry, calling and background (capped at 35
+at creation).
+
+| Group | Skill | Raised by |
+| --- | --- | --- |
+| Combat | Blade | Hits with swords and daggers |
+| | Blunt | Hits with maces, hammers and flails |
+| | Two-handed | Hits with greatswords, greataxes and polearms |
+| | Archery | Hits with bows and crossbows |
+| | Unarmed | Unarmed hits |
+| | Block | Blocking damage with a shield or weapon |
+| | Heavy Armour | Being hit while wearing mostly heavy armour |
+| | Light Armour | Being hit while wearing mostly light armour |
+| | Athletics | Steps taken while over-encumbered, climbing, swimming, forcing doors, power attacks |
+| Magic | Destruction | Damage dealt with Destruction spells |
+| | Restoration | HP healed and conditions cured |
+| | Warding | Damage absorbed by wards; dispelling |
+| | Conjuration | Time that summons are active; binding weapons |
+| | Illusion | Mind effects that land (fear, calm, invisibility) |
+| | Enchanting | Enchanting and disenchanting items; recharging |
+| Craft and stealth | Stealth | Moving unseen near monsters that would otherwise notice you; sneak attacks |
+| | Lockpicking | Locks opened (by difficulty) |
+| | Traps | Traps disarmed or reset; traps built (by difficulty) |
+| | Alchemy | Potions brewed; reagents tasted |
+| | Smithing | Items improved or forged |
+| | Survival | Food cooked; tracks read; secret doors and traps found |
+| | Lore | Items identified; carvings and scrolls read |
+
+### 7.2 Skill XP
+
+Each use gives **use XP**. The XP for the next rank is:
+
+```
+xpToNext(rank) = 4 + 0.08 × rank^1.95        (rank 15 → about 15; rank 50 → about 172; rank 90 → about 520)
+```
+
+Use XP per action is defined in `skills.json`. Examples:
+
+- Blade: 1 + 0.1 × damage dealt.
+- Lockpicking: (lock DC − 5) / 2.
+- Restoration: HP healed / 4.
+
+**Anti-grind rules:**
+
+- Combat skills earn only 10% XP against a target whose level is more than 5 below the character's, and nothing
+  against objects or allies.
+- Magic skills earn XP only when the spell has an effect: it deals damage, heals missing HP, or a ward absorbs
+  something.
+- Each skill can rise at most 3 ranks in a single fight.
+
+**Faster learning:**
+
+- Skill books. Each title gives +1 to its skill once per character.
+- Trainers at the Waystones charge `rank² × 2` gold, with at most 5 lessons per character level.
+- The lore bonus: each 3 journal pages collected give +5% skill XP for the rest of the Delve.
+
+### 7.3 Character level
+
+Every time any skill gains a rank, the character gains **character XP equal to the new rank**. The XP needed for
+the next level is:
+
+```
+levelXp(L) = (L + 3) × 25        (L1→2: 100, L10→11: 325, L30→31: 825)
+```
+
+Raising skills that are already high levels the character faster. That is intended: specialists level quickly.
+There is no level cap, but the content is tuned for levels 1–35 over a 12-level Delve.
+
+### 7.4 What a level-up gives
+
+1. **HP.** Average hit die + CON mod, automatically.
+2. **A choice.** +5 HP, +10 Stamina or +10 Mana.
+3. **One perk point** (section 8).
+4. **On every 4th level (4, 8, 12, …).** +2 attribute points, which can go +2 to one attribute or +1 to two.
+   This comes as well as the perk point, not instead of it.
+5. **On levels 5, 11 and 17.** An extra attack-recovery speed-up of 10% for the character's best weapon skill.
+   This stands in for the tabletop "extra attack".
+
+Save proficiency bonus rises with level (section 6.2). The calling's hit die is fixed for life.
+
+Killing monsters gives no character XP: it comes only from skills.
+
+### 7.5 Skill ceilings
+
+A skill can't rise above **35 + 5 × character level**, capped at 100. This stops a level-2 hero from having
+80 Lockpicking.
+
+---
+
+## 8. Perks
+
+Each skill has a **perk tree** of 6–10 perks. Each perk needs a skill rank, and some need an earlier perk in the
+same tree.
+
+- Perks are bought with perk points (one per level, plus Human bonus).
+- They can be reset at a Waystone shrine for gold. Each reset costs more than the last.
+
+The screen draws each tree as a branching chart. The perks you can buy are lit, and their required ranks are
+marked.
+
+### Sample trees
+
+**Blade**
+
+| Perk | Rank | Effect |
+| --- | --- | --- |
+| Edge Discipline (5 ranks) | 0/20/40/60/80 | +20% blade damage per rank |
+| Quick Draw | 20 | Blade recovery −15% |
+| Bleeder | 30 | Crits apply Bleeding (1d4/s for 6 s) |
+| Riposte | 50 | After a successful Block, the next blade hit within 2 s auto-crits |
+| Twin Fangs | 50 | Dual-wielding blades: both hands share one cooldown |
+| Whirl | 70 | Power attack hits every adjacent cell |
+| Executioner | 90 | Hits on targets under 25% HP have advantage and +50% damage |
+
+**Destruction**
+
+| Perk | Rank | Effect |
+| --- | --- | --- |
+| Adept Flame / Frost / Storm | 20 | That element costs 25% less mana and deals +25% damage |
+| Lingering Flame | 30 | Fire spells leave a burning cell for 4 s |
+| Deep Freeze | 40 | Frost spells Freeze a Chilled target (CON save) |
+| Arc | 50 | Lightning spells chain to a second target in an adjacent cell |
+| Overcharge | 60 | Hold the cast to spend 2× mana for 2.5× damage |
+| Elemental Mastery | 80 | Ignore resistance (not immunity) |
+| Cataclysm | 100 | Once per rest: the next Destruction spell is a 3×3 blast |
+
+**Stealth**
+
+| Perk | Rank | Effect |
+| --- | --- | --- |
+| Hush | 0 | Noise from steps −20% |
+| Backstab | 30 | Sneak attack with any weapon ×3, ×6 with daggers |
+| Light Feet | 40 | Doesn't set off pressure plates while sneaking (characters under 60 kg) |
+| Shadow Step | 60 | Once per fight: step 2 cells unseen, ignoring a blocker |
+| Vanish | 80 | Dropping into sneak during a fight breaks lock-on 50% of the time |
+
+The full set of perks lives in `perks.json`. **Every skill gets at least one perk that changes how you play** (a
+new action or a new interaction with the world), not only bigger numbers. Examples:
+
+- Survival: **Forager**, which finds reagents in rubble.
+- Traps: **Rig**, which picks up a disarmed trap and places it elsewhere.
+- Athletics: **Vault**, which jumps a 1-cell pit.
+- Lore: **Tongue of Stone**, which lets a carving answer one question.
+
+---
+
+## 9. Combat
+
+### 9.1 Time
+
+The game runs on a fixed simulation tick of 60 Hz. Everything is real-time:
+
+- A step takes 0.25 s and a turn takes 0.2 s, both animated (section 15).
+- Each hand of each hero has a **recovery timer** after use, typically 1.5–4 s, depending on the weapon and DEX.
+- Monsters have the same: an attack wind-up (shown as a tell) and then recovery.
+- With "Pause in combat" on, Space freezes the tick. While paused, the player can queue one action per hand.
+
+### 9.2 Formation and reach
+
+- The party fills one cell. Inside it are four slots: **front-left, front-right, back-left and back-right**.
+- Monsters attack the **front row** by default.
+  - A monster to the side attacks that side's column.
+  - A monster behind attacks the back row.
+  - Area attacks hit everyone.
+  - If both front heroes are down, the back row is exposed.
+- **Melee weapons only reach from the front row.** The exceptions are polearms, whips and Reach weapons, which
+  also work from the back row.
+- Bows, thrown weapons and spells work from anywhere.
+- Swap two heroes by dragging portraits, or with Ctrl+1–4. A swap takes 0.5 s, during which neither can act.
+
+### 9.3 Actions per hand
+
+- **Click a hand** (or press its key) to use the item in it: attack, cast from a staff or wand, throw, block with
+  a shield, drink, or read.
+- **Hold and release** for a **power attack**. It costs Stamina, deals +50% damage and has a chance to stagger
+  the target, but has 30% longer recovery.
+- **Block.** Hold the shield hand. Damage from the front is reduced by (shield value + Block / 4)%, which costs
+  Stamina. A perfect block (within 0.2 s of the impact) negates the hit and staggers the attacker.
+- **Dual wield.** Each hand has its own cooldown, at −2 to-hit on the off-hand unless the character has the perk.
+- **Unarmed.** Monks scale damage with the Unarmed skill: 1d4 + floor(Unarmed / 20) × 1d4.
+
+### 9.4 Positioning
+
+- **Flanking.** If the party attacks a monster from the side or behind, it gets advantage. Monsters turn to face
+  the party, taking 0.5–1.5 s depending on the type.
+- **Backing away.** Leaving a monster's reach doesn't trigger a free attack, which keeps the square dance
+  viable. But a fast monster pursues and attacks first.
+- **Crowds.** Small monsters (rats and the like) can pack up to 4 into a cell. Each attacks separately and they
+  share area damage.
+- **Doors.** A closing door interrupts any monster in its cell for 2 s, and deals 1d6 to it if the door is heavy.
+
+### 9.5 Death and unconsciousness
+
+- At 0 HP a hero is **down**. The hero is unconscious and their portrait goes grey.
+- The hero gets up with 1 HP after the fight if anyone in the party is still standing. Ironman and the Cruel and
+  Brutal settings change this to: they die after 3 failed death saves (one every 3 s, DC 10), unless stabilised
+  with a Restoration spell, a bandage or a potion.
+- **The dead** can be raised at a Waystone shrine for gold, or with the Restoration 90 perk spell Recall Soul.
+  Their bones and gear stay where they fell.
+- **The whole party down** ends the Delve: on Ironman, or on any setting with no save to load.
+
+### 9.6 Encumbrance
+
+- Up to 100% of capacity: normal.
+- Up to 150%: steps take ×1.5 as long, and the hero earns Athletics XP.
+- Over 150%: the hero can't move.
+
+---
+
+## 10. Magic
+
+### 10.1 Learning and casting
+
+- Spells are learned from **tomes** found in the dungeon or bought at Waystones. Reading one needs the school at
+  the listed rank.
+- A spell can be assigned to a hand (a "spell in hand") or to a quick slot (1–8 for the selected hero).
+- **Cast time** is 0.3–1.5 s. Getting hit while casting forces a CON save, DC 10 or half the damage (whichever is
+  higher), or the cast is lost.
+- **Mana cost** is reduced by school skill (up to −40% at 100) and by perks.
+- **Wands and staves** hold charges of a spell and recharge through Enchanting.
+- **Scrolls** cast once, at fixed power, with no school needed.
+
+### 10.2 Schools
+
+There are 5 schools of 8 spells, plus 8 cantrips (48 in all). The names are original.
+
+| School | Sample spells (rank required) |
+| --- | --- |
+| Destruction (INT) | Spark (0, cantrip), Firedart (0), Frostlance (15), Thunderclap (25, all cells adjacent), Cinder Wall (40, a wall of fire across the corridor), Acid Rain (55, a 3×3 area over time), Chain Storm (70), Starfall (90) |
+| Restoration (WIS) | Mend (0), Cleanse (15, cures one condition), Rally (25, heals the party), Bastion of Light (40, regen aura), Turn the Dead (40), Restore Limb (55, cures Weakened and Cursed), Second Dawn (70, revives down heroes at 25%), Recall Soul (90, raises the dead) |
+| Warding (WIS) | Ward (0, absorbs 20 + skill), Resist Element (15), Dispel (25), Spell Turning (40), Sanctuary Line (55, monsters can't enter one cell for 10 s), Anti-magic Field (70), Aegis of Ages (90) |
+| Conjuration (INT) | Bound Blade (0), Summon Familiar (15, a scout that walks ahead), Raise Bones (25), Summon Flame Spirit (40), Banish (55), Open the Way (70, a two-way portal on the same level), Gate of Teeth (90, summons a horror) |
+| Illusion (INT/CHA) | Light (0, cantrip), Fear (15), Calm (25), Muffle (25, silent steps), Invisibility (40), Mirror Selves (55, decoys draw 3 attacks), Frenzy (70, monsters fight each other), Unmind (90, stuns a 3×3 area) |
+
+The **cantrips** are Spark, Light, Mend (minor), Mage Hand (pull a lever 2 cells away), Detect Traps, Unlock
+Trivial (DC 10 locks), Frost Touch and Guidance.
+
+### 10.3 Light
+
+- The dungeon is dark. The party carries light: torches (burn time 10 min, fit in a hand), lanterns (oil, a belt
+  slot) or the Light spell.
+- Monsters notice lit parties from farther away.
+- Darkvision (Dwarf, or a potion) shows a grey, short-range view.
+
+---
+
+## 11. Stealth, locks and traps
+
+### 11.1 Stealth
+
+- Toggle **Sneak** with C. Steps take 0.4 s, light radius is halved and step noise is −50%.
+- Each tick, every monster that has line of sight runs a **notice check**:
+
+  ```
+  notice = monster Perception + light bonus + noise − (Stealth / 5 + DEX mod)
+  ```
+
+  The check fills an awareness meter, shown as an eye icon over the monster. When the meter is full the monster
+  is alerted.
+- A whole party sneaks at the **worst** member's Stealth.
+- Attacking an unaware monster is a **sneak attack**. It deals ×2 damage for anyone, ×3 (×5 with a dagger) for a
+  Rogue (section 5.2), and more with the Stealth perks.
+
+### 11.2 Locks
+
+- Locks have tiers: Trivial (DC 10), Simple (15), Tricky (20), Masterwork (25) and Arcane (30, which also needs
+  Dispel or a key).
+- **Lockpicking** is a short timing mini-game. Three pins rise and fall; click each one as it reaches the shear
+  line.
+  - The window width scales with (Lockpicking − DC × 2) and DEX.
+  - A failed pin has a chance to break the pick.
+  - Players who don't want the mini-game can pick "Auto": roll d20 + DEX mod + Lockpicking / 5 against the DC,
+    taking 5 s and risking the pick.
+- **Other ways in:** smash it (STR, Athletics; noisy, and may break what's inside), use a key, cast Unlock, or use
+  a key found elsewhere.
+
+### 11.3 Traps
+
+**Detection.**
+
+- Every hero rolls passive Perception against the trap's hide DC each time the party enters a cell within 2 cells
+  of the trap.
+- Elves and Cartographers get bonuses.
+- The Detect Traps cantrip reveals traps for 30 s.
+- A trap that has been spotted is outlined in the view and marked on the automap.
+
+**Disarming.**
+
+- A hero in the front row uses a hand on the trap, or on its mechanism (a plate, a tripwire or a nozzle on a
+  wall).
+- Roll d20 + DEX mod + Traps / 5 against the disarm DC.
+- Failing by 5 or more sets it off.
+- With the Traps perk **Rig**, the hero can pick up the trap's parts and set it again later.
+
+**The 20 trap kinds:**
+
+| # | Trap | Trigger | Effect |
+| --- | --- | --- | --- |
+| 1 | Pressure plate (generic) | Weight in the cell | Fires a linked device: door, dart wall, fireball spout or summoning |
+| 2 | Tripwire | Moving through the cell edge | Dart volley or bell alarm |
+| 3 | Pit | Stepping on it (hidden or open) | Fall to the level below, 2d6 damage, scattered party, or a spiked pit for 4d6 |
+| 4 | Spike floor | Cyclic, or a plate | 3d6 piercing; the timing is visible as the spikes retract |
+| 5 | Dart wall | Plate or tripwire | 1d4 piercing ×3, poisoned on a failed CON save |
+| 6 | Swinging blade | Cyclic across the corridor | 3d8 slashing; time the passage |
+| 7 | Fire spout | Plate or rune | Fire on a line of 3 cells for 3d6; leaves a burning cell |
+| 8 | Frost glyph | Stepping on it | Freezes the hero who failed a DEX save for 4 s |
+| 9 | Lightning rune | Metal weight (heavy armour) in the cell | 4d6 lightning; arcs to adjacent party members |
+| 10 | Gas vent | Plate | A poison or sleep cloud that spreads 2 cells and lingers 10 s |
+| 11 | Collapsing ceiling | Loud noise or a plate | 4d10 bludgeoning, unless a DEX save pushes the party back; the cell becomes rubble |
+| 12 | Rolling boulder | Lever or plate | Rolls down a corridor; it crushes whatever it meets unless the party steps aside or a door stops it |
+| 13 | Teleporter | Stepping on it | Moves the party to a linked cell, sometimes one-way |
+| 14 | Spinner | Stepping on it | Turns the party to a random facing, silently (the compass betrays it) |
+| 15 | Illusory wall | — | Looks like a wall but can be walked through; may hide a pit |
+| 16 | Alarm plate | Plate | Wakes and draws monsters within 12 cells |
+| 17 | Mimic | Touching the chest or door | It's a monster; it bites and grapples |
+| 18 | Cursed altar | Taking the offering | A Cursed condition until cured, or a guardian spawns |
+| 19 | Flooding room | A door shuts behind | Water rises over 30 s; find the drain lever, or swim (Athletics) |
+| 20 | Anti-magic zone | Entering it | No spells or wands; summons vanish |
+
+**Traps are tools too.** Monsters set off plates, fall into pits and get crushed by boulders. Luring a monster
+onto a plate is a valid tactic.
+
+---
+
+## 12. Monsters
+
+### 12.1 Structure
+
+Every monster has these, held in `creatures/*.json`:
+
+- level, HP (hit dice), AC, saves, Perception, speed (seconds per step), turn time
+- attacks (wind-up, damage, reach, the slot targeted, on-hit conditions)
+- resistances
+- behaviour (section 12.4)
+- loot table
+- sprite set
+
+Monsters are generated in four **tiers** by level band: **Lesser (L1–8), Common (L6–16), Greater (L14–26) and
+Dread (L24+)**. A family's members spread across the tiers.
+
+### 12.2 Elite and champion variants
+
+| Variant | Spawn chance (Standard) | Effect |
+| --- | --- | --- |
+| Elite | 8% | +50% HP, +2 AC, +1 tier of loot, a tinted sprite |
+| Champion | 2% from level 3 down | Elite, plus 1–3 **affixes**, a name, a glowing outline and guaranteed magic loot |
+
+The **affixes** (16) are: Vampiric, Frenzied (fast recovery), Stoneskin, Blinking (teleports 2 cells),
+Mortar (lobs area attacks from a distance), Shielded, Splitting (into 2 on death), Venomous, Frostbound, Burning
+Aura, Thunderous, Mirrored (summons 2 copies), Warded (immune to one school), Summoner, Bloodthirsty (heals on
+hit) and Unyielding (can't be staggered).
+
+### 12.3 The bestiary (v1.0, about 60)
+
+| Family | Members (tier) | Signature |
+| --- | --- | --- |
+| **Vermin** | Cellar Rat (L), Bristle Rat swarm (L), Tunnel Spider (L), Carrion Beetle (C), Weeping Spider (C), Brood Mother (G) | Packs of 4 small creatures in a cell; poison; webs block a cell until cut or burned |
+| **Restless Dead** | Shambler (L), Bone Sentry (L), Barrow Archer (C), Grave Hound (C), Lantern Wight (G), Ossuary Knight (G), the Hollow King (boss) | Undead: immune to poison, vulnerable to radiant; Bone Sentries reassemble unless crushed (bludgeoning) |
+| **Goblin-kin** | Gutter Goblin (L), Goblin Slinger (L), Goblin Hexer (C), Warg Rider (C), Bugbear Bruiser (C), Goblin Chieftain (G) | Gangs; flee at low morale (CHA matters); hexers buff; they set off their own traps knowingly |
+| **Oozes** | Grey Slick (L), Acid Jelly (C), Mirror Ooze (C, looks like the floor), Glutton Mass (G) | Corrode weapons and armour (durability); split when cut; slow |
+| **Deep Folk** | Delver Thrall (L), Deep Miner (C), Pale Overseer (C), Stone Speaker (G) | Dwarven ghosts made flesh; use the Deep Works' mine rails and steam valves against the party |
+| **Constructs** | Brass Sentinel (C), Pipe Crawler (C), Forge Golem (G), Rail Juggernaut (G), the Bellwright Engine (boss) | Immune to poison and mind; lightning stuns them; some are powered by levers you can cut |
+| **Elementals** | Ember Wisp (L), Cinder Imp (C), Steam Wraith (C), Magma Brute (G), Frost Remnant (G) | Immune to their own element; vulnerable to the opposite; leave hazards behind |
+| **Spore-kin** | Puffcap (L, explodes in a cloud), Mycelid Walker (C), Spore Shepherd (C), Rot Colossus (G) | Infect the dead to raise more; Confusion clouds; burn well |
+| **Serpent Cult** | Scaled Acolyte (C), Coil Guard (C), Naga Oracle (G), Drowned Bishop (G), Mother of Coils (boss) | Swim through flooded cells; cast curses; cultists can't be talked to |
+| **Aberrations** | Gloomstalker (C, invisible until close), Eye Moth swarm (C), Tendril Horror (G), Thought Eater (D), Unborn (D) | Psychic damage; Fear; can teleport; drawn to Illusion casters |
+| **The Unmade** | Unmade Hound (D), Hollow Saint (D), the Unmaker (final boss, 3 phases) | Each one uses an affix from the run's champions; the final level only |
+
+Plus wanderers, which appear in any region: Mimic (in chests and doors), Gelid Cube (a square ooze that fills a
+corridor and swallows a hero), and Lost Delver (a hostile human party member, who drops good loot).
+
+### 12.4 Behaviour (AI)
+
+Each monster has a behaviour profile made of these blocks:
+
+| Block | Meaning |
+| --- | --- |
+| Wander / Guard / Ambush / Patrol | Idle behaviour |
+| Chase | Path to the party on the grid (A*, avoids known traps unless Mindless) |
+| Melee / Ranged / Caster / Support | Combat role. Ranged keeps a distance of 2–4 cells and retreats if the party closes |
+| Flank | Two or more monsters try to approach from different sides |
+| Flee | At HP < morale threshold (with a CHA modifier), unless Mindless or Undead |
+| Door-user / Opener | Can open doors; some can pick locks |
+| Swimmer / Flier / Phaser | Ignore water, pits or walls respectively |
+| Pack | Shares alert state with all of its kind within 8 cells |
+
+**Telegraphs.** Every attack has a visible wind-up (the sprite rears up, glows or flashes), between 0.4 s and
+1.2 s. Big attacks have longer tells.
+
+### 12.5 Bosses
+
+| Boss | Level | Arena | Hook |
+| --- | --- | --- | --- |
+| The Hollow King | after level 4 | A crypt with 4 sarcophagi | Raises a Bone Sentry from a sarcophagus every 20 s. Smash the sarcophagi (Blunt) to stop it. At 50% HP he splits his crown into two Ossuary Knights |
+| The Bellwright Engine | after level 8 | A bell foundry with conveyor floors | The floor moves the party one cell every 4 s. The Engine is invulnerable until its 3 pressure valves are shut |
+| Mother of Coils | after level 12 | A flooded temple | Water rises and falls on a cycle. She is only vulnerable when the water drops. She summons Coil Guards from the pools |
+| The Hollow Choir (optional) | a secret level, after 6 | A round hall | 5 singers each cast a school. Silence (Warding) or kill them in the right order or they resurrect each other |
+| The Unmaker | the final level | The Unmade Heart | Phase 1: it unmakes walls, so the arena grows. Phase 2: it uses the run's champion affixes. Phase 3: the Knell tolls and the room rearranges every 15 s |
+
+---
+
+## 13. Items, loot and crafting
+
+### 13.1 Slots
+
+Each hero has: head, neck, chest, cloak, hands, belt (with 2 belt slots for quick items), legs, feet, two rings,
+left hand and right hand.
+
+The backpack is a grid of 24 cells. Big items take 2 cells. The party also shares a ground pile for each cell.
+
+### 13.2 Bases
+
+There are about 120 item bases:
+
+| Kind | Examples |
+| --- | --- |
+| Light blades | Dagger (d4, finesse, throwable), shortsword (d6, finesse), sabre (d6, crit 19–20) |
+| Blades | Longsword (d8), bastard sword (d10 two-handed) |
+| Blunt | Club (d4), mace (d6, ignores 1 AC of heavy armour), warhammer (d8), flail (d8, ignores shield block) |
+| Two-handed | Greatsword (2d6), greataxe (d12), maul (2d6, stagger), halberd (d10, reach) |
+| Archery | Shortbow (d6), longbow (d8, STR to damage), crossbow (d10, slow reload, ignores 2 AC) |
+| Thrown | Daggers, javelins (d6), bombs (alchemy) |
+| Staves and wands | +spell power; charges |
+| Armour | Light: padded, leather, studded (AC 11–12 + DEX). Medium: hide, scale (AC 13–14 + DEX up to 2). Heavy: chain, splint, plate (AC 16–18, no DEX, Stealth disadvantage) |
+| Shields | Buckler (+1, fast block), round (+2), tower (+3, −10% recovery speed) |
+| Consumables | Potions, scrolls, food, water, torches, oil, lockpicks, bandages, ropes, reagents |
+
+### 13.3 Rarity
+
+| Rarity | Colour | Affixes | Notes |
+| --- | --- | --- | --- |
+| Common | White | 0 | — |
+| Fine | Green | 1 | — |
+| Enchanted | Blue | 2 | Unidentified until Lore or Identify |
+| Masterwork | Gold | 3–4 | Unidentified; some are cursed |
+| Relic | Orange | Fixed | About 30 named items, each with a unique effect |
+| Set | Teal | Fixed | 4 sets of 3–4 pieces, each with set bonuses |
+
+**Item level** follows the dungeon level. Loot tables are weighted by region and by the monster family.
+
+**Identification.** Lore 0 identifies Fine items. Lore 25 identifies Enchanted items, and Lore 50 identifies
+Masterwork items, or a scroll of Identify can be used.
+
+**Curses.** A cursed item can't be removed until Dispel or a shrine lifts the curse. Each curse has an upside, so
+some players keep them on purpose.
+
+### 13.4 Durability
+
+Weapons and armour have durability. Oozes and acid wear it down faster. At 0 durability a weapon deals half
+damage and armour gives half its AC. Smithing repairs it at an anvil, or with a whetstone or a patch kit
+anywhere.
+
+### 13.5 Crafting
+
+| Craft | Where | How |
+| --- | --- | --- |
+| **Alchemy** | Anywhere, with a mortar | Combine 2–3 reagents. Each reagent has 4 hidden effects. Tasting one reveals the first effect, and Alchemy perks reveal more. Effects shared by the reagents make the potion. Potion strength scales with Alchemy. About 40 reagents, about 30 effects |
+| **Smithing** | Anvils (Waystones, and the Deep Works' forges) | Improve an item's quality (+1 to +5 damage or AC, capped by skill). Forge new bases from ore and bars. Melt down items for materials |
+| **Enchanting** | Enchanting altars (Waystones, and rare ones in vaults) | Disenchant an Enchanted or Masterwork item to learn one of its affixes (destroying the item). Apply learned affixes using Spirit Shards dropped by monsters. Strength scales with Enchanting. Recharge wands |
+| **Cooking** (Survival) | At a fire (campfire kit) | Combine ingredients into meals that give buffs and restore food and water |
+
+### 13.6 Food and water
+
+These rules apply when the option is on:
+
+- Each hero has Food and Water meters, which drain over an in-game day (about 40 minutes of play).
+- Hungry and thirsty heroes regenerate slower and get disadvantage on CON saves.
+- At 0, they lose HP.
+- Food is found in the dungeon, cooked from monster parts with Survival, or bought.
+
+### 13.7 Resting
+
+- **Rest (R).** Time passes until the party is healed or the player cancels. Spells are relearned for free, and
+  signatures that are "once per rest" recharge.
+- Each hour of rest rolls for a wandering monster encounter (base 15%, scaled by density and region). On an
+  encounter, the monster arrives and the party wakes. Resting behind a closed door halves the chance.
+- Resting in a cleared, sealed room, or at a Waystone, is safe.
+
+---
+
+## 14. Dungeon generation
+
+### 14.1 Level shape
+
+- Each level is a **32×32 grid** of cells.
+- A cell is: floor, wall, door (with sides), water (shallow or deep), pit, stairs up or down, rubble, or a wall
+  with a feature on one face (lever, button, alcove, niche, carving, torch holder, keyhole or secret button).
+- Each level has a **theme**, which sets the textures, lighting, ambience, the monster spawn table and the
+  vault pool.
+
+### 14.2 The algorithm
+
+1. **Seed.** `levelSeed = hash(runSeed, depth)`. A stable PCG32 generator is used for each step.
+2. **Rooms.** Place 8–14 rooms, from 2×2 to 7×7, by rejection sampling. Up to 3 **vaults** are placed first
+   (section 14.3).
+3. **Connect.** Build the minimum spanning tree of the room centres, then add 20% extra edges for loops. Carve the
+   corridors with a corridor-width chance of 15% for 2-wide corridors (the square dance needs room).
+4. **Lock and key.** Choose 1–3 lock barriers along the critical path, from the start to the down stairs. For
+   each barrier, place its key (a key, a lever, a plate puzzle or a pushable crate) in the part of the level that
+   is reachable **before** the barrier. The generator checks this with a flood fill.
+5. **Secrets.** 2–4 secret doors leading to dead-end treasure rooms, and 1 illusory wall.
+6. **Traps.** Budget = level × trap option. Place traps on corridor chokepoints and in vault entrances. Never
+   place more than 2 deadly traps on the critical path without a detection hint (scorch marks, bones, a draught).
+7. **Monsters.** Budget = depth × density. Draw from the theme's spawn table as groups: packs, a leader with
+   followers, or lone ambushers. Keep 2 cells clear of the start.
+8. **Loot.** Chests, alcoves and corpses (dead delvers have their own small loot tables), with 1–2 guaranteed
+   items of the current level's tier.
+9. **Validate.** Check every cell is reachable (with keys), check the stairs, and check the trap and secret
+   budgets. If validation fails, reseed the step and try again (at most 20 times, then use a fallback layout).
+
+### 14.3 Vaults
+
+About 40 handmade rooms, written as text maps with metadata in `vaults/*.txt`. Each one has:
+
+- size
+- connectors (where it can join a corridor)
+- tags (puzzle, ambush, treasure or shrine)
+- which themes it fits
+- its triggers and links (plate → door)
+
+**Example puzzle vaults:**
+
+- **The Weighing Room.** Four plates. Drop items to balance them and open the gate.
+- **Mirror Corridor.** Teleporters loop the party until they spot the spinner that is out of place.
+- **The Choir Bells.** Ring 4 bells in the order carved on the wall. Lore reads the carving.
+- **The Rolling Deep.** Outrun a boulder to a side alcove.
+- **Lantern Gate.** Carry lit torches into 3 sconces at once (a party of 4 helps; Mage Hand helps the lone hero).
+
+**The format:**
+
+```
+# vault: weighing-room
+# size: 7x7  tags: puzzle  themes: cellar,works  connectors: N3,S3
+#######
+#P...P#
+#.....#
+#..G..#      G = gate (linked to all P plates; opens when total weight 20–25 kg on each)
+#.....#
+#P...P#
+###D###
+```
+
+### 14.4 Stairs and levels
+
+- Going down the stairs saves an autosave (except in Ironman, where the single save is overwritten).
+- A level that has been left stays as it was. Monsters don't respawn, apart from wanderers that arrive during
+  long rests.
+- **Pits drop the party one level down** into a "landing" cell that the generator always places on the level
+  below.
+
+---
+
+## 15. The first-person view
+
+### 15.1 Renderer choice
+
+**Decision: use a software renderer, written in C#, that draws textured, lit 3D cells into a fixed-size
+framebuffer. Skia then scales the framebuffer up to the window.**
+
+The reasons:
+
+- It's deterministic and needs no GPU, so headless tests can render real frames and compare them against golden
+  images.
+- It avoids the OpenGL control-sizing problems seen on Hyprland (AVALightWave), and it runs the same on Windows,
+  macOS, Linux and ARM.
+- A grid dungeon is cheap to draw: at most about 7 cells deep and 9 wide are visible.
+
+Draw it behind an `IViewRenderer` interface, so an OpenGL or Vulkan back end can be added later without touching
+the game.
+
+### 15.2 Renderer specification
+
+- **Internal resolution.** 640×400 by default (16:10). It can be set to 480×300 or 960×600. Scaling uses nearest
+  neighbour or bilinear (an option).
+- **Ray casting.** Each screen column casts one ray through the grid (a DDA walk) and draws the first wall it
+  meets as a textured strip. The floor and ceiling either side are cast row by row. This is exact for a grid
+  with level floors and full-height walls, and it is far cheaper than general triangles.
+- **Doors** stand in the middle of their cell and slide up into the ceiling. A ray records each door panel it
+  crosses (up to 4) and carries on, and the doors are drawn over the far wall, nearest last. A shut wooden door
+  ends the ray. A portcullis's gaps are transparent, so you see through it.
+- **Wall features.** A lever is a wall texture of its own, chosen by the floor cell and the face. The sides of a
+  doorway use a dressed-stone frame texture.
+- **The eye** sits 0.4 of a cell behind the party's position, along the facing, so the wall ahead is about a
+  cell away. Less than 0.5 keeps the eye inside the party's own cell at every yaw.
+- **Textures** are 64×64, drawn in code by `TextureFactory` using integer hashing only, so the same seed gives
+  the same pixels everywhere. A 256-colour palette per theme and 128×128 textures remain options.
+- **Picking.** The renderer keeps, for each column, which wall face and door it drew and over which rows, so a
+  click in the view maps to a `WorldTarget`.
+- **Lighting.**
+  - Per-vertex light from the party's light source (falloff by distance, with a flicker for torches), plus static
+    light sources in the level (braziers, glowing fungus, lava). The light is interpolated across each span.
+  - Fog colour per theme.
+- **Sprites (from M2).** Monsters and items on the floor are camera-facing billboards.
+  - Monsters have frames for front, side and back, plus wind-up, attack, hit and death frames, chosen by the
+    angle between the monster's facing and the camera.
+  - Small creatures in a crowd are offset within their cell.
+- **Motion.**
+  - A step tweens the camera position over 0.25 s with ease-in-out and a small head bob (which can be turned
+    off).
+  - A turn tweens the yaw over 0.2 s.
+  - Input is buffered: one step and one turn queue.
+- **Effects.** Projectiles are sprites or particles with their own light. Screen shake on big hits. A red
+  vignette at low HP. Particles (sparks, gas, spores, dust) are drawn as point sprites.
+- **Budget.** At most 8 ms of CPU per frame at 640×400 on a mid-range ARM laptop, so the game holds 60 fps with
+  the simulation tick.
+
+### 15.3 Art
+
+- **Textures and sprites.** First choice: CC0 or CC-BY packs (OpenGameArt and similar). Each one is listed in
+  `assets.manifest.json` with its source, licence, author and any changes, and `CREDITS.md` is generated from
+  the manifest (the same process as AVAAshenReliquary).
+- **Gaps.** Where no pack fits, art is drawn in code or made procedurally by `tools/` scripts. Procedural brick,
+  stone, dirt and moss textures are made with noise.
+- **Placeholders (M0–M2).** Flat-coloured procedural textures and silhouette sprites, so the game can be played
+  before any art is chosen.
+
+---
+
+## 16. UI, controls and audio
+
+### 16.1 Screen layout (at 1280×800 and up)
+
+```
+┌────────────────────────────────────────────┬───────────────┐
+│                                            │  COMPASS  N   │
+│                                            │  ┌─────────┐  │
+│            FIRST-PERSON VIEW               │  │ minimap │  │
+│              (640×400 scaled)              │  │ 9×9     │  │
+│                                            │  └─────────┘  │
+│                                            │  Effects/buffs│
+│                                            │  Message log  │
+├──────────┬──────────┬──────────┬──────────┼───────────────┤
+│ Hero 1   │ Hero 2   │ Hero 3   │ Hero 4   │ Quick slots   │
+│ portrait │ portrait │ portrait │ portrait │  1 2 3 4      │
+│ HP ST MP │ HP ST MP │ HP ST MP │ HP ST MP │  5 6 7 8      │
+│ [L] [R]  │ [L] [R]  │ [L] [R]  │ [L] [R]  │ Rest Map Menu │
+└──────────┴──────────┴──────────┴──────────┴───────────────┘
+   front-left front-right back-left  back-right
+```
+
+- **Hands [L] and [R]** show the item in that hand with a radial cooldown sweep. Click one to use it.
+- **Portraits** flash when the hero is hit, show condition icons and turn grey when the hero is down. Drag one
+  portrait onto another to swap them.
+- **Overlays** sit over the view, and the game keeps running underneath unless paused:
+  - Inventory (I), with the backpack grid, paper doll and character sheet tabs.
+  - Skills and perks (K).
+  - Spellbook (B).
+  - Full map (M), with notes.
+  - Journal (J).
+- **Interacting with the world:** click in the view on a lever, a button, an item on the floor or a door. Items
+  on the floor can be dragged into the backpack, and items can be thrown from the hand into the view.
+- **Narrow windows.** Below 1000 px wide, the side panel moves under the party bar.
+
+### 16.2 Controls
+
+| Action | Keys |
+| --- | --- |
+| Step forward / back / strafe left / strafe right | W S A D (also keypad 8 2 4 6; the Up and Down arrows step) |
+| Turn left / right | Q E (also the Left and Right arrows, and keypad 7 9) |
+| Use what is ahead: pull the lever, open or close the door | F, Enter or keypad 5, or click it in the view |
+| Use hand: hero 1–4, left / right | Mouse on the hand, or keys 1–8 (1/2 = hero 1 L/R …) |
+| Quick slots | F1–F8 for the selected hero |
+| Select hero | Tab cycles; Ctrl+1–4 swaps positions |
+| Sneak | C |
+| Pause / queue (if enabled) | Space |
+| Rest | R |
+| Inventory, Skills, Book, Map, Journal | I, K, B, M, J |
+| Menu | Esc |
+
+**Gamepad** support is a v1.1 stretch goal.
+
+Keys are remappable. Movement goes through one `InputHandler`, with the same direction-sign convention as the
+engine. Test the keys through `InputHandler`, not the engine, to catch any mismatch in the up/down sign. Track
+held keys by `PhysicalKey`, because on this desktop Shift's KeyUp arrives as CapsLock.
+
+### 16.3 Audio
+
+- OpenAL Soft through Silk.NET, the same audio layer as the other AVA games. Effects are positional by cell
+  (left and right, and attenuated by distance and walls).
+- Each region has ambient beds: drips, wind, machinery or choir hum. The bosses have music stings.
+- **Footsteps and monster barks are cues.** You hear monsters before you see them. The sound travels through open
+  doors and is muffled by closed ones.
+- Sound effects are synthesised by a standard-library Python tool, `tools/make_sounds.py`, or taken from CC0
+  packs listed in the manifest.
+- Use the 2048-frame OpenAL period through ALSOFT_CONF, as the other AVA games do, to stop choppy audio in the
+  VM.
+
+---
+
+## 17. Saves and difficulty
+
+### Saves
+
+- Saves are JSON, holding:
+  - the run seed and Delve options
+  - the party
+  - for each level visited, the **delta from the generated level**: opened doors, picked-up items, dead
+    monsters, sprung traps and map notes
+  - the time, and the version
+- Saves are small because the level itself is regenerated from the seed.
+- Saving: 10 manual slots, 3 rotating autosaves (on stairs and Waystones, and every 10 minutes) and a quicksave
+  (F5 / F9).
+- **Ironman** keeps one save, written on stairs, Waystones and exit. It is deleted when the party dies.
+- The save folder is the OS's application data folder. An `AVAHACK_SAVE_DIR` environment variable overrides it,
+  for tests. Tests never touch the user's real folders.
+
+### Difficulty
+
+**Monster strength** scales these:
+
+| Setting | Monster HP | Monster damage | Monster to-hit | Down rules |
+| --- | --- | --- | --- | --- |
+| Gentle | ×0.75 | ×0.75 | −2 | Get up after the fight |
+| Standard | ×1.0 | ×1.0 | — | Get up after the fight |
+| Cruel | ×1.25 | ×1.25 | +1 | Death saves apply |
+| Brutal | ×1.5 | ×1.5 | +2 | Death saves apply; champions 2× as often |
+
+---
+
+## 18. Technical architecture
+
+### 18.1 Solution layout
+
+The same split as AVAAshenReliquary: a pure rules and world core, and an Avalonia front end.
+
+| Project | Responsibility |
+| --- | --- |
+| `src/AVAHack.Core` | Rules (dice, checks, conditions), characters and creation, skills and perks, items, magic, monsters and AI, the world (grid, cells, triggers), the generator, the save model, and the content database (embedded JSON in `Content/Data/`). It has no UI references and is deterministic for a given seed |
+| `src/AVAHack.Render` | The software 3D view (`IViewRenderer`, `SoftwareViewRenderer`), texture and palette loading, light tables, the sprite atlas. It depends only on Core and `System.Numerics`, and outputs a `uint[]` framebuffer |
+| `src/AVAHack.App` | The Avalonia window, the view control (copies the framebuffer to a `WriteableBitmap` and draws it with Skia), the HUD, overlays, input, audio and settings |
+| `tests/AVAHack.Core.Tests` | xUnit v3: formulas, rules, generator invariants and AI |
+| `tests/AVAHack.Render.Tests` | Golden-image tests for the view (rendered headless) |
+| `tests/AVAHack.App.Tests` | Avalonia.Headless window tests and screenshots (`AVAHACK_SHOTS=<folder>`) |
+| `tools/` | `make_sounds.py`, `make_textures.py` (procedural textures), `vault_lint.py`, `build_credits.py` |
+
+### 18.2 Runtime model
+
+- **The simulation tick** is a fixed 60 Hz in Core (`GameEngine.Tick`). The view interpolates the camera between
+  ticks.
+- **The engine is first, the drawing second.** All gameplay is in Core. The App reads the state and sends
+  commands (`Press(action)`, `UseHand(hero, hand)`, `ClickWorld(cell, face, uv)`). This keeps everything testable
+  without a window.
+- **Events.** Core raises typed events (Hit, Miss, ConditionApplied, SkillRankUp, LevelUp, TrapSprung, DoorOpened
+  and so on). The App turns them into floating text, sounds and log lines.
+- **RNG.** PCG32, seeded per subsystem (`world`, `loot`, `combat` and `ai` streams derived from the run seed), so
+  a change to the loot code doesn't change level layouts. The debug overlay (F3) shows the rolls.
+- **Content.** JSON in `Content/Data/`: `ancestries.json`, `callings.json`, `backgrounds.json`, `skills.json`,
+  `perks.json`, `spells.json`, `items/*.json`, `affixes.json`, `creatures/*.json`, `traps.json`, `themes/*.json`
+  and `vaults/*.txt`. Every file is checked against a JSON schema by a test.
+
+### 18.3 Example content (`creatures/restless-dead.json`)
+
+```json
+{
+  "id": "creature.bone_sentry",
+  "name": "Bone Sentry",
+  "family": "restless_dead",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 13,
+  "saves": { "str": 1, "dex": 1, "con": 2, "int": -3, "wis": 0, "cha": -3 },
+  "perception": 9,
+  "stepSeconds": 0.9,
+  "turnSeconds": 0.8,
+  "resist": ["piercing"],
+  "vulnerable": ["bludgeoning", "radiant"],
+  "immune": ["poison", "mind"],
+  "attacks": [
+    { "id": "rusty_blade", "windup": 0.7, "recovery": 2.0, "toHit": 4, "damage": "1d8+1", "type": "slashing", "targets": "facing_row" }
+  ],
+  "behaviour": ["guard", "chase", "melee", "mindless"],
+  "special": [{ "kind": "reassemble", "seconds": 8, "unlessKilledBy": "bludgeoning" }],
+  "loot": "loot.undead.lesser",
+  "sprite": "sprites/bone_sentry"
+}
+```
+
+### 18.4 Build and conventions
+
+- `global.json` pins SDK 10.0.400 or later (`rollForward: latestFeature`).
+- `Directory.Build.props`: `TreatWarningsAsErrors`, nullable, implicit usings, invariant globalization.
+- `Directory.Packages.props` for central package versions: Avalonia 12.1.4, SkiaSharp 3.119.4, Silk.NET.OpenAL
+  2.23.0, xunit.v3 3.2.2.
+- No trimming: `PublishTrimmed=false`, because Avalonia uses reflection for XAML. Publish single-file and
+  self-contained.
+
+### 18.5 CI and releases
+
+`.github/workflows/build.yml` runs on every push:
+
+1. Build and test.
+2. Publish 8 builds: win-x64, win-x86, win-arm64, osx-x64, osx-arm64, linux-x64, linux-arm64 and linux-arm.
+3. A push to `main` refreshes the rolling `latest` pre-release. A `v*` tag makes a proper release.
+4. After a release, ask the portfolio site to rebuild. Add the card only after the release has published.
+
+---
+
+## 19. Testing
+
+| Area | Tests |
+| --- | --- |
+| Rules | Every formula in sections 6–9: modifiers, to-hit, damage scaling, advantage, saves, resistance order, conditions |
+| Progression | XP curves; use XP and anti-grind rules; skill ceilings; level-up choices; perks' requirements and effects; the respec cost |
+| Combat | Recovery timers; reach by formation slot; flanking advantage; blocking and perfect blocks; death saves |
+| Generator | For 1,000 seeds per theme: everything reachable, keys before locks, stairs connected, trap and secret budgets, deterministic output (the same seed gives the same level, byte for byte) |
+| Vaults | `vault_lint.py` and a test: every vault parses, connectors line up, and triggers link to devices that exist |
+| AI | Pathing around traps; flee thresholds; pack alerts; door use |
+| Traps | Each of the 20 kinds: trigger, detection, disarm, effect, monster interaction |
+| Saves | Round trip (save, load, compare) at many points; old-version saves load |
+| Renderer | Golden images for fixed scenes (corridor, door, lit room, sprites at 3 distances); a frame-time benchmark |
+| Balance | Bot parties of each calling mix play simulated Delves (`AVAHACK_BALANCE_RUNS`) and report depth reached, deaths, level by depth and skill spread. The targets are in section 20 |
+| App | Headless window tests: creation flow, HUD, overlays, input mapping. These also render the README's screenshots |
+
+---
+
+## 20. Milestones
+
+Each milestone is finished when its exit test passes.
+
+| # | Milestone | Contents | Exit test |
+| --- | --- | --- | --- |
+| **M0** | Skeleton and view. *Done (2026-11-06)* | Solution, CI, the software renderer, a handmade test level, step and turn tweens, doors and a lever | Walk a 16×16 test level at 60 fps; golden images pass. *Result:* a frame takes about 2.3 ms at 640×400 on an 8-core ARM machine; 7 golden images pass |
+| **M1** | Rules core | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8 |
+| **M2** | One hero, one fight | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play |
+| **M3** | Party and creation | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it |
+| **M4** | Progression | Use-based skills for all 20, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling |
+| **M5** | Magic | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play |
+| **M6** | Generator | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable |
+| **M7** | The bestiary | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30 |
+| **M8** | Crafting and survival | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game |
+| **M9** | Polish and release | Art from the manifest, audio, the hall of fame, Ironman, help pages, README and screenshots, portfolio card | The user plays through a Delve; v1.0 tag |
+
+**The MVP is M0–M2.** It proves the view, movement and the real-time d20 fights feel right before anything else
+is built.
+
+---
+
+## 21. Open questions
+
+1. **Party default.** Is a party of 4 the right default, with the Lone Delver as an option, or should it be the
+   other way round?
+2. **Art.** Should the art be retro pixel (64×64 textures in 256 colours) or crisper (128×128 in true colour)?
+   This decides the renderer's texture path and which packs fit.
+3. **Lockpicking.** Should it have the timing mini-game, or only the dice roll?
+4. **Pause.** Should real-time with pause be the default, or pure real time?
+5. **Gamepad.** Should a controller be supported in v1.0 or v1.1?
+6. **Town.** Are the Waystones enough, or should Harrowgate be a visitable town between regions?
+
+---
+
+## 22. Implementation decisions (M0)
+
+- **The renderer is a column ray caster** (section 15.2), not a triangle rasteriser. A grid with level floors and
+  full-height walls needs nothing more, and it leaves room in the frame budget. Raised floors, stairs seen from
+  a distance, or slopes would need the rasteriser; `IViewRenderer` keeps that open.
+- **The party holds its new cell from the start of a step.** The camera glides there over 15 ticks, with an
+  ease in and out and a dip of 0.025 cells mid-step. A door can't close on a cell the party has started into.
+- **Turning** sets the new facing at once and eases the yaw over 12 ticks.
+- **Walking into a wall** plays a 10-tick nudge toward it and drops anything queued, so holding a key against a
+  wall doesn't stack up bumps.
+- **The queue** holds 2 actions while one is playing. Further presses are dropped. Key repeat therefore walks
+  steadily without running ahead of the player.
+- **One update runs at most 0.25 s of ticks,** so a stall (a window drag, say) never fast-forwards the game.
+- **Doors** take 1 s to open or close and are passable only when fully open. A door waits, raised, while the
+  party stands in it. Hand doors open with Use (F) or a click from the next cell. A portcullis only answers its
+  lever. A lever is used from its own cell, facing its wall.
+- **Use is on F (and Enter, keypad 5),** not Space, because Space is kept for pausing combat (section 9.1).
+- **Level files** for handmade levels and test levels: `name:`, `start:` and `lever:` directives, then `map:`
+  and the rows (`#` wall, `.` floor, `+` hand door, `P` portcullis, `O` open portcullis). Built-in levels are
+  embedded in Core under `Content/Levels/`. The vault format (section 14.3) will extend this one.
+- **Golden images** allow up to 0.5% of pixels to differ by more than 24 in a channel, for floating-point
+  differences between machines. `AVAHACK_UPDATE_GOLDEN=1` rewrites them.
+

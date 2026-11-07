@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AVAHack.Core/AVAHack.Core.csproj" />
+    <Project Path="src/AVAHack.Render/AVAHack.Render.csproj" />
+    <Project Path="src/AVAHack.App/AVAHack.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AVAHack.Core.Tests/AVAHack.Core.Tests.csproj" />
+    <Project Path="tests/AVAHack.Render.Tests/AVAHack.Render.Tests.csproj" />
+    <Project Path="tests/AVAHack.App.Tests/AVAHack.App.Tests.csproj" />
+  </Folder>
+</Solution>

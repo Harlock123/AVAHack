@@ -95,7 +95,16 @@ Every item has its own icon, drawn and finished the same way:
 
 The icons show in the inventory, the hand slots, the Waystone's lists and the crafting screen.
 
-![The item icons](Images/AVAHack-icons.png) Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
+![The item icons](Images/AVAHack-icons.png)
+
+The heroes' portraits are drawn the same way:
+- the ancestry sets the face: skin, ears, a dwarf's braided beard, an orc's tusks, a saurian's scaled snout and
+  crest, an emberkin's horns and ember eyes;
+- the calling sets the clothes and headgear, from a wizard's hat to a druid's antlers or a rogue's scarf;
+- the hero's name picks the hair, its colour, a beard and the eyes, so a hero always looks the same;
+- a downed hero turns grey with closed eyes.
+
+![The portraits: each ancestry in each calling](Images/AVAHack-portraits.png) Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
 made from it by `tools/build_credits.py`. Because there is no GPU in the path, the
 tests render real frames and compare them with golden images. A frame takes about 1–3 ms on an 8-core ARM
 machine.

@@ -43,6 +43,7 @@
 32. Implementation decisions (M9: textures from an art pack)
 33. Implementation decisions (M9: the creatures redrawn)
 34. Implementation decisions (M9: item icons)
+35. Implementation decisions (M9: hero portraits)
 
 ---
 
@@ -1971,4 +1972,38 @@ The first piece of M9's "art from the manifest": real textures for walls, floors
 - **Tests.** `Every_item_has_its_own_icon` renders every key the game can ask for, fails if one is nearly empty or
   falls back to the sack, checks every item base maps to one, and writes `icons.png` to `AVAHACK_SHOTS`.
   `Images/AVAHack-icons.png` is that sheet.
-- **Not done:** portraits are still the App's placeholder shapes.
+- **Portraits** followed in section 35.
+
+## 35. Implementation decisions (M9: hero portraits)
+
+- **In the sprite factory.** `SpriteFactory.Portrait(ancestry, calling, name, down)` draws head and shoulders on the
+  64-unit grid at 128 px with the same `Paint` finish. The App's vector-shape portraits (`Art.cs`) are gone; the
+  party cards draw the bitmap, cached per look.
+- **What sets what.** Heroes have no appearance settings, so:
+  - **Ancestry** sets the face:
+    - skin tones;
+    - head shape (a square jaw for dwarves and orcs, a fine one for elves);
+    - ears: long for elves, big and round for gnomes, pointed for orcs and halflings;
+    - gnomes' noses;
+    - a dwarf's beard with braid rings, and orcs' tusks;
+    - the saurian's scaled head, snout, slit pupils and crest;
+    - the emberkin's red skin, horns and ember eyes.
+  - **Calling** sets the clothes and headgear:
+    - fighter: mail and leather pauldrons;
+    - barbarian: a fur mantle, a baldric and war paint;
+    - ranger and rogue: hoods (the rogue's with a scarf over the mouth);
+    - cleric: a coif, a stole and a holy symbol;
+    - wizard: a starred robe and a pointed hat;
+    - paladin: plate, a tabard and a circlet;
+    - druid: leaves and antlers;
+    - monk: a crossed robe, a shaved head and a brow mark;
+    - spellblade: a shoulder rune, a hilt over the shoulder and a gem circlet.
+
+    The background is lit in the calling's colour.
+  - **The name**, through an FNV-1a hash, picks the hair style, hair colour, eye colour and, for some humans,
+    orcs and gnomes, a beard. Monks are always shaved.
+- **Downed** heroes are drawn grey with their eyes closed.
+- **Tests.** `Every_ancestry_and_calling_has_a_portrait…` draws all 80 combinations and the quick-start party
+  standing and downed. It checks that each portrait fills its frame, that the same hero always draws the same, and
+  that different names differ. It writes `portraits.png` to `AVAHACK_SHOTS`; `Images/AVAHack-portraits.png` is
+  that sheet at half size.

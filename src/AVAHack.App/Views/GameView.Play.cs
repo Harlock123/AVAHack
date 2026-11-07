@@ -170,7 +170,9 @@ public sealed partial class GameView
         bool selected = Engine.Selected == h;
         if (selected) dc.DrawRectangle(null, new Pen(Gold, 2), card.Deflate(2));
         var portrait = new Rect(card.X + 10, card.Y + 12, 72, 92);
-        Portraits.Draw(dc, portrait, h, h.IsDown);
+        var face = PortraitBitmap(h, h.IsDown);
+        dc.DrawImage(face, new Rect(0, 0, face.PixelSize.Width, face.PixelSize.Height), portrait);
+        dc.DrawRectangle(null, new Pen(PanelEdge, 2), portrait);
         if (h.HurtFlash > 0) dc.FillRectangle(new SolidColorBrush(Color.FromArgb(120, 200, 0, 0)), portrait);
         ClickArea(portrait, () => Engine.Selected = h);
 

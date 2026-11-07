@@ -71,6 +71,42 @@ public sealed class SpriteTests
     }
 
     [Fact]
+    public void Every_ancestry_and_calling_has_a_portrait_and_the_same_hero_always_looks_the_same()
+    {
+        var db = AVAHack.Content.ContentDb.LoadBuiltIn();
+        var art = new SpriteFactory();
+        var ancestries = db.Ancestries.Select(a => a.Id).ToList();
+        var callings = db.Callings.Select(c => c.Id).ToList();
+        int cell = SpriteFactory.Size + 4;
+        var sheet = new uint[callings.Count * cell * (ancestries.Count + 1) * cell];
+        Array.Fill(sheet, 0xFF2A2620u);
+        void Put(SpriteImage img, int row, int col)
+        {
+            for (int y = 0; y < img.Height; y++)
+            for (int x = 0; x < img.Width; x++)
+                sheet[(row * cell + 2 + y) * callings.Count * cell + col * cell + 2 + x] = img[x, y];
+        }
+        for (int r = 0; r < ancestries.Count; r++)
+        for (int c = 0; c < callings.Count; c++)
+        {
+            var img = art.Portrait(ancestries[r], callings[c], $"Hero {r * 31 + c * 7}");
+            Assert.All(img.Pixels, px => Assert.Equal(0xFFu, px >> 24)); // a portrait fills its frame
+            Put(img, r, c);
+        }
+        // The quick-start party, standing and downed.
+        var party = AVAHack.Characters.CharacterBuilder.QuickStartParty(db);
+        for (int i = 0; i < party.Count; i++)
+        {
+            Put(art.Portrait(party[i].Ancestry.Id, party[i].Calling.Id, party[i].Name), ancestries.Count, i * 2);
+            Put(art.Portrait(party[i].Ancestry.Id, party[i].Calling.Id, party[i].Name, down: true), ancestries.Count, i * 2 + 1);
+        }
+        Assert.Equal(new SpriteFactory().Portrait("dwarf", "fighter", "Brannoc").Pixels, art.Portrait("dwarf", "fighter", "Brannoc").Pixels);
+        Assert.NotEqual(art.Portrait("human", "fighter", "Aldric").Pixels, art.Portrait("human", "fighter", "Wenna").Pixels);
+        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir)
+            Png.Save(Path.Combine(dir, "portraits.png"), sheet, callings.Count * cell, (ancestries.Count + 1) * cell);
+    }
+
+    [Fact]
     public void Every_creature_in_the_content_has_its_own_picture()
     {
         var db = AVAHack.Content.ContentDb.LoadBuiltIn();

@@ -448,17 +448,25 @@ public sealed partial class GameView
         _ => Brushes.Gainsboro,
     };
 
-    private unsafe WriteableBitmap IconBitmap(string kind)
+    private WriteableBitmap IconBitmap(string kind) =>
+        _icons.TryGetValue(kind, out var bmp) ? bmp : _icons[kind] = ToBitmap(_art.ItemIcon(kind));
+
+    /// <summary>A hero's portrait (spec 16), drawn by the sprite factory and cached per look.</summary>
+    private WriteableBitmap PortraitBitmap(Character h, bool down)
     {
-        if (_icons.TryGetValue(kind, out var bmp)) return bmp;
-        var img = _art.ItemIcon(kind);
-        bmp = new WriteableBitmap(new PixelSize(img.Width, img.Height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Unpremul);
+        string key = $"portrait|{h.Ancestry.Id}|{h.Calling.Id}|{h.Name}|{down}";
+        return _icons.TryGetValue(key, out var bmp) ? bmp : _icons[key] = ToBitmap(_art.Portrait(h.Ancestry.Id, h.Calling.Id, h.Name, down));
+    }
+
+    private static unsafe WriteableBitmap ToBitmap(AVAHack.Render.SpriteImage img)
+    {
+        var bmp = new WriteableBitmap(new PixelSize(img.Width, img.Height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Unpremul);
         using (var fb = bmp.Lock())
         {
             fixed (uint* p = img.Pixels)
                 for (int y = 0; y < img.Height; y++)
                     Buffer.MemoryCopy(p + y * img.Width, (byte*)fb.Address + y * fb.RowBytes, fb.RowBytes, img.Width * 4L);
         }
-        return _icons[kind] = bmp;
+        return bmp;
     }
 }

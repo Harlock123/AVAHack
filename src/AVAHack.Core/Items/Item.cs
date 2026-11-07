@@ -41,6 +41,12 @@ public sealed record ItemBase(string Id, string Name, ItemKind Kind, string Cate
         }
         foreach (var b in db.Books) Add(new(b.Id, b.Title, ItemKind.Book, "book", 1, b.Value, []) { Book = b, Text = b.Text });
         Add(new("gold", "Gold", ItemKind.Gold, "gold", 0.01, 1, []) { Text = "Coins of a dozen kingdoms." });
+        if (db.Spells.Count > 0)
+        {
+            Add(new("tome", "Tome", ItemKind.Tome, "tome", 1.5, 60, []) { Text = "Read it to learn the spell, if your school is good enough." });
+            Add(new("scroll", "Scroll", ItemKind.Scroll, "scroll", 0.1, 30, []) { Text = "Read it once to cast the spell; anyone can." });
+            Add(new("wand", "Wand", ItemKind.Wand, "wand", 0.3, 120, []) { Text = "Holds charges of a spell. Enchanting recharges it." });
+        }
         foreach (var x in ExtraBases) Add(x);
         return d;
     }

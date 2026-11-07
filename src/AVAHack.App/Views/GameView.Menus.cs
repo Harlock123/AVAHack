@@ -242,7 +242,7 @@ public sealed partial class GameView
         DrawText(dc, "Menu", box.Center.X, box.Y + 16, 30, Gold, centre: true, face: Bold);
         double y = box.Y + 70;
         Button(dc, new Rect(box.X + 40, y, 220, 40), "Resume", () => Overlay = Overlay.None);
-        Button(dc, new Rect(box.X + 290, y, 220, 40), "Help (F1)", () => Overlay = Overlay.Help);
+        Button(dc, new Rect(box.X + 290, y, 220, 40), "Help (H)", () => Overlay = Overlay.Help);
         Button(dc, new Rect(box.X + 540, y, 220, 40), "Quit to title", () => { Screen = Screen.Title; Overlay = Overlay.None; });
         y += 70;
         DrawText(dc, "Save to a slot", box.X + 40, y, 16, Gold, face: Bold);
@@ -268,7 +268,7 @@ public sealed partial class GameView
             Button(dc, new Rect(box.X + 40, y, 720, 36), $"{slot}: {summary}", () => LoadSlot(slot), size: 14);
             y += 42;
         }
-        DrawText(dc, "F5 quick save · F9 quick load", box.X + 40, box.Bottom - 30, 13, Dim);
+        DrawText(dc, "F10 quick save · F11 quick load", box.X + 40, box.Bottom - 30, 13, Dim);
     }
 
     private void DrawHelp(DrawingContext dc)
@@ -285,7 +285,7 @@ public sealed partial class GameView
             "Only the front row can reach with a melee weapon. Reach weapons and bows work from the back.",
             "Tab: next hero.  Ctrl+1–4: move the chosen hero to a slot.  I: inventory.  C: character sheet.",
             "B: spellbook.  F1–F8 cast the chosen hero's quick spells.  X: sneak.  R: rest.  Space: pause.",
-            "F5 / F9: quick save and load.  Esc: menu.",
+            "F10 / F11: quick save and load.  F12: frame rate.  Esc: menu.",
             "",
             "Every blow has a tell: watch for the wind-up and step aside or block. Creatures not facing you are",
             "hit with advantage; ones that haven't noticed you take double damage. Bones need crushing.",
@@ -299,7 +299,7 @@ public sealed partial class GameView
     {
         switch (e.PhysicalKey)
         {
-            case PhysicalKey.F1: Overlay = Overlay == Overlay.Help ? Overlay.None : Overlay.Help; return true;
+            case PhysicalKey.H: Overlay = Overlay == Overlay.Help ? Overlay.None : Overlay.Help; return true;
             case PhysicalKey.C: Overlay = Overlay == Overlay.Character ? Overlay.None : Overlay.Character; return true;
             case PhysicalKey.B: Overlay = Overlay == Overlay.Spellbook ? Overlay.None : Overlay.Spellbook; return true;
         }

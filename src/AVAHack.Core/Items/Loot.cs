@@ -50,6 +50,13 @@ public sealed class LootGenerator(ContentDb db)
     public Item Make(string baseId, int itemLevel, Rng rng, MagicItems magic = MagicItems.Normal, double rarityBonus = 0, int count = 1)
     {
         var b = db.Base(baseId);
+        if (b.Kind is ItemKind.Tome or ItemKind.Scroll or ItemKind.Wand)
+        {
+            // A spell suited to the depth: anything up to rank 20 + 10 per item level.
+            var spells = db.Spells.Where(s => !s.Cantrip && s.NeedsPerk is null && s.Rank <= 20 + 10 * itemLevel).OrderBy(s => s.Id, StringComparer.Ordinal).ToList();
+            var sp = spells[rng.Next(spells.Count)];
+            return new Item { BaseId = baseId, Level = itemLevel, SpellId = sp.Id, Charges = b.Kind == ItemKind.Wand ? 6 + rng.Next(5) : 0 };
+        }
         if (b.Kind is not (ItemKind.Weapon or ItemKind.Shield or ItemKind.Armour or ItemKind.Gear))
             return new Item { BaseId = baseId, Count = count, Level = itemLevel, Charges = b.Consumable?.Amount ?? 0 };
 

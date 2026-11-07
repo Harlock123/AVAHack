@@ -1,3 +1,4 @@
+using AVAHack.Characters;
 using AVAHack.Game;
 using AVAHack.World;
 
@@ -44,6 +45,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     public void Think()
     {
         if (g.Mode != GameMode.Playing) return;
+        CastSpells();
         foreach (var p in g.Level.Plates.Where(p => p.Pressed)) _pressed.Add(p);
 
         // Fight anything adjacent.
@@ -126,6 +128,40 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             return;
         }
         g.Press(GameAction.StepForward);
+    }
+
+    private static readonly string[] Heals = ["rally", "mend", "mendMinor"];
+    private static readonly string[] Bolts = ["chainStorm", "frostlance", "firedart", "spark", "frostTouch", "fireball", "thunderclap"];
+    private static readonly string[] Summons = ["flameSpirit", "raiseBones", "summonFamiliar"];
+
+    /// <summary>Casters heal the hurt, throw spells at what's ahead, and call allies, as a player would.</summary>
+    private void CastSpells()
+    {
+        bool fight = g.Monsters.Any(m => m.IsAware && !m.Ally && m.IsAlive && m.Cell.Distance(g.PartyCell) <= 6);
+        foreach (var c in g.Party.Standing.ToList())
+        {
+            if (c.CastingSpell is not null || !c.RightHand.Ready || c.RightHand.Held) continue;
+            // Casters reach for their spells first; others now and then.
+            int magic = new[] { SkillId.Destruction, SkillId.Restoration, SkillId.Warding, SkillId.Conjuration, SkillId.Illusion }.Max(c.Rank);
+            int steel = AVAHack.Characters.Progression.WeaponSkills.Max(c.Rank);
+            if (Next() > (magic >= steel ? 0.6 : 0.05)) continue;
+            if (g.Party.Standing.Any(h => h.Hp < h.MaxHp * 0.7))
+                foreach (var h in Heals) if (g.WhyNotCast(c, h) is null) { g.Cast(c, h); goto next; }
+            if (!fight) continue;
+            if (Summons.FirstOrDefault(s => g.WhyNotCast(c, s) is null) is { } sum && !g.Monsters.Any(m => m.Ally && m.IsAlive)) { g.Cast(c, sum); continue; }
+            bool lined = Enumerable.Range(1, 6).Select(i => g.PartyCell.Step(g.Facing) is var first ? Walk(i) : default)
+                .Any(cell => g.MonstersAt(cell).Any(m => !m.Ally));
+            if (lined && Bolts.FirstOrDefault(s => g.WhyNotCast(c, s) is null) is { } bolt) { g.Cast(c, bolt); continue; }
+            if (g.WhyNotCast(c, "ward") is null && g.Hero.Ward <= 0 && Next() < 0.3) { g.Selected = g.Hero; g.Cast(c, "ward"); }
+            next: ;
+        }
+    }
+
+    private AVAHack.World.Cell Walk(int steps)
+    {
+        var c = g.PartyCell;
+        for (int i = 0; i < steps; i++) c = c.Step(g.Facing);
+        return c;
     }
 
     private (Cell? Cell, Dir? Face, Lever? Use) NextObjective()

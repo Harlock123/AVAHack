@@ -60,6 +60,7 @@ public sealed partial class GameEngine
     private bool CanEnter(Monster m, Cell c, bool forPath)
     {
         if (c == PartyCell || Level.ChestAt(c) is not null) return false;
+        if (_sanctuary.ContainsKey(c) && !m.Ally) return false;
         var kind = Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
         if (kind == CellKind.Door)
@@ -131,6 +132,13 @@ public sealed partial class GameEngine
         {
             if (m.Action == MonsterAction.WindingUp) { m.Action = MonsterAction.None; m.Attack = null; }
             return;
+        }
+        if (m.CalmLeft > 0) m.CalmLeft = Math.Max(0, m.CalmLeft - TickSeconds);
+        if (m.FrenzyLeft > 0 && (m.FrenzyLeft -= TickSeconds) <= 0)
+        {
+            m.FrenzyLeft = 0;
+            m.Ally = false;
+            Say($"The {m.Name} comes to its senses.");
         }
         if (m.Summoned)
         {
@@ -235,11 +243,12 @@ public sealed partial class GameEngine
     private bool Notices(Monster m)
     {
         if (Invisible > 0 && m.Cell.Distance(PartyCell) > 1) return false;
+        if (m.CalmLeft > 0) return false;
         if (NoticeHook is { } hook) return hook(m);
         if (Sneaking) return SneakNotice(m);
         double d = Math.Sqrt(Sq(m.Cell.X - PartyCell.X) + Sq(m.Cell.Y - PartyCell.Y));
         if (d <= 1.01) return true;
-        double range = m.Def.Has("ambush") ? AmbushRange : Math.Max(2, m.Def.Perception - 5);
+        double range = m.Def.Has("ambush") ? AmbushRange : Math.Max(2, m.Def.Perception - 5 + (Lit ? 1 : -1));
         return d <= range && HasLineOfSight(m.Cell, PartyCell);
     }
 
@@ -273,6 +282,12 @@ public sealed partial class GameEngine
     {
         var toParty = DirTo(m.Cell, PartyCell);
         int dist = m.Cell.Distance(PartyCell);
+        // An ally of the party standing next to it gets the blows meant for the party.
+        if (dist > 1 && Enum.GetValues<Dir>().Select(d => (d, MonstersAt(m.Cell.Step(d)).FirstOrDefault(o => o.Ally))).FirstOrDefault(x => x.Item2 is not null) is ({ } at, not null))
+        {
+            if (m.Facing != at) { Turn(m, at); return; }
+            if (m.Def.Attacks.FirstOrDefault(a => a.Range == 1) is { } bite) { WindUp(m, bite); return; }
+        }
 
         if (dist == 1 && toParty is { } face)
         {

@@ -44,8 +44,10 @@ public static class StartingKit
         c.AddToBackpack(new Item { BaseId = "torch", Count = 2 });
         c.AddToBackpack(new Item { BaseId = "bandage", Count = 2 });
         foreach (var sp in StartingSpells?.Invoke(c) ?? []) c.KnownSpells.Add(sp);
+        int quick = 0;
+        foreach (var sp in c.KnownSpells.Take(c.QuickSlots.Length)) c.QuickSlots[quick++] = sp;
     }
 
     /// <summary>The spells a calling starts with; magic fills this in.</summary>
-    public static Func<Character, IEnumerable<string>>? StartingSpells { get; set; }
+    public static Func<Character, IEnumerable<string>>? StartingSpells { get; set; } = Game.GameEngine.StartingSpells;
 }

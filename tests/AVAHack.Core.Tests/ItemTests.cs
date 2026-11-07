@@ -186,11 +186,12 @@ public sealed class ItemTests
         var hero = g.Hero; // Lore 5
         l.Drop(g.PartyCell, new Item { BaseId = "ring", Rarity = Rarity.Enchanted, Affixes = [new("ofTheOwl", 1), new("sturdy", 1)], Identified = false });
         g.PickUpAll();
-        Assert.False(hero.Backpack[0]!.Identified);
+        var ring = hero.Backpack.First(i => i?.BaseId == "ring")!;
+        Assert.False(ring.Identified);
         hero.GainSkillXp(SkillId.Lore, 1_000_000, XpSource.Plain); // up to the ceiling: 40 or more
         Assert.True(hero.SkillLevel(SkillId.Lore) >= 25);
         g.IdentifyAll();
-        Assert.True(hero.Backpack[0]!.Identified);
+        Assert.True(ring.Identified);
     }
 
     [Fact]

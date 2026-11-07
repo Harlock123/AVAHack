@@ -24,6 +24,7 @@ public sealed partial class Character
         RightHand = new HandSave(RightHand.Recovery, RightHand.RecoveryTotal),
         InFight = InFight, LuckUsed = LuckUsed, RelentlessUsed = RelentlessUsed,
         RanksThisFight = (int[])_ranksThisFight.Clone(), RiposteUntil = RiposteUntil,
+        Buffs = new Dictionary<string, double>(Buffs), AvoidDeathUsed = AvoidDeathUsed,
         Equipped = new Dictionary<EquipSlot, Items.Item>(_equipped),
         Backpack = (Items.Item?[])Backpack.Clone(),
         Spells = KnownSpells.ToList(),
@@ -65,6 +66,8 @@ public sealed partial class Character
         c.LuckUsed = s.LuckUsed;
         c.RelentlessUsed = s.RelentlessUsed;
         c.RiposteUntil = s.RiposteUntil;
+        foreach (var (k, v) in s.Buffs) c.Buffs[k] = v;
+        c.AvoidDeathUsed = s.AvoidDeathUsed;
         Array.Copy(s.RanksThisFight, c._ranksThisFight, Math.Min(c._ranksThisFight.Length, s.RanksThisFight.Length));
         foreach (var sp in s.Spells) c.KnownSpells.Add(sp);
         for (int i = 0; i < Math.Min(c.QuickSlots.Length, s.QuickSlots.Length); i++) c.QuickSlots[i] = s.QuickSlots[i];
@@ -105,6 +108,18 @@ public sealed partial class Character
     /// <summary>Food and water, 0–100 (spec 13.6).</summary>
     public double Food { get; internal set; } = 100;
     public double Water { get; internal set; } = 100;
+    /// <summary>The spell being cast, and how long until it goes off.</summary>
+    public string? CastingSpell { get; internal set; }
+    public double CastLeft { get; internal set; }
+    public double CastTotal { get; internal set; }
+    /// <summary>A scroll or wand casts at this skill instead of the hero's own (no Mana).</summary>
+    internal int? CastSkill;
+    internal Items.Item? CastItem;
+    /// <summary>Timed spell effects on this hero: bulwark, guidance, resistElements, regen, muffle, boundBlade, boundBow.</summary>
+    public Dictionary<string, double> Buffs { get; } = new();
+    /// <summary>Who cast the ward this hero carries, for their Warding XP.</summary>
+    internal Character? WardFrom;
+
     /// <summary>Avoid Death's once-a-rest save.</summary>
     public bool AvoidDeathUsed { get; internal set; }
 

@@ -20,7 +20,8 @@ public sealed class CellarsTests
         Assert.Single(l.Stairs);
         var g = new GameEngine(l);
         Assert.Equal(24, g.Monsters.Count);
-        Assert.Contains("booms shut", g.LastMessage); // the note on the start cell
+        Assert.Contains(g.Log, m => m.Contains("booms shut")); // the note on the start cell
+        Assert.True(g.Lit); // a torch is lit straight away
     }
 
     /// <summary>

@@ -35,6 +35,7 @@
 24. Implementation decisions (M2)
 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
+27. Implementation decisions (M5)
 
 ---
 
@@ -951,6 +952,7 @@ the game.
 | Use what is ahead: pull the lever, open or close the door | F, Enter or keypad 5, or click it in the view |
 | Use hand: hero 1–4, left / right | Mouse on the hand, or keys 1–8 (1/2 = hero 1 L/R …) |
 | Quick slots | F1–F8 for the selected hero |
+| Spellbook | B |
 | Select hero | Tab cycles; Ctrl+1–4 swaps positions |
 | Sneak | C |
 | Pause / queue (if enabled) | Space |
@@ -1116,7 +1118,7 @@ Each milestone is finished when its exit test passes.
 | **M2** | One hero, one fight. *Built (2026-11-06); the exit test waits on the user's play* | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play. *So far:* the balance bot wins The Cellars 10 times in 12, in about 2.6 minutes of game time |
 | **M3** | Party and creation. *Done (2026-11-06)* | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it. *Result:* the quick-start party (bot) gets through The Cellars about 9 times in 12; the creation screens make any party of one to four |
 | **M4** | Progression. *Done (2026-11-06)* | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling. *Revised:* that target didn't fit the level curve; a bot run now shows every calling at level 8 with its best skill at 45 or more and its third-best at 35 or more (section 26) |
-| **M5** | Magic | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play |
+| **M5** | Magic. *Done (2026-11-06)* | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play. *Result:* a test casts every calling's starting spells and checks each one does something; in the progression report the spellblade raises Destruction and the paladin Warding beside their weapons |
 | **M6** | Generator | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable |
 | **M7** | The bestiary | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30 |
 | **M8** | Crafting and survival | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game |
@@ -1169,6 +1171,7 @@ is built.
 24. Implementation decisions (M2)
 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
+27. Implementation decisions (M5)
 
 - **22 skills, not 20.** The table in section 7.1 always listed 22 (Survival and Lore are in the craft group). The
   count elsewhere was corrected to match.
@@ -1238,6 +1241,7 @@ is built.
 ## 24. Implementation decisions (M2)
 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
+27. Implementation decisions (M5)
 
 - **One hero, as a Lone Delver.** M2 plays Brannoc, the quick-start dwarf fighter, alone, so the Lone Delver rules
   of section 4 apply: +50% HP, +2 to saves and twice the skill XP. He has a longsword, a round shield and chain
@@ -1328,6 +1332,7 @@ is built.
 
 ## 25. Implementation decisions (M3)
 26. Implementation decisions (M4)
+27. Implementation decisions (M5)
 
 - **The party** (`Party`) has four slots: front left, front right, back left and back right. A party of one is a
   Lone Delver.
@@ -1390,6 +1395,7 @@ is built.
 ---
 
 ## 26. Implementation decisions (M4)
+27. Implementation decisions (M5)
 
 - **Perk trees for all 22 skills**: 145 perks, with 6–10 per tree and at least one that changes play in every tree.
   Effect kinds: damage, recovery, Mana cost, noise, sneak multiplier, block %, AC by armour, Stamina cost, crit
@@ -1446,4 +1452,54 @@ is built.
   The skills list marks every tree with a perk ready to buy.
 - **Trainers** (`Character.Train`) work, but there is nobody to train with until the Waystones (M7). Skill books
   drop as loot.
+
+---
+
+## 27. Implementation decisions (M5)
+
+- **48 spells** (`spells.json`, checked by the validator): eight in each school, plus cantrips (Minor Mending, Minor
+  Ward, Mage Hand, Detect Traps, Unlock, Frost Touch, Guidance and Beacon; Spark and Light are also cantrips). Some
+  names differ from section 10.2:
+  - Spell Turning turns missiles back, and Bulwark gives +2 AC.
+  - Bound Bow and Fireball are added; Anti-magic Field is left for the traps of M6.
+- **A spell has a target and an effect:**
+  - Targets: a bolt down the line ahead, the cell ahead, the eight cells around, a 3×3 blast two cells ahead,
+    self, the hero who needs it most, or the party.
+  - Effects: damage, heal, ward, cure, condition, buff, summon, hazard, revive or utility.
+- **Casting:**
+  - It takes the spell's cast time and then 1 s of recovery, and uses the caster's right hand.
+  - The Mana is spent at the start. Costs fall 0.4% per point of the school's skill (−40% at 100), and the
+    Mana perks lower them further.
+  - Power is (1 + skill / 200), plus the power perks, and the casting modifier is added to damage and healing.
+  - Bolts and spells aimed ahead make an attack roll against AC; blasts and the spells around the party allow a
+    save, for half damage (DC 8 + casting modifier + skill / 10).
+  - A blow on a caster calls for a CON save against 10 or half the damage, or the spell is lost. Shocked casters
+    fizzle a quarter of the time.
+- **Wards** soak damage before HP and don't stack. The warder earns Warding XP as theirs soaks blows.
+- **Summons** are allied creatures (Familiar, Raised Skeleton, Flame Spirit, Horror):
+  - they hunt the nearest foe, stay near the party when there's nothing to fight, and fade when their time runs
+    out;
+  - the party swaps places with an ally it walks into, and its blows and bolts pass allies by;
+  - foes fight an ally that stands next to them;
+  - Frenzy makes a creature an ally for a while.
+- **Calm** makes a creature forget the party until hurt or until the spell ends; **Fear** makes it flee.
+- **Hazards** (Cinder Wall, Acid Rain, Lingering Flame) burn creatures standing in them once a second. They don't
+  hurt the party.
+- **Light** (spec 10.3) has three levels, for the view and for being noticed:
+  - Darkness: 0.42, or 0.6 with a dwarf's darkvision.
+  - Torchlight: a torch burns 10 minutes. Torches light themselves when the last goes out, if anyone carries one.
+  - The Light spell: brighter still, for 5 minutes.
+
+  Creatures notice a lit party a cell farther away, and an unlit one a cell nearer.
+- **Tomes** teach a spell if the school's rank is high enough. **Scrolls** cast once at skill 50, for no Mana.
+  **Wands** hold 6–10 charges and cast at 40 + half the Enchanting skill.
+  - These spell items come in the loot tables, with a spell suited to the depth.
+  - Every calling starts with spells (fighters and barbarians with none, Emberkin with Spark).
+- **Keys:** F1–F8 cast the selected hero's quick slots; spells learned fill the empty ones, and right-clicking in
+  the spellbook moves them. To make room:
+  - quick save and load moved to F10 and F11 (spec 17 said F5 and F9);
+  - help moved to H;
+  - the frame-rate display moved to F12.
+- **The spellbook (B)** lists the selected hero's spells by school, with each one's cost, cast time, quick-slot key
+  and text, and casts a spell on a click. Each hero's card shows a casting bar and any ward.
 

@@ -81,7 +81,7 @@ public sealed partial class GameView
         DrawText(dc, string.Create(CultureInfo.InvariantCulture, $"{(int)t.TotalMinutes}:{t.Seconds:00}  ·  {Engine.Kills} slain  ·  {Engine.Party.Gold} gold"), SideArea.X + 16, 40, 14, Dim);
         DrawAutomap(dc, new Rect(SideArea.X + 16, 66, 288, 288));
         DrawLog(dc, new Rect(SideArea.X + 16, 366, 288, 200));
-        DrawText(dc, "I inventory · C sheet · Esc menu · F1 help", SideArea.X + 16, 574, 12, Dim);
+        DrawText(dc, "I items · C sheet · B spells · Esc menu · H help", SideArea.X + 16, 574, 12, Dim);
     }
 
     private void DrawAutomap(DrawingContext dc, Rect area)
@@ -193,6 +193,7 @@ public sealed partial class GameView
         if (h.PendingLevelChoices > 0 || h.AttributePoints > 0) notes.Add("level up! (C)");
         else if (h.PerkPoints > 0) notes.Add("perk to spend (C)");
         if (notes.Count > 0) DrawText(dc, string.Join(" · ", notes), card.X + 10, card.Y + 180, 11, Brushes.Orange, maxWidth: 300);
+        CardMagic(dc, card, h);
         double xp = (double)h.CharacterXp / h.XpToNextLevel;
         dc.FillRectangle(Trough, new Rect(card.X + 232, card.Y + 116, 76, 6));
         dc.FillRectangle(XpBrush, new Rect(card.X + 232, card.Y + 116, 76 * xp, 6));

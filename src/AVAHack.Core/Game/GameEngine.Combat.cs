@@ -198,7 +198,7 @@ public sealed partial class GameEngine
         {
             c = c.Step(Facing);
             if (Level.KindAt(c) == CellKind.Wall || Level.DoorAt(c) is { IsPassable: false, Kind: DoorKind.Hand } || Level.ChestAt(c) is not null) return null;
-            if (MonstersAt(c).FirstOrDefault() is { } m) return m;
+            if (MonstersAt(c).FirstOrDefault(x => !x.Ally) is { } m) return m;
         }
         return null;
     }
@@ -209,7 +209,7 @@ public sealed partial class GameEngine
     {
         var ahead = PartyCell.Step(Facing);
         AlertWithin(NoiseRange);
-        target ??= MonstersAt(ahead).FirstOrDefault();
+        target ??= MonstersAt(ahead).FirstOrDefault(m => !m.Ally);
         if (target is null)
         {
             if (weaponKind != "bow" && _monsters.FirstOrDefault(m => m.State == MonsterState.Pile && m.Cell == ahead) is { } pile) StrikePile(pile, type);
@@ -425,6 +425,12 @@ public sealed partial class GameEngine
         var exposed = Party.Exposed(side);
         if (exposed.Count == 0) return;
         var c = target ?? (exposed.Count == 1 ? exposed[0] : exposed[Rng.Combat.Next(exposed.Count)]);
+        if (Mirrors > 0 && target is null)
+        {
+            Mirrors--;
+            FloatAtHero("a false self shatters", TextKind.Blocked);
+            return;
+        }
         var adv = c.Conditions.AttackedWithAdvantage ? Advantage.Advantage : Advantage.None;
         if (Invisible > 0) adv = AdvantageRules.Combine(adv, Advantage.Disadvantage);
         var res = Combat.Attack(Rng.Combat, a.ToHit + m.ToHitBonus, c.ArmourClass, adv);
@@ -482,7 +488,10 @@ public sealed partial class GameEngine
             Say($"{c.Name} refuses to fall!");
         }
 
+        double ward = c.Ward;
         c.TakeDamage(dmg);
+        if (ward > c.Ward && c.WardFrom is { } warder) warder.UseSkill(SkillId.Warding, warder.UseXp(SkillId.Warding, ward - c.Ward), XpSource.Plain);
+        Concentrate(c, dmg);
         c.HurtFlash = 0.3;
         HeroHurt = 0.3;
         FloatAtHero(res.Critical ? $"-{dmg}!" : $"-{dmg}", TextKind.HeroHurt);
@@ -525,7 +534,19 @@ public sealed partial class GameEngine
             if (cell == PartyCell && !p.FromParty)
             {
                 _projectiles.Remove(p);
-                if (p.Attack is { } atk) HitHero(p.Source!, atk, cell.Step(p.Dir.Opposite()));
+                if (p.Attack is { } atk && Turning > 0)
+                {
+                    // Spell Turning: back it goes.
+                    var src = p.Source;
+                    _projectiles.Add(new Projectile(PartyCell, p.Dir.Opposite())
+                    {
+                        Look = p.Look, Speed = p.Speed, Range = p.Range,
+                        OnHit = (m, _) => DamageMonster(m, Combat.ApplyAffinity(Dice.Parse(atk.Damage).Roll(Rng.Combat), m.Resistances.For(atk.Type)), atk.Type),
+                    });
+                    FloatAtHero("turned", TextKind.Blocked);
+                    continue;
+                }
+                if (p.Attack is { } atk2) HitHero(p.Source!, atk2, cell.Step(p.Dir.Opposite()));
                 continue;
             }
             if (MonstersAt(cell).FirstOrDefault(m => m != p.Source && (!p.FromParty || !m.Ally)) is { } victim)

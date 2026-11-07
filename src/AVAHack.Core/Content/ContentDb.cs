@@ -331,6 +331,27 @@ public sealed class ContentDb
         }
         foreach (var c in Creatures.Where(c => c.Loot is not null && LootTables.All(t => t.Id != c.Loot)))
             p.Add($"creatures: {c.Id}'s loot table '{c.Loot}' doesn't exist.");
+        ValidateSpells(p);
+    }
+
+    private void ValidateSpells(List<string> p)
+    {
+        var targets = new HashSet<string> { "bolt", "ahead", "around", "blast", "self", "ally", "party" };
+        var effects = new HashSet<string> { "damage", "heal", "ward", "cure", "condition", "buff", "summon", "hazard", "revive", "utility" };
+        foreach (var g in Spells.GroupBy(x => x.Id).Where(g => g.Count() > 1)) p.Add($"spells: '{g.Key}' is defined {g.Count()} times.");
+        foreach (var s in Spells)
+        {
+            if (!targets.Contains(s.Target)) p.Add($"spells: {s.Id} has an unknown target '{s.Target}'.");
+            if (!effects.Contains(s.Effect)) p.Add($"spells: {s.Id} has an unknown effect '{s.Effect}'.");
+            if (_skills.TryGetValue(s.School, out var school) && school.Group != SkillGroup.Magic) p.Add($"spells: {s.Id}'s school {s.School} is not a school of magic.");
+            if (s.Dice is { } d) CheckDice(p, $"spells: {s.Id}'s dice", d);
+            if (s.Effect is "damage" or "heal" or "hazard" && s.Dice is null) p.Add($"spells: {s.Id} needs dice.");
+            if (s.Effect is "damage" or "hazard" && s.Type is null) p.Add($"spells: {s.Id} needs a damage type.");
+            if (s.Effect == "summon" && Creatures.All(c => c.Id != s.Name2)) p.Add($"spells: {s.Id} summons '{s.Name2}', which isn't a creature.");
+            if (s.Effect == "condition" && s.Condition is null) p.Add($"spells: {s.Id} needs a condition.");
+            if (s.Mana < 0 || s.CastTime <= 0) p.Add($"spells: {s.Id} needs a cost and a cast time.");
+            if (s.Rank is < 0 or > 100) p.Add($"spells: {s.Id}'s rank must be 0–100.");
+        }
     }
 
     private static void CheckDice(List<string> p, string what, string dice)

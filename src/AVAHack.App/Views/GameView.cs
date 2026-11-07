@@ -318,9 +318,9 @@ public sealed partial class GameView : Control, ICustomHitTest
         bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
         switch (e.PhysicalKey)
         {
-            case PhysicalKey.F3: ShowStats = !ShowStats; return;
-            case PhysicalKey.F5: QuickSave(); return;
-            case PhysicalKey.F9: QuickLoad(); return;
+            case PhysicalKey.F12: ShowStats = !ShowStats; return;
+            case PhysicalKey.F10: QuickSave(); return;
+            case PhysicalKey.F11: QuickLoad(); return;
             case PhysicalKey.Escape:
                 Overlay = Overlay == Overlay.None ? Overlay.Menu : Overlay.None;
                 return;
@@ -339,6 +339,7 @@ public sealed partial class GameView : Control, ICustomHitTest
         }
         if (OverlayKey(e)) return;
         if (Overlay is not (Overlay.None or Overlay.Help)) return;
+        if (QuickCast(e.PhysicalKey)) return;
         if (ctrl && InputHandler.MapSlot(e.PhysicalKey) is { } slot)
         {
             Engine.Party.Swap(Engine.Party.SlotOf(Engine.Selected), slot);

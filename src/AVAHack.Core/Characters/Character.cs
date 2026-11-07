@@ -48,8 +48,8 @@ public sealed partial class Character
     public double ExtraSkillXpPercent { get; set; }
 
     public double Hp { get; private set; }
-    public double Stamina { get; private set; }
-    public double Mana { get; private set; }
+    public double Stamina { get; internal set; }
+    public double Mana { get; internal set; }
     public bool IsDown => Hp <= 0;
     /// <summary>Dead, not just down: failed death saves. Only a shrine or Recall Soul brings them back.</summary>
     public bool IsDead { get; internal set; }
@@ -146,7 +146,7 @@ public sealed partial class Character
             var w = Armour;
             int armour = w.Armour == 0 && HasTrait(Traits.ScaledHide) ? 2 : w.Armour;
             int dex = w.DexCap is { } cap ? Math.Min(Mod(Attribute.Dex), cap) : Mod(Attribute.Dex);
-            return 10 + armour + dex + w.Shield + w.Other + (int)ItemTotal("ac") + (int)PerkArmour;
+            return 10 + armour + dex + w.Shield + w.Other + (int)ItemTotal("ac") + (int)PerkArmour + (Buffs.ContainsKey("bulwark") ? 2 : 0);
         }
     }
 
@@ -178,7 +178,7 @@ public sealed partial class Character
         if (against == "poison" && HasTrait(Traits.PoisonResistance)) adv = AdvantageRules.Combine(adv, Advantage.Advantage);
         if (against == "illusion" && HasTrait(Traits.IllusionWard)) adv = AdvantageRules.Combine(adv, Advantage.Advantage);
         int n = RollD20(rng, adv);
-        return n + SaveBonus(a) >= dc;
+        return n + SaveBonus(a) + (against == "spell" ? (int)PerkTotal("spellSave") : 0) >= dc;
     }
 
     /// <summary>A d20 for this character. A Halfling's luck rerolls the first natural 1 in each fight.</summary>
@@ -196,7 +196,7 @@ public sealed partial class Character
     /// <summary>Attack bonus with a weapon skill: the attribute, floor(skill / 10), minus Weakened's penalty on STR attacks.</summary>
     public int AttackBonus(SkillId weaponSkill, Attribute attribute, int other = 0) =>
         Combat.AttackBonus(Mod(attribute) - (attribute == Attribute.Str ? Conditions.StrengthPenalty : 0), SkillLevel(weaponSkill),
-                           other + (int)ItemTotal("toHit"));
+                           other + (int)ItemTotal("toHit") + (Buffs.ContainsKey("guidance") ? 1 : 0));
 
     /// <summary>Rolls an attack, taking advantage from the situation and disadvantage from this character's conditions.</summary>
     public AttackResult Attack(Rng rng, SkillId weaponSkill, Attribute attribute, int targetAc, Advantage situation = Advantage.None, int other = 0)
@@ -256,6 +256,7 @@ public sealed partial class Character
             if (HasTrait(Traits.PoisonResistance)) r.Resist(DamageType.Poison);
             if (HasTrait(Traits.FireResistance)) r.Resist(DamageType.Fire);
             foreach (var t in ItemScopes("resist")) if (Enum.TryParse<DamageType>(t, true, out var d)) r.Resist(d);
+            if (Buffs.ContainsKey("resistElements")) r.Resist(DamageType.Fire, DamageType.Cold, DamageType.Lightning);
             return r;
         }
     }
@@ -339,6 +340,7 @@ public sealed partial class Character
         double scale = InFight ? 0.25 : 1;
         if (!InFight && !IsDown && !Conditions.StopsRegeneration) Hp = Math.Min(MaxHp, Hp + MaxHp * 0.01 * seconds);
         if (!IsDown && ItemTotal("hpRegen") is > 0 and var regen) Hp = Math.Min(MaxHp, Hp + regen / 10.0 * seconds);
+        if (!IsDown && Buffs.ContainsKey("regen")) Hp = Math.Min(MaxHp, Hp + 2.0 / 3 * seconds);
         Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * scale * seconds * (1 + PerkTotalFor("regenPct", "stamina") / 100));
         double manaRate = Math.Max(0, 0.03 + 0.005 * Mod(Attribute.Wis));
         Mana = Math.Min(MaxMana, Mana + MaxMana * manaRate * scale * seconds);

@@ -30,6 +30,10 @@ public sealed partial class GameEngine
             Gold = Party.Gold, TickCount = TickCount, Kills = Kills, Log = Log.TakeLast(12).ToList(),
             LightLeft = LightLeft, Invisible = Invisible, Selected = members.IndexOf(Selected),
             Accumulator = _accumulator, InFight = _inFight, Calm = _calm,
+            MagicLight = MagicLight, Mirrors = Mirrors, Turning = Turning, Detecting = Detecting,
+            Portal = Portal is { } pt ? [pt.Cell.X, pt.Cell.Y, (int)pt.Facing] : null,
+            Hazards = _hazards.Select(h => new HazardSave(h.Cell.X, h.Cell.Y, h.Type, h.Dice.ToString(), h.SecondsLeft, h.Power)).ToList(),
+            Sanctuary = _sanctuary.Select(kv => new CellSave(kv.Key.X, kv.Key.Y)).ToList(),
             Current = LevelState(),
             Visited = visited?.ToList() ?? [],
             Delve = delve ?? [],
@@ -59,7 +63,7 @@ public sealed partial class GameEngine
             Action = m.Action, ActionLeft = m.ActionLeft, ActionTotal = m.ActionTotal, Attack = m.Attack?.Id,
             FromX = m.From.X, FromY = m.From.Y, StrikeTime = m.StrikeTime, IdleLeft = m.IdleLeft, FleeLeft = m.FleeLeft,
             AffixTimer = m.AffixTimer, LastHitType = m.LastHitType, Conditions = Character.SaveConditions(m.Conditions),
-            LastSeen = m.LastSeen, Awareness = m.Awareness,
+            LastSeen = m.LastSeen, Awareness = m.Awareness, CalmLeft = m.CalmLeft, FrenzyLeft = m.FrenzyLeft,
         }).ToList(),
         Flags = new Dictionary<string, string>(LevelFlags),
         PartyX = PartyCell.X, PartyY = PartyCell.Y, Facing = Facing,
@@ -88,6 +92,13 @@ public sealed partial class GameEngine
         g.LightLeft = s.LightLeft;
         g.Invisible = s.Invisible;
         g._accumulator = s.Accumulator;
+        g.MagicLight = s.MagicLight;
+        g.Mirrors = s.Mirrors;
+        g.Turning = s.Turning;
+        g.Detecting = s.Detecting;
+        if (s.Portal is { Length: 3 } pt) g.Portal = (new Cell(pt[0], pt[1]), (Dir)pt[2]);
+        foreach (var h in s.Hazards) g._hazards.Add(new Hazard { Cell = new Cell(h.X, h.Y), Type = h.Type, Dice = Rules.Dice.Parse(h.Dice), SecondsLeft = h.SecondsLeft, Power = h.Power });
+        foreach (var c in s.Sanctuary) g._sanctuary[new Cell(c.X, c.Y)] = 5;
         g._inFight = s.InFight;
         g._calm = s.Calm;
         if (s.Selected >= 0 && s.Selected < heroes.Count) g.Selected = heroes[s.Selected];
@@ -148,6 +159,8 @@ public sealed partial class GameEngine
             m.AffixTimer = ms.AffixTimer;
             m.LastHitType = ms.LastHitType;
             m.LastSeen = ms.LastSeen;
+            m.CalmLeft = ms.CalmLeft;
+            m.FrenzyLeft = ms.FrenzyLeft;
             m.Awareness = ms.Awareness;
             Character.LoadConditions(m.Conditions, ms.Conditions);
             _monsters.Add(m);

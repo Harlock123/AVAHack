@@ -59,6 +59,8 @@ public sealed record CharacterSave
     public bool RelentlessUsed { get; init; }
     public int[] RanksThisFight { get; init; } = [];
     public double RiposteUntil { get; init; } = -1;
+    public Dictionary<string, double> Buffs { get; init; } = [];
+    public bool AvoidDeathUsed { get; init; }
 }
 
 public sealed record MonsterSave
@@ -99,7 +101,11 @@ public sealed record MonsterSave
     public List<ConditionSave> Conditions { get; init; } = [];
     public double LastSeen { get; init; } = -100;
     public double Awareness { get; init; }
+    public double CalmLeft { get; init; }
+    public double FrenzyLeft { get; init; }
 }
+
+public sealed record HazardSave(int X, int Y, DamageType Type, string Dice, double SecondsLeft, double Power);
 
 public sealed record CellSave(int X, int Y);
 public sealed record DoorSave(int X, int Y, double Open, bool Opening);
@@ -146,6 +152,13 @@ public sealed record SaveGame
     public double Invisible { get; init; }
     public int Selected { get; init; }
     public double Accumulator { get; init; }
+    public double MagicLight { get; init; }
+    public int Mirrors { get; init; }
+    public double Turning { get; init; }
+    public double Detecting { get; init; }
+    public int[]? Portal { get; init; }
+    public List<HazardSave> Hazards { get; init; } = [];
+    public List<CellSave> Sanctuary { get; init; } = [];
     public bool InFight { get; init; }
     public double Calm { get; init; }
     /// <summary>The level the party is in.</summary>

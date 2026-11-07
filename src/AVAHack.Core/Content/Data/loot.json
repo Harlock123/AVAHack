@@ -41,6 +41,10 @@
    {
     "item": "potionHealing",
     "weight": 1
+   },
+   {
+    "category": "scroll",
+    "weight": 0.4
    }
   ]
  },
@@ -67,6 +71,10 @@
    {
     "category": "gear",
     "weight": 0.5
+   },
+   {
+    "category": "scroll",
+    "weight": 0.6
    }
   ]
  },
@@ -106,6 +114,18 @@
    {
     "item": "potionHealing",
     "weight": 2
+   },
+   {
+    "category": "tome",
+    "weight": 1.2
+   },
+   {
+    "category": "scroll",
+    "weight": 1.2
+   },
+   {
+    "category": "wand",
+    "weight": 0.3
    }
   ]
  },
@@ -141,6 +161,18 @@
    {
     "item": "scrollIdentify",
     "weight": 1
+   },
+   {
+    "category": "tome",
+    "weight": 1.5
+   },
+   {
+    "category": "scroll",
+    "weight": 1
+   },
+   {
+    "category": "wand",
+    "weight": 0.8
    }
   ]
  }

@@ -103,7 +103,7 @@ public sealed partial class GameEngine
             "food" or "water" => Eat(c, index),
             _ => null,
         };
-        said ??= UseSpellItem(c, index);
+        said ??= SpellItemHook?.Invoke(c, index);
         said ??= c.Use(index, Rng.Combat);
         if (said is not null) Say(said);
         return said;
@@ -199,7 +199,6 @@ public sealed partial class GameEngine
 
     /// <summary>Hooks for later systems: food (survival) and spell items (magic) fill these in.</summary>
     private string? Eat(Character c, int index) => EatHook?.Invoke(c, index);
-    private string? UseSpellItem(Character c, int index) => SpellItemHook?.Invoke(c, index);
     internal Func<Character, int, string?>? EatHook;
     internal Func<Character, int, string?>? SpellItemHook;
 }
@@ -208,7 +207,27 @@ public sealed partial class GameEngine
 {
     private void TickLight()
     {
-        if (LightLeft > 0) LightLeft = Math.Max(0, LightLeft - TickSeconds);
+        if (LightLeft > 0)
+        {
+            LightLeft = Math.Max(0, LightLeft - TickSeconds);
+            if (LightLeft == 0) { Say("The torch gutters out."); LightNextTorch(); }
+        }
         if (Invisible > 0) Invisible = Math.Max(0, Invisible - TickSeconds);
+    }
+}
+
+public sealed partial class GameEngine
+{
+    /// <summary>When the light goes out, someone lights the next torch, if anyone has one.</summary>
+    private void LightNextTorch()
+    {
+        if (LightLeft > 0 || MagicLight > 0) return;
+        foreach (var c in Party.Standing)
+            for (int i = 0; i < Character.BackpackSize; i++)
+                if (c.Backpack[i] is { BaseId: "torch" })
+                {
+                    Say(LightTorch(c, i) ?? "");
+                    return;
+                }
     }
 }

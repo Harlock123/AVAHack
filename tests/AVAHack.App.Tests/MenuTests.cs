@@ -186,3 +186,28 @@ public sealed class SheetTests
             w.CaptureRenderedFrame()!.Save(Path.Combine(dir, "AVAHack-sheet.png"), PngBitmapEncoderOptions.Default);
     }
 }
+
+public sealed class SpellbookTests
+{
+    [AvaloniaFact]
+    public void Quick_slots_cast_and_the_spellbook_lists_the_spells()
+    {
+        var db = ContentDb.LoadBuiltIn();
+        var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(db), db);
+        var v = new GameView(g, startLoop: false, store: new SaveStore(Path.Combine(Path.GetTempPath(), "avahack-book-" + Guid.NewGuid().ToString("N"))));
+        var w = new Window { Width = 1280, Height = 800, Content = v };
+        w.Show();
+        var ithren = g.Party[Slot.BackRight]!;
+        g.Selected = ithren;
+        Assert.Equal("spark", ithren.QuickSlots[0]);
+        double mana = ithren.Mana;
+        w.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.None);
+        Assert.Equal("spark", ithren.CastingSpell);
+        Assert.True(ithren.Mana < mana);
+        w.KeyPressQwerty(PhysicalKey.B, RawInputModifiers.None);
+        Assert.Equal(Overlay.Spellbook, v.Overlay);
+        for (int i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
+        var frame = w.CaptureRenderedFrame();
+        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir) frame!.Save(Path.Combine(dir, "AVAHack-spellbook.png"), PngBitmapEncoderOptions.Default);
+    }
+}

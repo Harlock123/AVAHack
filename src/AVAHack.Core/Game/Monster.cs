@@ -76,6 +76,10 @@ public sealed class Monster
     public double Awareness { get; internal set; }
     /// <summary>When it last saw (or heard) the party, in game seconds.</summary>
     public double LastSeen { get; internal set; } = -100;
+    /// <summary>Seconds left of Calm: it won't notice the party unless hurt.</summary>
+    public double CalmLeft { get; internal set; }
+    /// <summary>Seconds left of Frenzy: it fights its own side.</summary>
+    public double FrenzyLeft { get; internal set; }
     /// <summary>Seconds left of the lunge after a blow lands.</summary>
     public double StrikeTime { get; internal set; }
     /// <summary>Seconds until a pile of bones stands up again.</summary>

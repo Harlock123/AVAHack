@@ -81,7 +81,7 @@ public sealed class WindowTests
     }
 
     [AvaloniaFact]
-    public void Use_opens_the_door_ahead_and_F3_shows_the_stats()
+    public void Use_opens_the_door_ahead_and_F12_shows_the_stats()
     {
         var (w, v) = Open();
         v.Engine.Stand(new Cell(4, 3), Dir.East);
@@ -89,7 +89,7 @@ public sealed class WindowTests
         v.Advance(0.5);
         Assert.True(v.Engine.Level.DoorAt(5, 3)!.Opening);
         Shot(w, "door-opening");
-        w.KeyPressQwerty(PhysicalKey.F3, RawInputModifiers.None);
+        w.KeyPressQwerty(PhysicalKey.F12, RawInputModifiers.None);
         Assert.True(v.ShowStats);
     }
 

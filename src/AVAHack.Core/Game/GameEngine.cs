@@ -87,18 +87,21 @@ public sealed partial class GameEngine
         Party = party;
         PartyCell = level.Start;
         Facing = level.StartFacing;
+        InitMagic();
         if (spawn)
         {
             SpawnMonsters();
             FillChests();
         }
         EnterCell(PartyCell);
+        LightNextTorch();
     }
 
     public static Character DefaultHero(ContentDb content)
     {
         var h = CharacterBuilder.QuickStartParty(content)[0];
         h.Equip(content.Weapon("longsword"), content.Shield("roundShield"), content.ArmourPiece("chainMail"));
+        h.AddToBackpack(new Items.Item { BaseId = "torch", Count = 2 });
         return h;
     }
 
@@ -140,6 +143,7 @@ public sealed partial class GameEngine
         TickProjectiles();
         UpdatePlates();
         TickParty();
+        TickCasting();
         TickLight();
     }
 
@@ -291,6 +295,12 @@ public sealed partial class GameEngine
                         Say("Someone is carrying far too much to move. Drop something.");
                         _queue.Clear();
                         return;
+                    }
+                    if (!CanPartyEnter(target) && Level.IsPassable(target) && Level.ChestAt(target) is null
+                        && _monsters.Where(m => m.IsAlive && m.Cell == target).ToList() is { Count: > 0 } there && there.All(m => m.Ally))
+                    {
+                        // Allies step aside: they take the party's place.
+                        foreach (var ally in there) { ally.From = target; ally.Cell = PartyCell; }
                     }
                     if (CanPartyEnter(target))
                     {

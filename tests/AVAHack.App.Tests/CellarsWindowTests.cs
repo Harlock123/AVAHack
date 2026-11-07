@@ -48,7 +48,7 @@ public sealed class CellarsWindowTests
     public void The_cellars_open_with_the_hero_bar_and_the_first_note()
     {
         var (w, v) = Open();
-        Assert.Contains("booms shut", v.Engine.LastMessage);
+        Assert.Contains(v.Engine.Log, m => m.Contains("booms shut"));
         Shot(w, "cellars-start");
     }
 

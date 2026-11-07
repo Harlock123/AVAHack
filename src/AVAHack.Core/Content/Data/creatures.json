@@ -1,41 +1,418 @@
-// Monsters (spec 12). M2 has the six lesser creatures of the Upper Hollow.
+// Monsters (spec 12), and the things the party summons.
 [
-  { "id": "cellarRat", "loot": "vermin", "name": "Cellar Rat", "family": "vermin", "tier": "lesser", "level": 1,
-    "hitDice": "1d6", "ac": 11, "saves": { "dex": 2 }, "perception": 10, "stepSeconds": 0.45, "turnSeconds": 0.3, "size": "small",
-    "attacks": [ { "id": "bite", "windup": 0.45, "recovery": 1.3, "toHit": 3, "damage": "1d3", "type": "piercing",
-                   "onHit": { "condition": "diseased", "dc": 10, "chance": 10 } } ],
-    "behaviour": ["wander", "chase", "melee", "pack"], "fleeAtPercent": 25, "sprite": "rat",
-    "text": "Fat on what the town throws down the drains. They come in threes and fours." },
-  { "id": "tunnelSpider", "loot": "vermin", "name": "Tunnel Spider", "family": "vermin", "tier": "lesser", "level": 2,
-    "hitDice": "2d8", "ac": 12, "saves": { "dex": 3 }, "perception": 12, "stepSeconds": 0.4, "turnSeconds": 0.35, "size": "small",
-    "attacks": [ { "id": "bite", "windup": 0.5, "recovery": 1.6, "toHit": 4, "damage": "1d4", "type": "piercing",
-                   "onHit": { "condition": "poisoned", "dc": 11, "seconds": 6 } } ],
-    "behaviour": ["ambush", "chase", "melee", "mindless"], "sprite": "spider",
-    "text": "Waits in the dark of a ceiling corner until something walks underneath." },
-  { "id": "shambler", "loot": "undead.lesser", "name": "Shambler", "family": "restlessDead", "tier": "lesser", "level": 2,
-    "hitDice": "3d8+3", "ac": 8, "saves": { "con": 3 }, "perception": 8, "stepSeconds": 1.3, "turnSeconds": 1.2,
-    "immune": ["poison"], "vulnerable": ["radiant"], "conditionImmune": ["poisoned", "asleep", "frightened", "diseased"],
-    "attacks": [ { "id": "slam", "windup": 1.1, "recovery": 2.4, "toHit": 3, "damage": "1d6+1", "type": "bludgeoning" } ],
-    "behaviour": ["wander", "chase", "melee", "mindless"], "sprite": "shambler",
-    "text": "Slow, patient, and very hard to discourage." },
-  { "id": "boneSentry", "loot": "undead.lesser", "name": "Bone Sentry", "family": "restlessDead", "tier": "lesser", "level": 3,
-    "hitDice": "3d8", "ac": 13, "saves": { "str": 1, "dex": 1, "con": 2 }, "perception": 9, "stepSeconds": 0.9, "turnSeconds": 0.8,
-    "resist": ["piercing"], "vulnerable": ["bludgeoning", "radiant"], "immune": ["poison"],
-    "conditionImmune": ["poisoned", "asleep", "frightened", "diseased", "bleeding"],
-    "attacks": [ { "id": "rustyBlade", "windup": 0.7, "recovery": 2.0, "toHit": 4, "damage": "1d8+1", "type": "slashing" } ],
-    "behaviour": ["guard", "chase", "melee", "mindless"],
-    "special": [ { "kind": "reassemble", "seconds": 8, "unlessKilledBy": "bludgeoning" } ], "sprite": "skeleton",
-    "text": "Its bones knit back together unless they are crushed." },
-  { "id": "gutterGoblin", "loot": "goblin.lesser", "name": "Gutter Goblin", "family": "goblinKin", "tier": "lesser", "level": 1,
-    "hitDice": "2d6", "ac": 13, "saves": { "dex": 2 }, "perception": 11, "stepSeconds": 0.5, "turnSeconds": 0.4,
-    "attacks": [ { "id": "knife", "windup": 0.6, "recovery": 1.6, "toHit": 4, "damage": "1d6", "type": "slashing" } ],
-    "behaviour": ["guard", "chase", "melee", "opener", "pack", "flee"], "fleeAtPercent": 30, "sprite": "goblin",
-    "text": "Brave in a gang, and only in a gang." },
-  { "id": "goblinSlinger", "loot": "goblin.lesser", "name": "Goblin Slinger", "family": "goblinKin", "tier": "lesser", "level": 2,
-    "hitDice": "2d6", "ac": 12, "saves": { "dex": 3 }, "perception": 12, "stepSeconds": 0.5, "turnSeconds": 0.4,
-    "attacks": [
-      { "id": "stone", "windup": 0.8, "recovery": 2.4, "toHit": 4, "damage": "1d4+1", "type": "bludgeoning", "range": 5, "projectileSpeed": 6 },
-      { "id": "smack", "windup": 0.6, "recovery": 1.8, "toHit": 2, "damage": "1d3", "type": "bludgeoning" } ],
-    "behaviour": ["guard", "chase", "ranged", "melee", "opener", "pack", "flee"], "fleeAtPercent": 40, "sprite": "slinger",
-    "text": "Keeps its distance and its pockets full of stones." }
+ {
+  "id": "cellarRat",
+  "loot": "vermin",
+  "name": "Cellar Rat",
+  "family": "vermin",
+  "tier": "lesser",
+  "level": 1,
+  "hitDice": "1d6",
+  "ac": 11,
+  "saves": {
+   "dex": 2
+  },
+  "perception": 10,
+  "stepSeconds": 0.45,
+  "turnSeconds": 0.3,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "bite",
+    "windup": 0.45,
+    "recovery": 1.3,
+    "toHit": 3,
+    "damage": "1d3",
+    "type": "piercing",
+    "onHit": {
+     "condition": "diseased",
+     "dc": 10,
+     "chance": 10
+    }
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "pack"
+  ],
+  "fleeAtPercent": 25,
+  "sprite": "rat",
+  "text": "Fat on what the town throws down the drains. They come in threes and fours."
+ },
+ {
+  "id": "tunnelSpider",
+  "loot": "vermin",
+  "name": "Tunnel Spider",
+  "family": "vermin",
+  "tier": "lesser",
+  "level": 2,
+  "hitDice": "2d8",
+  "ac": 12,
+  "saves": {
+   "dex": 3
+  },
+  "perception": 12,
+  "stepSeconds": 0.4,
+  "turnSeconds": 0.35,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "bite",
+    "windup": 0.5,
+    "recovery": 1.6,
+    "toHit": 4,
+    "damage": "1d4",
+    "type": "piercing",
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 11,
+     "seconds": 6
+    }
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "spider",
+  "text": "Waits in the dark of a ceiling corner until something walks underneath."
+ },
+ {
+  "id": "shambler",
+  "loot": "undead.lesser",
+  "name": "Shambler",
+  "family": "restlessDead",
+  "tier": "lesser",
+  "level": 2,
+  "hitDice": "3d8+3",
+  "ac": 8,
+  "saves": {
+   "con": 3
+  },
+  "perception": 8,
+  "stepSeconds": 1.3,
+  "turnSeconds": 1.2,
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "radiant"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased"
+  ],
+  "attacks": [
+   {
+    "id": "slam",
+    "windup": 1.1,
+    "recovery": 2.4,
+    "toHit": 3,
+    "damage": "1d6+1",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "shambler",
+  "text": "Slow, patient, and very hard to discourage."
+ },
+ {
+  "id": "boneSentry",
+  "loot": "undead.lesser",
+  "name": "Bone Sentry",
+  "family": "restlessDead",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 13,
+  "saves": {
+   "str": 1,
+   "dex": 1,
+   "con": 2
+  },
+  "perception": 9,
+  "stepSeconds": 0.9,
+  "turnSeconds": 0.8,
+  "resist": [
+   "piercing"
+  ],
+  "vulnerable": [
+   "bludgeoning",
+   "radiant"
+  ],
+  "immune": [
+   "poison"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding"
+  ],
+  "attacks": [
+   {
+    "id": "rustyBlade",
+    "windup": 0.7,
+    "recovery": 2.0,
+    "toHit": 4,
+    "damage": "1d8+1",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "special": [
+   {
+    "kind": "reassemble",
+    "seconds": 8,
+    "unlessKilledBy": "bludgeoning"
+   }
+  ],
+  "sprite": "skeleton",
+  "text": "Its bones knit back together unless they are crushed."
+ },
+ {
+  "id": "gutterGoblin",
+  "loot": "goblin.lesser",
+  "name": "Gutter Goblin",
+  "family": "goblinKin",
+  "tier": "lesser",
+  "level": 1,
+  "hitDice": "2d6",
+  "ac": 13,
+  "saves": {
+   "dex": 2
+  },
+  "perception": 11,
+  "stepSeconds": 0.5,
+  "turnSeconds": 0.4,
+  "attacks": [
+   {
+    "id": "knife",
+    "windup": 0.6,
+    "recovery": 1.6,
+    "toHit": 4,
+    "damage": "1d6",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "opener",
+   "pack",
+   "flee"
+  ],
+  "fleeAtPercent": 30,
+  "sprite": "goblin",
+  "text": "Brave in a gang, and only in a gang."
+ },
+ {
+  "id": "goblinSlinger",
+  "loot": "goblin.lesser",
+  "name": "Goblin Slinger",
+  "family": "goblinKin",
+  "tier": "lesser",
+  "level": 2,
+  "hitDice": "2d6",
+  "ac": 12,
+  "saves": {
+   "dex": 3
+  },
+  "perception": 12,
+  "stepSeconds": 0.5,
+  "turnSeconds": 0.4,
+  "attacks": [
+   {
+    "id": "stone",
+    "windup": 0.8,
+    "recovery": 2.4,
+    "toHit": 4,
+    "damage": "1d4+1",
+    "type": "bludgeoning",
+    "range": 5,
+    "projectileSpeed": 6
+   },
+   {
+    "id": "smack",
+    "windup": 0.6,
+    "recovery": 1.8,
+    "toHit": 2,
+    "damage": "1d3",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee",
+   "opener",
+   "pack",
+   "flee"
+  ],
+  "fleeAtPercent": 40,
+  "sprite": "slinger",
+  "text": "Keeps its distance and its pockets full of stones."
+ },
+ {
+  "id": "familiar",
+  "name": "Familiar",
+  "family": "summoned",
+  "tier": "lesser",
+  "level": 2,
+  "hitDice": "2d6",
+  "ac": 14,
+  "perception": 14,
+  "stepSeconds": 0.35,
+  "turnSeconds": 0.2,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "claw",
+    "windup": 0.4,
+    "recovery": 1.2,
+    "toHit": 4,
+    "damage": "1d4+1",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "chase",
+   "melee",
+   "flier"
+  ],
+  "sprite": "bat",
+  "text": "A small winged thing that does as it's told."
+ },
+ {
+  "id": "boundSkeleton",
+  "name": "Raised Skeleton",
+  "family": "summoned",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 13,
+  "perception": 9,
+  "stepSeconds": 0.8,
+  "turnSeconds": 0.6,
+  "immune": [
+   "poison"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened"
+  ],
+  "attacks": [
+   {
+    "id": "blade",
+    "windup": 0.6,
+    "recovery": 1.8,
+    "toHit": 5,
+    "damage": "1d8+2",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "skeleton",
+  "text": "Old bones, borrowed."
+ },
+ {
+  "id": "flameSpirit",
+  "name": "Flame Spirit",
+  "family": "summoned",
+  "tier": "common",
+  "level": 6,
+  "hitDice": "5d8",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.5,
+  "turnSeconds": 0.3,
+  "immune": [
+   "fire",
+   "poison"
+  ],
+  "vulnerable": [
+   "cold"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "burning",
+   "asleep",
+   "frightened"
+  ],
+  "attacks": [
+   {
+    "id": "burn",
+    "windup": 0.6,
+    "recovery": 1.6,
+    "toHit": 6,
+    "damage": "2d6",
+    "type": "fire",
+    "onHit": {
+     "condition": "burning",
+     "dc": 13,
+     "chance": 30
+    }
+   }
+  ],
+  "behaviour": [
+   "chase",
+   "melee",
+   "flier"
+  ],
+  "sprite": "wisp",
+  "text": "A walking bonfire with a temper."
+ },
+ {
+  "id": "horror",
+  "name": "Horror",
+  "family": "summoned",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10",
+  "ac": 16,
+  "perception": 14,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.4,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "maw",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 9,
+    "damage": "3d8+4",
+    "type": "piercing"
+   }
+  ],
+  "behaviour": [
+   "chase",
+   "melee"
+  ],
+  "sprite": "horror",
+  "text": "Better on your side than not."
+ }
 ]

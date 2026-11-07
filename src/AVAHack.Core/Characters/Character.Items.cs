@@ -24,8 +24,23 @@ public sealed partial class Character
 
     public Item? ItemIn(EquipSlot slot) => _equipped.GetValueOrDefault(slot);
 
-    /// <summary>The weapon in the right hand (null is a bare fist).</summary>
-    public WeaponDef? MainHand => ItemIn(EquipSlot.RightHand) is { } i ? Content.Base(i.BaseId).Weapon : null;
+    /// <summary>The weapon in the right hand (null is a bare fist); a bound weapon spell replaces it.</summary>
+    public WeaponDef? MainHand =>
+        Buffs.ContainsKey("boundBlade") ? BoundBlade
+        : Buffs.ContainsKey("boundBow") ? BoundBow
+        : ItemIn(EquipSlot.RightHand) is { } i ? Content.Base(i.BaseId).Weapon : null;
+
+    private static readonly WeaponDef BoundBlade = new()
+    {
+        Id = "boundBlade", Name = "Bound Blade", Skill = SkillId.Blade, Damage = "1d10", Type = Rules.DamageType.Force,
+        Recovery = 1.8, Text = "A blade of force.",
+    };
+
+    private static readonly WeaponDef BoundBow = new()
+    {
+        Id = "boundBow", Name = "Bound Bow", Skill = SkillId.Archery, Damage = "1d10", Type = Rules.DamageType.Force,
+        Recovery = 2.0, Kind = "bow", Range = 8, Finesse = true, TwoHanded = true, Text = "A bow of force.",
+    };
     /// <summary>A shield on the left arm.</summary>
     public ShieldDef? OffHand => ItemIn(EquipSlot.LeftHand) is { } i ? Content.Base(i.BaseId).Shield : null;
     /// <summary>A second weapon in the left hand.</summary>

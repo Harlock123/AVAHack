@@ -126,6 +126,16 @@ public sealed class Delve
         if (Depth >= Options.Depth)
         {
             if (FinalHook?.Invoke() == true) return;
+            if (Depth == Options.Depth && Generator.HasHeart(Options.Depth))
+            {
+                // Below the last level: the Unmade Heart, and the Unmaker.
+                Store();
+                Depth++;
+                var heart = Generate(Depth);
+                Arrive(heart, heart.Start, heart.StartFacing);
+                Engine.Say("The stairs end in a place that isn't finished. Something vast is waking. This is the Unmade Heart.");
+                return;
+            }
             Engine.Win("The last stairs. The Delve is done.");
             return;
         }
@@ -169,7 +179,7 @@ public sealed class Delve
         LevelChanged?.Invoke(Depth);
     }
 
-    /// <summary>The final level and its boss take over the last stairs (the bestiary's).</summary>
+    /// <summary>Lets a test or mod take over the last stairs; by default a 12-level Delve goes on to the Unmade Heart.</summary>
     public Func<bool>? FinalHook { get; set; }
 
     public SaveGame ToSave()

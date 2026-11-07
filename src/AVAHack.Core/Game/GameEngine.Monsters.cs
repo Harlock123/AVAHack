@@ -29,9 +29,10 @@ public sealed partial class GameEngine
         foreach (var s in Level.Spawns)
         {
             var def = Content.Creature(s.Creature);
-            if (s.Level is { } lvl && lvl > def.Level) def = Bestiary.Scale(def, lvl);
+            if (s.Level is { } lvl && (lvl > def.Level || (def.Boss is not null && lvl != def.Level))) def = Bestiary.ScaleTo(def, lvl);
             var m = AddMonster(def, s.Cell, s.Facing);
             ApplyDifficulty(m);
+            if (Level.Source.StartsWith("gen:", StringComparison.Ordinal)) MaybeChampion(m);
             SpawnHook?.Invoke(m);
         }
     }
@@ -60,6 +61,7 @@ public sealed partial class GameEngine
             IdleLeft = 1 + Rng.Ai.Next(300) / 100.0,
         };
         m.Slot = FreeSlot(cell);
+        m.Boss = def.Boss;
         _monsters.Add(m);
         UpdatePlates(); // a creature placed on a plate presses it at once
         return m;
@@ -83,6 +85,7 @@ public sealed partial class GameEngine
         if (_sanctuary.ContainsKey(c) && !m.Ally) return false;
         var kind = Level.KindAt(c);
         if (kind == CellKind.Wall) return false;
+        if (Level.Waystone == c) return false;
         if (Level.TrapAt(c) is { } trap && (trap.Kind == TrapKind.CursedAltar || (trap.Armed && !m.Def.Has("mindless") && !m.Ally && trap.Kind != TrapKind.AntiMagic))) return false;
         if (kind == CellKind.Door)
         {
@@ -100,6 +103,7 @@ public sealed partial class GameEngine
     private void TickMonsters()
     {
         bool anyAware = false;
+        BestiaryLevelTick();
         foreach (var m in _monsters.ToList())
         {
             if (m.HurtFlash > 0) m.HurtFlash = Math.Max(0, m.HurtFlash - TickSeconds);
@@ -166,6 +170,8 @@ public sealed partial class GameEngine
             m.SummonLeft -= TickSeconds;
             if (m.SummonLeft <= 0) { m.State = MonsterState.Dead; Say($"The {m.Def.Name} fades away."); return; }
         }
+        BestiaryTick(m);
+        if (!m.IsAlive) return;
         MonsterTickHook?.Invoke(m);
         if (!m.IsAlive) return;
         if (m.Action != MonsterAction.None)

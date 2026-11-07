@@ -74,6 +74,10 @@ public sealed record CreatureDef
     public CreatureSpecialDef[] Special { get; init; } = [];
     /// <summary>The loot table rolled when it dies, if any.</summary>
     public string? Loot { get; init; }
+    /// <summary>What a summoner calls up every so often.</summary>
+    public string? Summons { get; init; }
+    /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir or unmaker.</summary>
+    public string? Boss { get; init; }
     public required string Sprite { get; init; }
     public required string Text { get; init; }
 
@@ -85,7 +89,7 @@ public static class Behaviours
     public static readonly IReadOnlySet<string> All = new HashSet<string>
     {
         "wander", "guard", "ambush", "patrol", "chase", "melee", "ranged", "flee", "opener", "pack", "mindless",
-        "flier", "swimmer", "phaser", "unyielding", "caster",
+        "flier", "swimmer", "phaser", "unyielding", "caster", "summoner", "splits", "explodes", "invisible", "raises", "boss",
     };
 }
 

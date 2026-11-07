@@ -62,7 +62,7 @@ public sealed class ProgressionReport(ITestOutputHelper output)
         var party = new Party(hero);
         hero.LoneDelver = false; // train as a party member would, not with the lone bonus
         var rng = new Pcg32(seed, 7);
-        var kinds = db.Creatures.Select(c => c.Id).Order(StringComparer.Ordinal).ToList();
+        var kinds = db.Creatures.Where(c => c.Tier == Tier.Lesser && c.Boss is null && c.Family != "summoned").Select(c => c.Id).Order(StringComparer.Ordinal).ToList();
         int fights = 0, deaths = 0;
         while (hero.Level < targetLevel && fights < maxFights)
         {

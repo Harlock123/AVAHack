@@ -103,6 +103,13 @@ public sealed record MonsterSave
     public double Awareness { get; init; }
     public double CalmLeft { get; init; }
     public double FrenzyLeft { get; init; }
+    /// <summary>The level it was scaled to (spec 12.1); its definition is scaled again on load.</summary>
+    public int Level { get; init; }
+    public double SpecialTimer { get; init; }
+    public int Id { get; init; }
+    public int SummonedBy { get; init; }
+    public bool Raised { get; init; }
+    public bool SplitHalf { get; init; }
 }
 
 public sealed record HazardSave(int X, int Y, DamageType Type, string Dice, double SecondsLeft, double Power);
@@ -172,6 +179,10 @@ public sealed record SaveGame
     /// <summary>The Delve's options and progress, when the game is a generated Delve.</summary>
     public Dictionary<string, string> Delve { get; init; } = [];
     public bool Ironman { get; init; }
+    /// <summary>The Waystones' stash, shared by all of them.</summary>
+    public List<Items.Item> Stash { get; init; } = [];
+    /// <summary>Every affix the run's champions have shown (the Unmaker borrows them).</summary>
+    public List<string> ChampionAffixes { get; init; } = [];
     /// <summary>For the slot list: who, where, how long.</summary>
     public string Summary { get; init; } = "";
 }

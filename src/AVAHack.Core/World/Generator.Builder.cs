@@ -34,7 +34,10 @@ public static partial class Generator
         private Cell _start, _down;
         private Cell? _landing;
         private Dir _facing = Dir.East;
-        private readonly string _theme = ThemeFor(depth);
+        private readonly string _theme = depth > o.MaxDepth ? "heart" : ThemeFor(depth);
+        private string? _boss;
+        private Cell? _waystone;
+        private readonly List<Cell> _valves = new();
 
         /// <summary>Make the simplest level that works: no vaults, locks, secrets or traps.</summary>
         public bool Plain { get; init; }
@@ -54,6 +57,7 @@ public static partial class Generator
             Connect();
             AddRoomDoors();
             PlaceStairs();
+            Specials();
             if (!Plain)
             {
                 Barriers();
@@ -598,6 +602,69 @@ public static partial class Generator
 
         // ---- Creatures and loot ----
 
+        // ---- Bosses, the Choir and Waystones (spec 12.5 and 3) ----
+
+        private void Specials()
+        {
+            if (HasWaystone(depth, o.MaxDepth))
+            {
+                // Next to the start (so the party can face it), never in the way it faces on arrival.
+                var spot = Enum.GetValues<Dir>().Where(d => d != _facing).Select(d => _start.Step(d))
+                               .FirstOrDefault(c => At(c) == CellKind.Floor && !_taken.Contains(c) && _rooms.Any(r => r.Contains(c) && r.Contains(_start)));
+                if (spot != default) { _waystone = spot; _taken.Add(spot); }
+            }
+            _boss = BossFor(depth, o.MaxDepth);
+            if (_boss is not null)
+            {
+                var room = _rooms.FirstOrDefault(r => r.Contains(_down));
+                var near = (room is null ? Around(_down, 2) : RoomCells(room))
+                           .Where(c => At(c) == CellKind.Floor && !_taken.Contains(c) && c != _down)
+                           .OrderBy(c => Enum.GetValues<Dir>().Count(d => At(c.Step(d)) == CellKind.Floor) >= 3 ? 0 : 1)
+                           .ThenBy(c => Math.Abs(c.Distance(_down) - 2)).ThenBy(c => c.Y).ThenBy(c => c.X).ToList();
+                if (near.Count == 0) { _boss = null; return; }
+                var at = near[0];
+                _taken.Add(at);
+                var def = db.Creature(_boss);
+                int lvl = depth + 1 + Roll(2); // the boss fits the depth (spec 12.5), not the depth × 1.6 of its level's creatures
+                _spawns.Add(new Spawn(_boss, at, Enum.GetValues<Dir>().OrderBy(d => at.Step(d).Distance(_down)).First()) { Level = lvl });
+                if (_boss == "bellwrightEngine" && room is not null)
+                {
+                    // Three pressure valves on the arena's walls.
+                    var walls = RoomCells(room).Where(c => !_taken.Contains(c) && c != _down)
+                                .SelectMany(c => Enum.GetValues<Dir>().Where(d => At(c.Step(d)) == CellKind.Wall).Select(d => (c, d)))
+                                .GroupBy(x => x.c).Select(g => g.First()).ToList();
+                    for (int i = 0; i < 3 && walls.Count > 0; i++)
+                    {
+                        var (cell, face) = walls[Roll(walls.Count)];
+                        walls.RemoveAll(w => w.c == cell);
+                        _levers.Add((cell, face, []));
+                        _valves.Add(cell);
+                        _taken.Add(cell);
+                    }
+                }
+                if (_boss == "motherOfCoils")
+                    foreach (var c in near.Skip(1).Take(2)) { _spawns.Add(new Spawn("coilGuard", c, Dir.South) { Level = MonsterLevel() }); _taken.Add(c); }
+            }
+            // The Hollow Choir: five singers in a hall on level 6 (an optional fight; the stairs don't need it).
+            if (depth == 6 && o.MaxDepth >= 6 && !Plain)
+            {
+                var hall = _rooms.Where(r => r.Vault is null && !r.Contains(_start) && !r.Contains(_down) && (_landing is not { } l || !r.Contains(l)))
+                                 .OrderByDescending(r => r.W * r.H).FirstOrDefault();
+                if (hall is not null)
+                {
+                    var cells = RoomCells(hall).Where(c => At(c) == CellKind.Floor && !_taken.Contains(c)).ToList();
+                    for (int i = 0; i < 5 && cells.Count > 0; i++)
+                    {
+                        var c = cells[Roll(cells.Count)];
+                        cells.Remove(c);
+                        _taken.Add(c);
+                        _spawns.Add(new Spawn("choirSinger", c, Dir.South) { Level = MonsterLevel() });
+                    }
+                    _notes.Add((hall.Centre, "Five voices, singing one note that never ends. The air shapes itself to it."));
+                }
+            }
+        }
+
         private int MonsterLevel() => Math.Max(1, (int)(depth * 1.6)) + Roll(2);
 
         private string Weighted(IReadOnlyList<(string Id, double Weight)> table)
@@ -690,6 +757,7 @@ public static partial class Generator
             }
             var openDoors = _doors.Where(d => d.Kind == DoorKind.Hand && d.Key is null || d.Open).Select(d => d.Cell).ToHashSet();
             var blocked = _chests.Select(c => c.Cell).Concat(_pits.Select(p => p.Cell)).Concat(_altars).ToHashSet();
+            if (_waystone is { } ws) blocked.Add(ws);
             HashSet<Cell> reach = [];
             bool grew = true;
             while (grew)
@@ -717,13 +785,17 @@ public static partial class Generator
 
         public Level Finish(ulong seed, int attempt)
         {
-            var level = new Level($"{RegionName(_theme)}, level {depth}", Size, Size, (CellKind[])_cells.Clone(), _start, _facing)
+            var level = new Level(_theme == "heart" ? RegionName(_theme) : $"{RegionName(_theme)}, level {depth}", Size, Size, (CellKind[])_cells.Clone(), _start, _facing)
             {
                 Source = $"gen:{seed}:{depth}:{o.Code}",
             };
             level.Theme = _theme;
             level.Depth = depth;
             level.Landing = _landing;
+            level.Boss = _boss;
+            level.Waystone = _waystone;
+            level.Valves.AddRange(_valves);
+            level.Final = _theme == "heart";
             level.AddStairs(_down);
             if (depth > 1) level.AddStairsUp(_start);
             foreach (var d in _doors.GroupBy(d => d.Cell).Select(g => g.Last()))

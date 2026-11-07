@@ -278,13 +278,14 @@ public sealed class ContentDb
             foreach (var a in c.Attacks)
             {
                 CheckDice(p, $"creatures: {c.Id}'s {a.Id} damage", a.Damage);
-                if (a.Windup is < 0.4 or > 1.5) p.Add($"creatures: {c.Id}'s {a.Id} tell is {a.Windup} s; tells run 0.4–1.5 s.");
+                if (a.Windup is < 0.4 or > 1.5 && !c.Has("boss")) p.Add($"creatures: {c.Id}'s {a.Id} tell is {a.Windup} s; tells run 0.4–1.5 s.");
                 if (a.Recovery <= 0) p.Add($"creatures: {c.Id}'s {a.Id} must take time to recover.");
                 if (a.Range < 1) p.Add($"creatures: {c.Id}'s {a.Id} has range {a.Range}.");
             }
             foreach (var s in c.Special.Where(s => s.Kind != "reassemble")) p.Add($"creatures: {c.Id} has an unknown special '{s.Kind}'.");
             if (c.FleeAtPercent is < 0 or > 90) p.Add($"creatures: {c.Id} flees at {c.FleeAtPercent}%; it must be 0–90.");
             if (c.FleeAtPercent > 0 && c.Has("mindless")) p.Add($"creatures: {c.Id} is mindless, so it can't flee.");
+            if (c.Has("summoner") && (c.Summons is null || Creatures.All(x => x.Id != c.Summons))) p.Add($"creatures: {c.Id} summons '{c.Summons}', which isn't a creature.");
         }
     }
 

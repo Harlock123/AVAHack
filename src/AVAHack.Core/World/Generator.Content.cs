@@ -12,6 +12,7 @@ public static class SpawnTables
         ["cellar"] = ["vermin", "restlessDead", "goblinKin"],
         ["works"] = ["oozes", "deepFolk", "constructs", "elementals", "goblinKin", "vermin"],
         ["choir"] = ["sporeKin", "serpentCult", "aberrations", "restlessDead", "oozes"],
+        ["heart"] = ["unmade", "aberrations"],
     };
 
     public static IReadOnlyList<(string Id, double Weight)> For(ContentDb db, string theme, int depth)

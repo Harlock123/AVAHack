@@ -48,6 +48,17 @@ public sealed class Monster
     public string? Boss { get; internal set; }
     internal double AffixTimer;
     internal int Phase;
+    /// <summary>A second timer for summoning, raising, a boss's cycle and a singer's return.</summary>
+    internal double SpecialTimer;
+    /// <summary>The creature that called this one up (summoners), or 0.</summary>
+    internal int SummonedBy;
+    /// <summary>Raised already by a Spore Shepherd, so it can't be raised twice.</summary>
+    internal bool Raised;
+    /// <summary>Half of a creature that split; it won't split again.</summary>
+    internal bool SplitHalf;
+
+    /// <summary>Invisible creatures (Gloomstalker, Mirror Ooze) show only within 2 cells, or while hurt.</summary>
+    public bool HiddenFrom(Cell party) => Def.Has("invisible") && IsAlive && HurtFlash <= 0 && Cell.Distance(party) > 2;
 
     /// <summary>How long recoveries take: Frenzied champions are quicker, Chilled ones slower.</summary>
     public double RecoveryFactor => (Affixes.Contains("frenzied") ? 0.6 : 1) * Conditions.RecoveryFactor;

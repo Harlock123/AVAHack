@@ -51,6 +51,14 @@ public sealed class Level
     public string Source { get; init; } = "";
     /// <summary>How deep it is (1 for the first): the item level and the monsters' tier.</summary>
     public int Depth { get; internal set; } = 1;
+    /// <summary>The boss whose arena holds the stairs down (spec 12.5); the stairs are sealed while it lives.</summary>
+    public string? Boss { get; internal set; }
+    /// <summary>A Waystone (spec 3): a safe stone with a merchant, a trainer, a shrine and a stash.</summary>
+    public Cell? Waystone { get; internal set; }
+    /// <summary>The Bellwright Engine's pressure valves: levers that must all be pulled before it can be hurt.</summary>
+    public List<Cell> Valves { get; } = new();
+    /// <summary>The Unmade Heart, the Delve's last level.</summary>
+    public bool Final { get; internal set; }
 
     public Level(string name, int width, int height, CellKind[] cells, Cell start, Dir startFacing)
     {

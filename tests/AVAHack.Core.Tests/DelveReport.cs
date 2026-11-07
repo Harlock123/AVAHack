@@ -40,4 +40,20 @@ public sealed class DelveReport(ITestOutputHelper output)
         Assert.True(won >= 1, "The bot never got through a four-level Delve.");
         Assert.True(results.Average(r => r.Depth) >= 2.5);
     }
+
+    /// <summary>
+    /// M7's exit test: a full 12-level Delve on Standard, with its bosses and the Unmade Heart. The spec's target
+    /// is 8–12 hours ending near level 30; this records what the bot actually does (spec section 29 has the result).
+    /// </summary>
+    [Fact]
+    public void A_full_twelve_level_delve()
+    {
+        int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_RUNS"), out int n) ? n : 6;
+        var results = Enumerable.Range(1, runs).AsParallel().Select(i => Play((ulong)i * 104729, 12, 12 * 60)).OrderBy(r => r.Seed).ToList();
+        foreach (var r in results)
+            output.WriteLine($"{r.Seed}: {r.Mode,-7} reached level {r.Depth,2}  {r.Minutes,6:F1} min  kills {r.Kills,4}  heroes at level {r.Level,2}  {r.Note}");
+        output.WriteLine($"won {results.Count(r => r.Mode == GameMode.Won)}/{runs}; average depth {results.Average(r => r.Depth):F1}; " +
+                         $"best {results.Max(r => r.Depth)}; average hero level {results.Average(r => r.Level):F1}");
+        Assert.True(results.Average(r => r.Depth) >= 3, "The bot should get past the first boss on some seeds.");
+    }
 }

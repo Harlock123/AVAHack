@@ -40,8 +40,28 @@ public static partial class Generator
 
     public static string ThemeFor(int depth) => ((depth - 1) / 4 % 3) switch { 0 => "cellar", 1 => "works", _ => "choir" };
 
+    /// <summary>
+    /// The boss guarding a level's stairs down (spec 12.5): the Hollow King on level 4, the Bellwright Engine on 8,
+    /// Mother of Coils on 12, and the Unmaker in the Unmade Heart, the level after a 12-level Delve's last.
+    /// </summary>
+    public static string? BossFor(int depth, int maxDepth) => depth switch
+    {
+        _ when depth > maxDepth => maxDepth >= 12 && depth == maxDepth + 1 ? "unmaker" : null,
+        4 => "hollowKing",
+        8 => "bellwrightEngine",
+        12 => "motherOfCoils",
+        _ => null,
+    };
+
+    /// <summary>A Waystone waits at the start of the level after each boss.</summary>
+    public static bool HasWaystone(int depth, int maxDepth) => depth > 1 && BossFor(depth - 1, maxDepth) is not null;
+
+    /// <summary>Whether a Delve this deep ends in the Unmade Heart.</summary>
+    public static bool HasHeart(int maxDepth) => maxDepth >= 12;
+
     public static string RegionName(string theme) => theme switch
     {
+        "heart" => "The Unmade Heart",
         "cellar" => "The Upper Hollow",
         "works" => "The Deep Works",
         _ => "The Drowned Choir",

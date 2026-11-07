@@ -1121,7 +1121,7 @@ Each milestone is finished when its exit test passes.
 | **M4** | Progression. *Done (2026-11-06)* | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling. *Revised:* that target didn't fit the level curve; a bot run now shows every calling at level 8 with its best skill at 45 or more and its third-best at 35 or more (section 26) |
 | **M5** | Magic. *Done (2026-11-06)* | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play. *Result:* a test casts every calling's starting spells and checks each one does something; in the progression report the spellblade raises Destruction and the paladin Warding beside their weapons |
 | **M6** | Generator. *Done (2026-11-06)* | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable. *Result:* 1,000 seeds at each of depths 1, 5 and 9 give finishable levels with no fallbacks; the bot's quick-start party gets through a 4-level Delve on 6 seeds of 8 (one fell on level 4, one got stuck) |
-| **M7** | The bestiary | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30 |
+| **M7** | The bestiary. *Done (2026-11-07), exit target not met* | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30. *Result:* the bot gets nowhere near. Over 6 seeds it averages depth 3.8 (best 5), and its heroes are still level 1 when they fall. Character level comes only from skill use (M4: about 50–100 fights a level), while a level holds 8–16 creatures, so a 12-level Delve holds roughly 150 fights. The target needs a balance pass on progression against depth (section 29) |
 | **M8** | Crafting and survival | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game |
 | **M9** | Polish and release | Art from the manifest, audio, the hall of fame, Ironman, help pages, README and screenshots, portfolio card | The user plays through a Delve; v1.0 tag |
 
@@ -1596,4 +1596,93 @@ is built.
   - keeps off the stairs up.
 
   The quick-start party gets through a 4-level Delve on 6 seeds of 8.
+
+## 29. Implementation decisions (M7)
+
+- **The bestiary.**
+  - `creatures.json` holds 58 creatures in the ten families of 12.3, plus the wanderers (Mimic, Gelid Cube and
+    Lost Delver) and the four summons.
+  - Each creature has a tier, a behaviour profile and attacks with tells.
+  - New behaviour blocks:
+    - `summoner` (with `summons`): calls up its kind every 12 s, at most 3 about.
+    - `splits`: splits once into two halves with half the HP.
+    - `explodes`: bursts on death, hitting the party if it is next to it (CON save for half, and Poisoned).
+    - `invisible`: unseen beyond 2 cells unless just hurt (Gloomstalker, Mirror Ooze).
+    - `raises`: a Spore Shepherd turns a corpse within 5 cells into a Shambler every 15 s.
+    - `boss`.
+  - The validator checks that a summoner's creature exists.
+- **Scaling.** `Bestiary.ScaleTo` also scales down: 10% of the hit dice a level, to 35% at least, and the bonuses fall
+  the same way. Bosses, their summons and anything a summoner calls are fitted to the depth with it. A scaled
+  creature's level is saved, and its definition is scaled again on load. (M6 lost this on load, a bug fixed here.)
+- **Elites and champions** (12.2) appear only in Delve levels, so the Cellars stay as they were.
+  - Each creature rolls once: 2% champion from level 3 down, else 8% elite, both times the difficulty's champion
+    factor.
+  - A test over 60 seeds holds the rates to about these figures.
+  - Elite: +50% HP and +2 AC, gold-tinted.
+  - Champion: an elite with 1–3 of the 16 affixes, +25% HP again, a generated name ("Grisk the Vampiric"), a violet
+    tint and glow, and guaranteed rich loot.
+  - What the affixes do:
+    - Stoneskin: +3 AC and resists slashing and piercing.
+    - Shielded: a ward of 20% HP, back every 10 s.
+    - Warded: immune to one school, kept as `ward:<type>`.
+    - Blinking: every 6 s, appears next to the party.
+    - Mortar: every 7 s at 2–5 cells, an area lob (DEX save for half).
+    - Burning Aura: 1d6 fire to the front row every 2 s.
+    - Mirrored: two reflections at a quarter HP.
+    - Splitting, and Summoner (its family's weakest).
+    - Vampiric, Bloodthirsty, Frenzied, Venomous, Frostbound, Thunderous and Unyielding work as in M5.
+  - The engine remembers every affix the run's champions showed (`ChampionAffixes`, saved).
+- **Bosses** (12.5) guard the stairs down of levels 4, 8 and 12 (when the Delve is that deep).
+  - Each stands in the stairs' room, two cells from the stairs, on open floor.
+  - The stairs are sealed while it lives, and it wakes when the party comes within 5 cells in sight.
+  - Its level is depth + 1–2, not the depth × 1.6 of the level's other creatures, so a party that has kept up can win.
+  - A bar across the top of the view shows its name and HP.
+  - The scripts:
+    - **The Hollow King:** raises a Bone Sentry every 20 s, at most 2. At half HP he splits his crown into two
+      Ossuary Knights, each with a fifth of his HP. *Not done:* the sarcophagi to smash.
+    - **The Bellwright Engine:** takes no damage until the three pressure valves (levers on the arena walls) are all
+      pulled. Its bell tolls every 10 s, with lightning to anyone within 2 cells (DEX save for half).
+      *Not done:* the moving floor.
+    - **Mother of Coils:** the water rises for 12 s (no damage gets through) and falls for 8 s. Each rise brings a
+      Coil Guard, at most 3. She comes with two guards.
+    - **The Hollow Choir:** five singers in the largest spare room of level 6, an optional fight. A fallen singer
+      rises at half HP 10 s later while another still sings, with no second share of loot; kill all five within
+      10 s. *Changed:* not a secret level, and the school-by-school silencing isn't done.
+    - **The Unmaker,** in **the Unmade Heart**, the level after a 12-level Delve's last:
+      - Phase 1 calls Unmade Hounds every 15 s.
+      - At two thirds of its HP it takes up to three of the run's champion affixes (Vampiric, Shielded and Frenzied
+        if there were none).
+      - Below a third, the Knell moves the party to a random cell near it every 15 s.
+      - Its death wins the Delve.
+
+      *Not done:* unmaking walls.
+- **Waystones** are a stone next to the start of the level after each boss, and of the Heart.
+  - The stone blocks its cell; F on it opens the Waystone screen, which works only next to it and out of a fight.
+  - **Merchant:** 10 items made from the level's source (the same every time), sold at twice their worth and bought
+    at half.
+  - **Trainer:** `Character.Train`, at rank² × 2 gold, 5 lessons a level.
+  - **Shrine:**
+    - Raises the dead for 100 gold a level, with full HP.
+    - Tends the downed for free.
+    - Lifts curses for 50 gold a level.
+    - Resets perks at the M4 price.
+  - **Stash:** shared by every Waystone, kept in the save.
+  - **Rest:** a free full rest at the stone.
+- **Art.** Every creature has its own code-drawn sprite in all views and frames, built from generic shapes (people
+  with more weapons, beasts, blobs, floaters, bugs, fungi, machines, serpents, swarms and a mimic). A test checks that
+  every creature in the content has a picture. Large creatures are drawn 18% bigger.
+- **Not done** from 12.3's signatures: webs, corroding gear, mine rails and steam valves, lightning stunning
+  constructs, elementals' hazards, swimming, aberrations' teleports, and the Unmade each using a champion affix.
+- **The 4-level Delve report** now meets the Hollow King. The bot heals up before a boss. 4 of 8 seeds get
+  through: 2 fall to the King or on the way, and 2 get stuck (one was stuck before M7 too). Bosses off, it was 5 of 8.
+- **The 12-level report** (`A_full_twelve_level_delve`, 6 seeds): no run finishes; average depth 3.8, best 5,
+  heroes at level 1. This bot rushes for the stairs and kills about 15 creatures a level, while M4's progression
+  wants 50–100 fights a level. Ordinary creatures are level depth × 1.6 from M6, so the party falls ever further
+  behind. Meeting the M7 target needs a balance pass. Options:
+  - character XP from kills;
+  - much faster early skill growth;
+  - creatures scaled to the party rather than to depth;
+  - or a bot that clears each level.
+
+  That pass is left for after M8, so M8's food, rest and crafting can be weighed with it.
 

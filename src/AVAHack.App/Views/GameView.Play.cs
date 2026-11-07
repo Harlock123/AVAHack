@@ -245,7 +245,9 @@ public sealed partial class GameView
             case Overlay.Character: DrawCharacter(dc); return;
             case Overlay.Spellbook: DrawSpellbook(dc); return;
             case Overlay.Help: DrawHelp(dc); return;
+            case Overlay.Waystone: DrawWaystone(dc); return;
         }
+        DrawBossBar(dc);
         if (Engine.Paused) Banner(dc, "Paused", "Press Space to carry on.");
         else if (Engine.Mode == GameMode.Dead)
             Banner(dc, Engine.Party.Count == 1 ? $"{Engine.Hero.Name} has fallen" : "The party has fallen",

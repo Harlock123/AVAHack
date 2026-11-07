@@ -1,4 +1,4 @@
-// Monsters (spec 12), and the things the party summons.
+// Monsters (spec 12): ten families, the wanderers, the bosses, and the things the party summons.
 [
  {
   "id": "cellarRat",
@@ -414,5 +414,2281 @@
   ],
   "sprite": "horror",
   "text": "Better on your side than not."
+ },
+ {
+  "id": "bristleRat",
+  "name": "Bristle Rat Swarm",
+  "family": "vermin",
+  "tier": "lesser",
+  "level": 2,
+  "hitDice": "2d6",
+  "ac": 11,
+  "perception": 10,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 3,
+    "damage": "1d4",
+    "type": "piercing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "pack"
+  ],
+  "sprite": "swarm",
+  "text": "A boiling carpet of rats.",
+  "loot": "vermin",
+  "fleeAtPercent": 20
+ },
+ {
+  "id": "carrionBeetle",
+  "name": "Carrion Beetle",
+  "family": "vermin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.9,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d6",
+    "type": "piercing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee"
+  ],
+  "sprite": "beetle",
+  "text": "Armoured, slow, and very hungry.",
+  "resist": [
+   "slashing"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "weepingSpider",
+  "name": "Weeping Spider",
+  "family": "vermin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "bite",
+    "windup": 0.5,
+    "recovery": 1.6,
+    "toHit": 6,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 14,
+     "seconds": 10
+    }
+   },
+   {
+    "id": "spit",
+    "windup": 0.8,
+    "recovery": 2.4,
+    "toHit": 5,
+    "damage": "1d4",
+    "type": "acid",
+    "range": 4,
+    "projectileSpeed": 7,
+    "onHit": {
+     "condition": "blinded",
+     "dc": 13,
+     "seconds": 6
+    }
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "spiderBig",
+  "text": "It weeps a venom that blinds.",
+  "loot": "vermin"
+ },
+ {
+  "id": "broodMother",
+  "name": "Brood Mother",
+  "family": "vermin",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "bite",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 8,
+    "damage": "2d8+3",
+    "type": "piercing",
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 16,
+     "seconds": 12
+    }
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "mindless",
+   "summoner"
+  ],
+  "sprite": "spiderBig",
+  "text": "The mother of every spider in these tunnels.",
+  "summons": "tunnelSpider",
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "barrowArcher",
+  "name": "Barrow Archer",
+  "family": "restlessDead",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "arrow",
+    "windup": 0.8,
+    "recovery": 2.4,
+    "toHit": 6,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "range": 6,
+    "projectileSpeed": 9
+   },
+   {
+    "id": "claw",
+    "windup": 0.6,
+    "recovery": 1.8,
+    "toHit": 4,
+    "damage": "1d4",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "archerSkel",
+  "text": "It still remembers how to draw a bow.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "bludgeoning",
+   "radiant"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased"
+  ],
+  "loot": "undead.lesser"
+ },
+ {
+  "id": "graveHound",
+  "name": "Grave Hound",
+  "family": "restlessDead",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.4,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "1d10+2",
+    "type": "piercing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "pack",
+   "mindless"
+  ],
+  "sprite": "hound",
+  "text": "A dog that died guarding something, and still is.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "radiant"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased"
+  ],
+  "loot": "undead.lesser"
+ },
+ {
+  "id": "lanternWight",
+  "name": "Lantern Wight",
+  "family": "restlessDead",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "touch",
+    "windup": 0.7,
+    "recovery": 1.8,
+    "toHit": 8,
+    "damage": "2d8+3",
+    "type": "necrotic",
+    "onHit": {
+     "condition": "weakened",
+     "dc": 15,
+     "seconds": 30
+    }
+   },
+   {
+    "id": "lantern",
+    "windup": 1.0,
+    "recovery": 3.0,
+    "toHit": 7,
+    "damage": "2d6",
+    "type": "cold",
+    "range": 5,
+    "projectileSpeed": 6
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "ranged"
+  ],
+  "sprite": "wight",
+  "text": "It carries a lantern of cold green fire.",
+  "immune": [
+   "poison",
+   "cold"
+  ],
+  "vulnerable": [
+   "radiant"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased"
+  ],
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "ossuaryKnight",
+  "name": "Ossuary Knight",
+  "family": "restlessDead",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 18,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 8,
+    "damage": "2d10+3",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "mindless",
+   "unyielding"
+  ],
+  "sprite": "knight",
+  "text": "Armour full of the bones of a knight, and of others.",
+  "resist": [
+   "piercing",
+   "slashing"
+  ],
+  "vulnerable": [
+   "bludgeoning",
+   "radiant"
+  ],
+  "immune": [
+   "poison"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased"
+  ],
+  "special": [
+   {
+    "kind": "reassemble",
+    "seconds": 12,
+    "unlessKilledBy": "bludgeoning"
+   }
+  ],
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "goblinHexer",
+  "name": "Goblin Hexer",
+  "family": "goblinKin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "hex",
+    "windup": 0.9,
+    "recovery": 2.6,
+    "toHit": 6,
+    "damage": "1d10",
+    "type": "necrotic",
+    "range": 5,
+    "projectileSpeed": 6,
+    "onHit": {
+     "condition": "cursed",
+     "dc": 13,
+     "chance": 30
+    }
+   },
+   {
+    "id": "stick",
+    "windup": 0.6,
+    "recovery": 1.6,
+    "toHit": 4,
+    "damage": "1d6",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "opener",
+   "pack",
+   "flee"
+  ],
+  "sprite": "hexer",
+  "text": "Mutters curses, and some of them work.",
+  "fleeAtPercent": 40,
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "wargRider",
+  "name": "Warg Rider",
+  "family": "goblinKin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.35,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d8+2",
+    "type": "piercing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "pack",
+   "flee"
+  ],
+  "sprite": "warg",
+  "text": "A goblin on a wolf the size of a pony.",
+  "fleeAtPercent": 25,
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "bugbearBruiser",
+  "name": "Bugbear Bruiser",
+  "family": "goblinKin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "7d10+7",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d8+3",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "opener"
+  ],
+  "sprite": "bugbear",
+  "text": "Big, hairy, and quieter than it looks.",
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "goblinChieftain",
+  "name": "Goblin Chieftain",
+  "family": "goblinKin",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 8,
+    "damage": "2d10+4",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "opener",
+   "summoner"
+  ],
+  "sprite": "chief",
+  "text": "Wears three crowns, none of them its own.",
+  "summons": "gutterGoblin",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "greySlick",
+  "name": "Grey Slick",
+  "family": "oozes",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 12,
+  "perception": 10,
+  "stepSeconds": 1.2,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 4,
+    "damage": "1d8",
+    "type": "acid"
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "mindless",
+   "splits"
+  ],
+  "sprite": "slimeGrey",
+  "text": "A puddle that moves when you aren't looking.",
+  "conditionImmune": [
+   "frightened",
+   "asleep",
+   "blinded"
+  ],
+  "resist": [
+   "piercing",
+   "slashing"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "acidJelly",
+  "name": "Acid Jelly",
+  "family": "oozes",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 1.1,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "engulf",
+    "windup": 0.9,
+    "recovery": 2.2,
+    "toHit": 6,
+    "damage": "2d8",
+    "type": "acid",
+    "onHit": {
+     "condition": "weakened",
+     "dc": 14,
+     "seconds": 20
+    }
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless",
+   "splits"
+  ],
+  "sprite": "slimeAcid",
+  "text": "It dissolves everything but glass.",
+  "conditionImmune": [
+   "frightened",
+   "asleep",
+   "blinded"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "mirrorOoze",
+  "name": "Mirror Ooze",
+  "family": "oozes",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 1.0,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d6+2",
+    "type": "acid"
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "mindless",
+   "invisible"
+  ],
+  "sprite": "slimeMirror",
+  "text": "Lies flat and shiny, like a wet floor.",
+  "conditionImmune": [
+   "frightened",
+   "asleep",
+   "blinded"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "gluttonMass",
+  "name": "Glutton Mass",
+  "family": "oozes",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "12d10+20",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 1.3,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "engulf",
+    "windup": 1.1,
+    "recovery": 2.6,
+    "toHit": 8,
+    "damage": "3d8",
+    "type": "acid",
+    "area": true
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless",
+   "splits"
+  ],
+  "sprite": "slimeGlutton",
+  "text": "A heap of everything it ever ate.",
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "delverThrall",
+  "name": "Delver Thrall",
+  "family": "deepFolk",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 12,
+  "perception": 10,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 4,
+    "damage": "1d8+1",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "opener"
+  ],
+  "sprite": "thrall",
+  "text": "A miner who went too deep and came back wrong.",
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "deepMiner",
+  "name": "Deep Miner",
+  "family": "deepFolk",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d6+3",
+    "type": "piercing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "opener"
+  ],
+  "sprite": "miner",
+  "text": "Swings a pick at stone and skulls alike.",
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "paleOverseer",
+  "name": "Pale Overseer",
+  "family": "deepFolk",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "1d10+2",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "opener",
+   "summoner"
+  ],
+  "sprite": "overseer",
+  "text": "It cracks a whip; the thralls come.",
+  "summons": "delverThrall",
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "stoneSpeaker",
+  "name": "Stone Speaker",
+  "family": "deepFolk",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "stones",
+    "windup": 1.0,
+    "recovery": 2.6,
+    "toHit": 8,
+    "damage": "3d6",
+    "type": "bludgeoning",
+    "range": 5,
+    "projectileSpeed": 7
+   },
+   {
+    "id": "fist",
+    "windup": 0.7,
+    "recovery": 1.8,
+    "toHit": 7,
+    "damage": "2d6+3",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee"
+  ],
+  "sprite": "speaker",
+  "text": "Speaks to the rock, and the rock listens.",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "brassSentinel",
+  "name": "Brass Sentinel",
+  "family": "constructs",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 17,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d8+2",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "mindless",
+   "unyielding"
+  ],
+  "sprite": "sentinel",
+  "text": "Guards a door that may no longer exist.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "lightning"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded"
+  ],
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "pipeCrawler",
+  "name": "Pipe Crawler",
+  "family": "constructs",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.45,
+  "turnSeconds": 0.5,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "scald",
+    "windup": 0.6,
+    "recovery": 1.8,
+    "toHit": 6,
+    "damage": "2d6",
+    "type": "fire",
+    "onHit": {
+     "condition": "burning",
+     "dc": 13,
+     "chance": 30
+    }
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "crawler",
+  "text": "A brass thing with too many legs, hissing steam.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "lightning"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "forgeGolem",
+  "name": "Forge Golem",
+  "family": "constructs",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "12d10+30",
+  "ac": 18,
+  "perception": 13,
+  "stepSeconds": 1.0,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 8,
+    "damage": "3d10+4",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "mindless",
+   "unyielding"
+  ],
+  "sprite": "golem",
+  "text": "Iron with a fire inside, and no mercy.",
+  "immune": [
+   "poison",
+   "fire"
+  ],
+  "vulnerable": [
+   "lightning",
+   "cold"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded"
+  ],
+  "loot": "chest.rich"
+ },
+ {
+  "id": "railJuggernaut",
+  "name": "Rail Juggernaut",
+  "family": "constructs",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.5,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "ram",
+    "windup": 1.0,
+    "recovery": 2.8,
+    "toHit": 9,
+    "damage": "3d10+3",
+    "type": "bludgeoning",
+    "area": true
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless",
+   "unyielding"
+  ],
+  "sprite": "juggernaut",
+  "text": "A mine cart that decided to stop carrying things.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "lightning"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded"
+  ],
+  "loot": "chest.rich"
+ },
+ {
+  "id": "emberWisp",
+  "name": "Ember Wisp",
+  "family": "elementals",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 12,
+  "perception": 10,
+  "stepSeconds": 0.4,
+  "turnSeconds": 0.5,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 4,
+    "damage": "1d6+1",
+    "type": "fire"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "flier"
+  ],
+  "sprite": "wisp",
+  "text": "A spark that learned to hate.",
+  "immune": [
+   "fire",
+   "poison"
+  ],
+  "vulnerable": [
+   "cold"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded",
+   "burning"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "cinderImp",
+  "name": "Cinder Imp",
+  "family": "elementals",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "firebolt",
+    "windup": 0.8,
+    "recovery": 2.2,
+    "toHit": 6,
+    "damage": "2d6",
+    "type": "fire",
+    "range": 6,
+    "projectileSpeed": 8
+   },
+   {
+    "id": "claw",
+    "windup": 0.5,
+    "recovery": 1.4,
+    "toHit": 5,
+    "damage": "1d6",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "ranged",
+   "melee",
+   "flier",
+   "flee"
+  ],
+  "sprite": "imp",
+  "text": "Giggles as it throws fire.",
+  "immune": [
+   "fire",
+   "poison"
+  ],
+  "vulnerable": [
+   "cold"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded",
+   "burning"
+  ],
+  "fleeAtPercent": 30,
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "steamWraith",
+  "name": "Steam Wraith",
+  "family": "elementals",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d6+2",
+    "type": "fire"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "flier"
+  ],
+  "sprite": "ghost",
+  "text": "Scalding mist in the shape of a man.",
+  "immune": [
+   "fire",
+   "poison"
+  ],
+  "resist": [
+   "slashing",
+   "piercing",
+   "bludgeoning"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "magmaBrute",
+  "name": "Magma Brute",
+  "family": "elementals",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "slam",
+    "windup": 1.0,
+    "recovery": 2.6,
+    "toHit": 8,
+    "damage": "3d8+4",
+    "type": "fire",
+    "area": true,
+    "onHit": {
+     "condition": "burning",
+     "dc": 15,
+     "chance": 40
+    }
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "unyielding"
+  ],
+  "sprite": "golemMagma",
+  "text": "Molten rock that walks.",
+  "immune": [
+   "fire",
+   "poison"
+  ],
+  "vulnerable": [
+   "cold"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded",
+   "burning"
+  ],
+  "loot": "chest.rich"
+ },
+ {
+  "id": "frostRemnant",
+  "name": "Frost Remnant",
+  "family": "elementals",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "frost",
+    "windup": 0.9,
+    "recovery": 2.4,
+    "toHit": 8,
+    "damage": "2d10",
+    "type": "cold",
+    "range": 5,
+    "projectileSpeed": 7,
+    "onHit": {
+     "condition": "chilled",
+     "dc": 15,
+     "seconds": 8
+    }
+   },
+   {
+    "id": "touch",
+    "windup": 0.7,
+    "recovery": 1.8,
+    "toHit": 7,
+    "damage": "2d6",
+    "type": "cold"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "ranged",
+   "melee",
+   "flier"
+  ],
+  "sprite": "ghostFrost",
+  "text": "What is left of a winter that came down here to die.",
+  "immune": [
+   "cold",
+   "poison"
+  ],
+  "vulnerable": [
+   "fire"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded"
+  ],
+  "loot": "chest.rich"
+ },
+ {
+  "id": "puffcap",
+  "name": "Puffcap",
+  "family": "sporeKin",
+  "tier": "lesser",
+  "level": 3,
+  "hitDice": "3d8",
+  "ac": 12,
+  "perception": 10,
+  "stepSeconds": 0.8,
+  "turnSeconds": 0.5,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 4,
+    "damage": "1d4",
+    "type": "poison"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless",
+   "explodes"
+  ],
+  "sprite": "mushroom",
+  "text": "A fat mushroom that bursts in a cloud of spores.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "fire"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "mycelidWalker",
+  "name": "Mycelid Walker",
+  "family": "sporeKin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "lash",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 6,
+    "damage": "2d6+2",
+    "type": "bludgeoning",
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 14,
+     "chance": 40,
+     "seconds": 10
+    }
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "walker",
+  "text": "A tall stalk on two thick legs.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "fire"
+  ],
+  "loot": "vermin"
+ },
+ {
+  "id": "sporeShepherd",
+  "name": "Spore Shepherd",
+  "family": "sporeKin",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "1d10+2",
+    "type": "poison"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "raises"
+  ],
+  "sprite": "walkerTall",
+  "text": "It sows the dead with spores, and they rise.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "fire"
+  ],
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "rotColossus",
+  "name": "Rot Colossus",
+  "family": "sporeKin",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "13d10+20",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "slam",
+    "windup": 1.2,
+    "recovery": 2.8,
+    "toHit": 8,
+    "damage": "3d8+3",
+    "type": "bludgeoning",
+    "area": true
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless",
+   "explodes"
+  ],
+  "sprite": "colossus",
+  "text": "A hill of rot and fungus, walking.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "fire"
+  ],
+  "loot": "chest.rich"
+ },
+ {
+  "id": "scaledAcolyte",
+  "name": "Scaled Acolyte",
+  "family": "serpentCult",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "curse",
+    "windup": 0.9,
+    "recovery": 2.6,
+    "toHit": 6,
+    "damage": "1d10",
+    "type": "necrotic",
+    "range": 5,
+    "projectileSpeed": 6,
+    "onHit": {
+     "condition": "cursed",
+     "dc": 13,
+     "chance": 25
+    }
+   },
+   {
+    "id": "dagger",
+    "windup": 0.5,
+    "recovery": 1.5,
+    "toHit": 6,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 13,
+     "chance": 30
+    }
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "ranged",
+   "opener"
+  ],
+  "sprite": "cultist",
+  "text": "Robed, hooded, and not entirely human beneath.",
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "coilGuard",
+  "name": "Coil Guard",
+  "family": "serpentCult",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 16,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d8+2",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "opener"
+  ],
+  "sprite": "cultistGuard",
+  "text": "A temple guard with a serpent's patience.",
+  "loot": "goblin.lesser"
+ },
+ {
+  "id": "nagaOracle",
+  "name": "Naga Oracle",
+  "family": "serpentCult",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "venomBolt",
+    "windup": 1.0,
+    "recovery": 2.6,
+    "toHit": 8,
+    "damage": "3d6",
+    "type": "poison",
+    "range": 6,
+    "projectileSpeed": 7,
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 16,
+     "seconds": 12
+    }
+   },
+   {
+    "id": "coil",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 8,
+    "damage": "2d8+3",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee"
+  ],
+  "sprite": "naga",
+  "text": "Half serpent, half priestess, all poison.",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "drownedBishop",
+  "name": "Drowned Bishop",
+  "family": "serpentCult",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "drown",
+    "windup": 1.0,
+    "recovery": 2.8,
+    "toHit": 8,
+    "damage": "3d8",
+    "type": "cold",
+    "range": 5,
+    "projectileSpeed": 6,
+    "onHit": {
+     "condition": "weakened",
+     "dc": 16,
+     "seconds": 20
+    }
+   },
+   {
+    "id": "crozier",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 7,
+    "damage": "2d6+3",
+    "type": "bludgeoning"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee",
+   "summoner"
+  ],
+  "sprite": "bishop",
+  "text": "Its vestments still drip.",
+  "summons": "scaledAcolyte",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "gloomstalker",
+  "name": "Gloomstalker",
+  "family": "aberrations",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.45,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d8+3",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee",
+   "invisible"
+  ],
+  "sprite": "stalker",
+  "text": "You see it when it's already too close.",
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "eyeMothSwarm",
+  "name": "Eye Moth Swarm",
+  "family": "aberrations",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "small",
+  "attacks": [
+   {
+    "id": "gaze",
+    "windup": 0.8,
+    "recovery": 2.2,
+    "toHit": 6,
+    "damage": "1d10",
+    "type": "psychic",
+    "range": 4,
+    "projectileSpeed": 8,
+    "onHit": {
+     "condition": "frightened",
+     "dc": 13,
+     "chance": 30
+    }
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "ranged",
+   "flier",
+   "pack"
+  ],
+  "sprite": "moths",
+  "text": "Wings patterned like eyes, all looking at you.",
+  "loot": "vermin"
+ },
+ {
+  "id": "tendrilHorror",
+  "name": "Tendril Horror",
+  "family": "aberrations",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "10d10+10",
+  "ac": 16,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "lash",
+    "windup": 0.9,
+    "recovery": 2.2,
+    "toHit": 9,
+    "damage": "3d8+3",
+    "type": "bludgeoning",
+    "area": true,
+    "onHit": {
+     "condition": "paralysed",
+     "dc": 15,
+     "chance": 20,
+     "seconds": 3
+    }
+   }
+  ],
+  "behaviour": [
+   "ambush",
+   "chase",
+   "melee"
+  ],
+  "sprite": "tentacles",
+  "text": "A knot of grey arms around a mouth.",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "thoughtEater",
+  "name": "Thought Eater",
+  "family": "aberrations",
+  "tier": "dread",
+  "level": 18,
+  "hitDice": "15d10+20",
+  "ac": 18,
+  "perception": 15,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "mindBlast",
+    "windup": 1.1,
+    "recovery": 3.0,
+    "toHit": 10,
+    "damage": "3d10",
+    "type": "psychic",
+    "range": 5,
+    "projectileSpeed": 9,
+    "onHit": {
+     "condition": "stunned",
+     "dc": 17,
+     "chance": 40,
+     "seconds": 2
+    }
+   },
+   {
+    "id": "tendrils",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 9,
+    "damage": "2d10+4",
+    "type": "psychic"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee"
+  ],
+  "sprite": "brain",
+  "text": "A swollen brain on spider's legs. It is hungry, and it is listening.",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "unborn",
+  "name": "Unborn",
+  "family": "aberrations",
+  "tier": "dread",
+  "level": 18,
+  "hitDice": "15d10+20",
+  "ac": 18,
+  "perception": 15,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 10,
+    "damage": "3d10+5",
+    "type": "necrotic"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "flier"
+  ],
+  "sprite": "unborn",
+  "text": "A shape that was never finished, and resents it.",
+  "resist": [
+   "slashing",
+   "piercing",
+   "bludgeoning"
+  ],
+  "loot": "chest.rich"
+ },
+ {
+  "id": "unmadeHound",
+  "name": "Unmade Hound",
+  "family": "unmade",
+  "tier": "dread",
+  "level": 18,
+  "hitDice": "15d10+20",
+  "ac": 18,
+  "perception": 15,
+  "stepSeconds": 0.35,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 10,
+    "damage": "3d8+4",
+    "type": "force"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "pack"
+  ],
+  "sprite": "houndVoid",
+  "text": "A hound shaped out of a hole in the world.",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "hollowSaint",
+  "name": "Hollow Saint",
+  "family": "unmade",
+  "tier": "dread",
+  "level": 18,
+  "hitDice": "15d10+20",
+  "ac": 18,
+  "perception": 15,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "unmaking",
+    "windup": 1.0,
+    "recovery": 2.8,
+    "toHit": 10,
+    "damage": "4d8",
+    "type": "force",
+    "range": 6,
+    "projectileSpeed": 7
+   },
+   {
+    "id": "touch",
+    "windup": 0.8,
+    "recovery": 2.0,
+    "toHit": 9,
+    "damage": "3d6",
+    "type": "necrotic"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee",
+   "summoner"
+  ],
+  "sprite": "saint",
+  "text": "Robes, a halo, and nothing inside them.",
+  "summons": "unmadeHound",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "mimic",
+  "name": "Mimic",
+  "family": "wanderers",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 1.2,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "bite",
+    "windup": 0.6,
+    "recovery": 1.8,
+    "toHit": 7,
+    "damage": "2d8+3",
+    "type": "piercing",
+    "onHit": {
+     "condition": "paralysed",
+     "dc": 13,
+     "chance": 25,
+     "seconds": 2
+    }
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "mimic",
+  "text": "A chest with teeth. It was a chest. It still mostly is.",
+  "loot": "chest.rich"
+ },
+ {
+  "id": "gelidCube",
+  "name": "Gelid Cube",
+  "family": "wanderers",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "8d10+16",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 1.3,
+  "turnSeconds": 0.5,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "engulf",
+    "windup": 1.1,
+    "recovery": 2.6,
+    "toHit": 7,
+    "damage": "3d6",
+    "type": "acid",
+    "area": true,
+    "onHit": {
+     "condition": "paralysed",
+     "dc": 14,
+     "chance": 30,
+     "seconds": 3
+    }
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "mindless"
+  ],
+  "sprite": "cube",
+  "text": "A clear cube that fills the corridor, and swallows.",
+  "loot": "chest.cellar"
+ },
+ {
+  "id": "lostDelver",
+  "name": "Lost Delver",
+  "family": "wanderers",
+  "tier": "common",
+  "level": 7,
+  "hitDice": "6d8+6",
+  "ac": 14,
+  "perception": 12,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "strike",
+    "windup": 0.7,
+    "recovery": 1.9,
+    "toHit": 6,
+    "damage": "2d6+3",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "wander",
+   "chase",
+   "melee",
+   "opener",
+   "flee"
+  ],
+  "sprite": "delver",
+  "text": "Another delver, gone mad down here, who wants your boots.",
+  "fleeAtPercent": 20,
+  "loot": "chest.rich"
+ },
+ {
+  "id": "hollowKing",
+  "name": "The Hollow King",
+  "family": "restlessDead",
+  "tier": "greater",
+  "level": 6,
+  "hitDice": "6d10+6",
+  "ac": 15,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "greatblade",
+    "windup": 1.1,
+    "recovery": 2.8,
+    "toHit": 7,
+    "damage": "2d6+2",
+    "type": "slashing"
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "melee",
+   "unyielding",
+   "boss",
+   "mindless"
+  ],
+  "sprite": "king",
+  "text": "He ruled the dead of these cellars, and means to rule you.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "radiant"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "stunned",
+   "paralysed"
+  ],
+  "loot": "chest.rich",
+  "boss": "hollowKing"
+ },
+ {
+  "id": "bellwrightEngine",
+  "name": "The Bellwright Engine",
+  "family": "constructs",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "20d10+40",
+  "ac": 18,
+  "perception": 13,
+  "stepSeconds": 3,
+  "turnSeconds": 0.6,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "hammer",
+    "windup": 1.2,
+    "recovery": 2.4,
+    "toHit": 10,
+    "damage": "3d10+5",
+    "type": "bludgeoning",
+    "area": true
+   },
+   {
+    "id": "bolt",
+    "windup": 1.0,
+    "recovery": 3.0,
+    "toHit": 9,
+    "damage": "3d8",
+    "type": "lightning",
+    "range": 7,
+    "projectileSpeed": 9
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "melee",
+   "unyielding",
+   "boss",
+   "mindless"
+  ],
+  "sprite": "engine",
+  "text": "The machine that rings the Knell, and the rest of what it does.",
+  "immune": [
+   "poison"
+  ],
+  "vulnerable": [
+   "lightning"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded",
+   "stunned",
+   "paralysed",
+   "frozen"
+  ],
+  "loot": "chest.rich",
+  "boss": "bellwright"
+ },
+ {
+  "id": "motherOfCoils",
+  "name": "Mother of Coils",
+  "family": "serpentCult",
+  "tier": "dread",
+  "level": 18,
+  "hitDice": "22d10+50",
+  "ac": 17,
+  "perception": 15,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "coil",
+    "windup": 1.0,
+    "recovery": 2.4,
+    "toHit": 11,
+    "damage": "3d10+6",
+    "type": "bludgeoning",
+    "area": true
+   },
+   {
+    "id": "venom",
+    "windup": 1.1,
+    "recovery": 2.8,
+    "toHit": 10,
+    "damage": "4d8",
+    "type": "poison",
+    "range": 6,
+    "projectileSpeed": 8,
+    "onHit": {
+     "condition": "poisoned",
+     "dc": 18,
+     "seconds": 12
+    }
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee",
+   "unyielding",
+   "boss"
+  ],
+  "sprite": "nagaQueen",
+  "text": "The serpent the cult sings to.",
+  "loot": "chest.rich",
+  "boss": "motherOfCoils"
+ },
+ {
+  "id": "choirSinger",
+  "name": "Voice of the Hollow Choir",
+  "family": "aberrations",
+  "tier": "greater",
+  "level": 12,
+  "hitDice": "9d10+10",
+  "ac": 15,
+  "perception": 13,
+  "stepSeconds": 0.7,
+  "turnSeconds": 0.6,
+  "size": "medium",
+  "attacks": [
+   {
+    "id": "song",
+    "windup": 1.0,
+    "recovery": 2.6,
+    "toHit": 8,
+    "damage": "2d10",
+    "type": "psychic",
+    "range": 6,
+    "projectileSpeed": 8,
+    "onHit": {
+     "condition": "frightened",
+     "dc": 15,
+     "chance": 25
+    }
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "ranged",
+   "boss"
+  ],
+  "sprite": "singer",
+  "text": "One of five who sing the Hollow into new shapes.",
+  "loot": "chest.cellar",
+  "boss": "choir"
+ },
+ {
+  "id": "unmaker",
+  "name": "The Unmaker",
+  "family": "unmade",
+  "tier": "dread",
+  "level": 22,
+  "hitDice": "30d10+80",
+  "ac": 19,
+  "perception": 15,
+  "stepSeconds": 0.6,
+  "turnSeconds": 0.5,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "unmake",
+    "windup": 1.2,
+    "recovery": 2.4,
+    "toHit": 12,
+    "damage": "4d10+8",
+    "type": "force",
+    "area": true
+   },
+   {
+    "id": "void",
+    "windup": 1.2,
+    "recovery": 3.0,
+    "toHit": 11,
+    "damage": "5d8",
+    "type": "necrotic",
+    "range": 7,
+    "projectileSpeed": 8
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "chase",
+   "ranged",
+   "melee",
+   "unyielding",
+   "boss"
+  ],
+  "sprite": "unmaker",
+  "text": "The thing at the bottom of the Hollow. It is waking.",
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded",
+   "stunned",
+   "paralysed",
+   "frozen",
+   "frightened"
+  ],
+  "loot": "chest.rich",
+  "boss": "unmaker"
  }
 ]

@@ -14,19 +14,31 @@ public static class Bestiary
     {
         int up = level - d.Level;
         if (up <= 0) return d;
+        return ScaleTo(d, level);
+    }
+
+    /// <summary>
+    /// Like <see cref="Scale"/>, but it also scales down (bosses and their summons fit the depth): below its own
+    /// level a creature loses 10% of its hit dice a level (to 35% at least), and its bonuses fall the same way.
+    /// </summary>
+    public static CreatureDef ScaleTo(CreatureDef d, int level)
+    {
+        level = Math.Max(1, level);
+        int up = level - d.Level;
+        if (up == 0) return d;
         var hd = Dice.Parse(d.HitDice);
-        int count = Math.Max(1, (int)Math.Round(hd.Count * (1 + up * 0.3)));
+        int count = Math.Max(1, (int)Math.Round(hd.Count * (up > 0 ? 1 + up * 0.3 : Math.Max(0.35, 1 + up * 0.1))));
         var attacks = d.Attacks.Select(a =>
         {
             var dmg = Dice.Parse(a.Damage);
-            return a with { ToHit = a.ToHit + up / 2, Damage = (dmg with { Bonus = dmg.Bonus + up / 2 }).ToString() };
+            return a with { ToHit = Math.Max(1, a.ToHit + up / 2), Damage = (dmg with { Bonus = Math.Max(0, dmg.Bonus + up / 2) }).ToString() };
         }).ToArray();
         return d with
         {
             Level = level,
-            HitDice = new Dice(count, hd.Sides, hd.Bonus + up).ToString(),
-            Ac = d.Ac + up / 3,
-            Perception = d.Perception + up / 3,
+            HitDice = new Dice(count, hd.Sides, Math.Max(0, hd.Bonus + up)).ToString(),
+            Ac = Math.Max(10, d.Ac + up / 3),
+            Perception = Math.Max(8, d.Perception + up / 3),
             Attacks = attacks,
         };
     }

@@ -245,7 +245,7 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Whether the party may step into a cell: open floor or an open door, with no creature in it.</summary>
-    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && Level.TrapAt(c) is not { Kind: TrapKind.CursedAltar }
+    public bool CanPartyEnter(Cell c) => Level.IsPassable(c) && Level.ChestAt(c) is null && Level.Waystone != c && Level.TrapAt(c) is not { Kind: TrapKind.CursedAltar }
         && !Monsters.Any(m => m.IsAlive && m.Cell == c);
 
     private void StartNext()
@@ -343,6 +343,7 @@ public sealed partial class GameEngine
         if (Level.DoorAt(ahead) is { } door) { TryWorkDoor(door); return; }
         if (Level.ChestAt(ahead) is { } chest) { OpenChest(chest); return; }
         if (Level.TrapAt(ahead) is { Kind: TrapKind.CursedAltar } altar) { TakeOffering(altar); return; }
+        if (Level.Waystone == ahead) { TouchWaystone(); return; }
         if (Level.KindAt(ahead) == CellKind.Wall) SearchWall(ahead);
     }
 

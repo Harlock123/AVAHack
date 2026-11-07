@@ -45,6 +45,7 @@ public sealed partial class GameEngine
             Visited = visited?.ToList() ?? [],
             Delve = delve ?? [],
             Ironman = ironman,
+            Stash = Stash.ToList(), ChampionAffixes = ChampionAffixes.ToList(),
             Summary = $"{string.Join(", ", members.Select(c => c.Name))} · {Level.Name} · {(int)t.TotalMinutes}:{t.Seconds:00}",
         };
     }
@@ -74,6 +75,8 @@ public sealed partial class GameEngine
             FromX = m.From.X, FromY = m.From.Y, StrikeTime = m.StrikeTime, IdleLeft = m.IdleLeft, FleeLeft = m.FleeLeft,
             AffixTimer = m.AffixTimer, LastHitType = m.LastHitType, Conditions = Character.SaveConditions(m.Conditions),
             LastSeen = m.LastSeen, Awareness = m.Awareness, CalmLeft = m.CalmLeft, FrenzyLeft = m.FrenzyLeft,
+            Level = m.Def.Level, SpecialTimer = m.SpecialTimer, Id = m.Id, SummonedBy = m.SummonedBy, Raised = m.Raised,
+            SplitHalf = m.SplitHalf,
         }).ToList(),
         Flags = new Dictionary<string, string>(LevelFlags),
         PartyX = PartyCell.X, PartyY = PartyCell.Y, Facing = Facing,
@@ -97,6 +100,8 @@ public sealed partial class GameEngine
         for (int i = 0; i < all.Length && i * 2 + 1 < s.RngStates.Length; i++) all[i].SetState(s.RngStates[i * 2], s.RngStates[i * 2 + 1]);
         g.TickCount = s.TickCount;
         g.Kills = s.Kills;
+        g.Stash.AddRange(s.Stash);
+        g.ChampionAffixes.AddRange(s.ChampionAffixes);
         g._log.Clear();
         g._log.AddRange(s.Log);
         g.LightLeft = s.LightLeft;
@@ -155,15 +160,20 @@ public sealed partial class GameEngine
         foreach (var pile in st.Piles) foreach (var it in pile.Items) Level.Drop(new Cell(pile.X, pile.Y), it);
         foreach (var c in st.Explored) _explored.Add(new Cell(c.X, c.Y));
         _monsters.Clear();
+        int top = st.Monsters.Count == 0 ? 0 : st.Monsters.Max(x => x.Id);
+        if (top >= _nextMonsterId) _nextMonsterId = top + 1;
         foreach (var ms in st.Monsters)
         {
-            var m = new Monster(_nextMonsterId++, Content.Creature(ms.Def), new Cell(ms.X, ms.Y), ms.Facing, ms.MaxHp, Content)
+            var def = Content.Creature(ms.Def);
+            if (ms.Level > 0 && ms.Level != def.Level) def = Bestiary.ScaleTo(def, ms.Level);
+            var m = new Monster(ms.Id > 0 ? ms.Id : _nextMonsterId++, def, new Cell(ms.X, ms.Y), ms.Facing, ms.MaxHp, Content)
             {
                 Hp = ms.Hp, State = ms.State, Slot = ms.Slot, PileLeft = ms.PileLeft, FellInPit = ms.Fell, Ally = ms.Ally,
                 Summoned = ms.Summoned, SummonLeft = ms.SummonLeft, Elite = ms.Elite, Title = ms.Title, AcBonus = ms.AcBonus,
                 ToHitBonus = ms.ToHitBonus, DamageFactor = ms.DamageFactor, Ward = ms.Ward, Boss = ms.Boss, Phase = ms.Phase,
             };
             foreach (var a in ms.Affixes) m.Affixes.Add(a);
+            ReapplyAffixes(m);
             m.Action = ms.Action;
             m.ActionLeft = ms.ActionLeft;
             m.ActionTotal = ms.ActionTotal;
@@ -178,6 +188,10 @@ public sealed partial class GameEngine
             m.CalmLeft = ms.CalmLeft;
             m.FrenzyLeft = ms.FrenzyLeft;
             m.Awareness = ms.Awareness;
+            m.SpecialTimer = ms.SpecialTimer;
+            m.SummonedBy = ms.SummonedBy;
+            m.Raised = ms.Raised;
+            m.SplitHalf = ms.SplitHalf;
             Character.LoadConditions(m.Conditions, ms.Conditions);
             _monsters.Add(m);
         }

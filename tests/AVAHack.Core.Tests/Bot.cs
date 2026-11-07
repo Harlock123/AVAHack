@@ -112,7 +112,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         // Rest when hurt and nothing is coming.
         bool danger = g.Monsters.Any(x => x.IsAware && !x.Ally && x.Cell.Distance(g.PartyCell) <= 6);
         double worst = g.Party.Standing.Min(c => c.Hp / c.MaxHp);
-        if (!danger && (worst < 0.5 || (_resting && worst < 0.9)))
+        // Before a boss, a player heals up all the way first.
+        bool bossAhead = g.LivingBoss is { IsAware: false } && Goal == "stairs";
+        if (!danger && (worst < 0.5 || (_resting && worst < 0.9) || (bossAhead && worst < 0.97)))
         {
             _resting = true;
             return;

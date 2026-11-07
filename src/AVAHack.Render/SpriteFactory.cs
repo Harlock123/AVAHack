@@ -9,13 +9,13 @@ public enum SpriteFrame { Idle, Windup, Strike, Dead }
 /// left side is the mirror) and the back, standing, winding up an attack, striking and dead. Pictures are
 /// 64×64 with the feet on the bottom row. Made once and cached.
 /// </summary>
-public sealed class SpriteFactory
+public sealed partial class SpriteFactory
 {
     public const int Size = 64;
 
     private readonly Dictionary<(string, SpriteView, SpriteFrame, bool), SpriteImage> _cache = new();
 
-    public static readonly IReadOnlyList<string> Known = ["rat", "spider", "shambler", "skeleton", "goblin", "slinger"];
+    public static IReadOnlyList<string> Known => [.. new[] { "rat", "spider", "shambler", "skeleton", "goblin", "slinger" }, .. People.Keys.Order(StringComparer.Ordinal), .. MoreKnown];
 
     /// <summary>The picture for a sprite id, view and frame. <paramref name="mirror"/> flips a side view to face left.</summary>
     public SpriteImage Get(string sprite, SpriteView view, SpriteFrame frame, bool mirror = false)
@@ -84,6 +84,11 @@ public sealed class SpriteFactory
                 p.Ellipse(32, 27, 6, 4, Paint.Rgb(210, 170, 60));
                 p.Ellipse(20, 26, 2, 5, Paint.Rgb(230, 220, 180));
                 p.Ellipse(44, 26, 2, 5, Paint.Rgb(230, 220, 180));
+                break;
+            case "waystone":
+                p.Rect(22, 14, 42, 63, Paint.Rgb(120, 126, 140));
+                p.Triangle(22, 14, 32, 2, 42, 14, Paint.Rgb(120, 126, 140));
+                for (int i = 0; i < 4; i++) p.Rect(28, 20 + i * 10, 36, 23 + i * 10, Paint.Rgb(140, 220, 255), false);
                 break;
             case "boulder":
                 p.Ellipse(32, 36, 27, 27, Paint.Rgb(110, 100, 90));
@@ -189,6 +194,7 @@ public sealed class SpriteFactory
             case "goblin": Humanoid(p, view, frame, Goblin); break;
             case "slinger": Humanoid(p, view, frame, Slinger); break;
             default:
+                if (DrawMore(p, sprite, view, frame)) break;
                 p.Ellipse(32, 40, 20, 22, Paint.Rgb(200, 0, 200)); // missing art shows as a magenta blob
                 break;
         }
@@ -399,6 +405,37 @@ public sealed class SpriteFactory
             }
             case "knife":
                 p.Line(hx, hy, hx + (f == SpriteFrame.Strike ? 8 : 2), hy - (f == SpriteFrame.Strike ? 2 : 8), 2, Paint.Rgb(170, 170, 176));
+                break;
+            case "pick":
+                p.Line(hx, hy, hx + 2, hy - 16, 2, Paint.Rgb(110, 80, 50));
+                p.Line(hx - 6, hy - 16, hx + 10, hy - 14, 2.5, Paint.Rgb(150, 150, 156));
+                break;
+            case "axe":
+                p.Line(hx, hy, hx + 2, hy - 18, 2, Paint.Rgb(110, 80, 50));
+                p.Triangle(hx + 2, hy - 20, hx + 12, hy - 22, hx + 10, hy - 10, Paint.Rgb(170, 170, 176));
+                break;
+            case "club":
+                p.Line(hx, hy, hx + 3, hy - 16, 4, Paint.Rgb(110, 80, 50));
+                break;
+            case "spear":
+                p.Line(hx, hy + 8, hx + 2, hy - 24, 2, Paint.Rgb(110, 80, 50));
+                p.Triangle(hx - 1, hy - 24, hx + 2, hy - 31, hx + 5, hy - 24, Paint.Rgb(190, 190, 200));
+                break;
+            case "staff":
+                p.Line(hx, hy + 10, hx + 1, hy - 22, 2, Paint.Rgb(90, 70, 50));
+                p.Ellipse(hx + 1, hy - 23, 3, 3, f == SpriteFrame.Windup ? Paint.Rgb(255, 255, 200) : Paint.Rgb(150, 200, 255), false);
+                break;
+            case "whip":
+                p.Line(hx, hy, hx + (f == SpriteFrame.Strike ? 18 : 6), hy + (f == SpriteFrame.Strike ? -4 : 14), 1, Paint.Rgb(70, 50, 30));
+                break;
+            case "bow":
+                p.Line(hx, hy - 12, hx + 3, hy, 1.5, Paint.Rgb(120, 90, 60));
+                p.Line(hx + 3, hy, hx, hy + 12, 1.5, Paint.Rgb(120, 90, 60));
+                p.Line(hx, hy - 12, hx, hy + 12, 1, Paint.Rgb(200, 200, 190));
+                break;
+            case "lantern":
+                p.Line(hx, hy, hx, hy + 4, 1, Paint.Rgb(60, 60, 60));
+                p.Rect(hx - 3, hy + 4, hx + 3, hy + 10, Paint.Rgb(120, 255, 160), false);
                 break;
             case "sling":
                 if (f == SpriteFrame.Windup)

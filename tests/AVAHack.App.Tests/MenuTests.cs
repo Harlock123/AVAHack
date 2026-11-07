@@ -96,6 +96,33 @@ public sealed class MenuTests
     }
 
     [AvaloniaFact]
+    public void The_Waystone_screen_trains_a_hero_and_closes()
+    {
+        var level = Generator.Generate(Db, 41, 5, new GenOptions { MaxDepth = 12 });
+        Assert.NotNull(level.Waystone);
+        var g = new GameEngine(level, 41, GameView.DefaultParty(Db), Db);
+        var (w, v) = Open(new GameView(g, startLoop: false, store: TempStore()));
+        for (int i = 0; i < 4 && g.PartyCell.Step(g.Facing) != level.Waystone; i++)
+        {
+            w.KeyPressQwerty(PhysicalKey.E, RawInputModifiers.None);
+            v.Advance(1);
+        }
+        w.KeyPressQwerty(PhysicalKey.F, RawInputModifiers.None);
+        v.Advance(0.2);
+        Pump();
+        Assert.Equal(Overlay.Waystone, v.Overlay);
+        g.Party.Gold = 5000;
+        Click(w, 164 + 250, 40 + 78); // the Trainer tab
+        Shot(w, "waystone");
+        int rank = g.Selected.Rank(SkillId.Athletics);
+        int index = Array.IndexOf(Enum.GetValues<SkillId>(), SkillId.Athletics);
+        Click(w, 164 + index % 3 * 320 + 150, 40 + 112 + 30 + index / 3 * 38 + 16);
+        Assert.Equal(rank + 1, g.Selected.Rank(SkillId.Athletics));
+        Click(w, 1140 - 110 + 45, 40 + 14 + 16); // Close
+        Assert.Equal(Overlay.None, v.Overlay);
+    }
+
+    [AvaloniaFact]
     public void The_inventory_wears_and_drops_things()
     {
         var g = new GameEngine(LevelLoader.LoadBuiltIn("the-cellars"), 3, GameView.DefaultParty(Db), Db);

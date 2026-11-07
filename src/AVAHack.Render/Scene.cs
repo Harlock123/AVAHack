@@ -11,6 +11,8 @@ public static class Scene
     {
         "rat" => 0.42,
         "spider" => 0.5,
+        "swarm" or "mushroom" or "wisp" or "crawler" or "slimeGrey" or "bat" => 0.55,
+        "moths" or "imp" or "beetle" => 0.7,
         _ => 0.92,
     };
 
@@ -20,7 +22,7 @@ public static class Scene
         double rx = -cam.DirY, ry = cam.DirX; // the camera's right
         foreach (var m in g.Monsters)
         {
-            if (m.FellInPit) continue;
+            if (m.FellInPit || m.HiddenFrom(g.PartyCell)) continue;
             var (x, y) = m.Position(alpha);
             var frame = !m.IsAlive ? SpriteFrame.Dead
                 : m.Action == MonsterAction.WindingUp ? SpriteFrame.Windup
@@ -37,15 +39,23 @@ public static class Scene
             bool mirror = view == SpriteView.Side && fx * rx + fy * ry < 0;
             if (frame == SpriteFrame.Dead) mirror = m.Id % 2 == 0;
 
-            double size = SizeOf(m.Def.Sprite);
+            double size = SizeOf(m.Def.Sprite) * m.Def.Size switch { Content.CreatureSize.Large => 1.18, _ => 1 };
             double glow = frame == SpriteFrame.Windup ? 0.25 + 0.25 * Math.Sin(m.ActionProgress * Math.PI * 4) : 0;
+            // Elites are tinted gold, champions violet and glowing (spec 12.2); a hit flashes red over either.
+            (uint tint, double amount) = m.HurtFlash > 0 ? (0xFFFF2010u, 0.6)
+                : !m.IsAlive ? (0u, 0)
+                : m.Title is not null && m.Affixes.Count > 0 ? (0xFFB060FFu, 0.28)
+                : m.Elite ? (0xFFFFC840u, 0.22) : (0u, 0);
+            if (m.IsAlive && m.Affixes.Count > 0 && m.Title is not null) glow = Math.Max(glow, 0.15);
             list.Add(new SpriteInstance(x, y, 0, size, size, art.Get(m.Def.Sprite, view, frame, mirror),
-                Tint: 0xFFFF2010, TintAmount: m.HurtFlash > 0 ? 0.6 : 0, Glow: glow));
+                Tint: tint, TintAmount: amount, Glow: glow));
         }
         foreach (var p in g.Projectiles)
             list.Add(p.Look == "stone"
                 ? new SpriteInstance(p.X, p.Y, 0.42, 0.12, 0.12, art.Stone())
                 : new SpriteInstance(p.X, p.Y, 0.36, 0.24, 0.24, art.Bolt(p.Look), SelfLit: true));
+        if (g.Level.Waystone is { } ws)
+            list.Add(new SpriteInstance(ws.X + 0.5, ws.Y + 0.5, 0, 0.95, 0.95, art.Prop("waystone"), Glow: 0.2));
         foreach (var t in g.Level.Traps)
         {
             if (t.Kind == World.TrapKind.CursedAltar)

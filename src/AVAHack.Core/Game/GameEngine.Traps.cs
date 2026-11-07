@@ -102,6 +102,12 @@ public sealed partial class GameEngine
         }
         if (Level.IsStairs(PartyCell))
         {
+            if (LivingBoss is { } boss)
+            {
+                Say($"The way down is sealed. {boss.Name} still stands.");
+                if (!boss.IsAware) Alert(boss);
+                return;
+            }
             if (StairsHook is { } next && next(PartyCell)) return;
             Mode = GameMode.Won;
             Say("You find the stairs down. The cellars are behind you.");

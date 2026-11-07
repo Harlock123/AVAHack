@@ -318,6 +318,7 @@ public sealed partial class GameEngine
     /// <summary>Damage to a creature, already through its resistances.</summary>
     internal void DamageMonster(Monster m, int dmg, DamageType type, bool critical = false, bool sneak = false)
     {
+        dmg = BossShield(m, dmg);
         var (x, y) = m.Position();
         string text = dmg == 0 ? "immune" : sneak ? $"{dmg}!!" : critical ? $"{dmg}!" : dmg.ToString();
         Float?.Invoke(new FloatText(x, y, FloatZ(m), text, critical || sneak ? TextKind.Critical : TextKind.MonsterHurt));
@@ -351,8 +352,9 @@ public sealed partial class GameEngine
         if (m.Ally) { Say($"Your {m.Def.Name} is gone."); return; }
         Kills++;
         Say($"The {m.Name} is slain.");
-        DropLoot(m);
+        if (!(m.Boss == "choir" && m.Raised)) DropLoot(m);
         MonsterDied?.Invoke(m);
+        BestiaryDeath(m);
         Event?.Invoke(GameEvent.MonsterDied);
     }
 

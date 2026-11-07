@@ -44,6 +44,18 @@ public sealed class SpriteTests
     }
 
     [Fact]
+    public void Every_creature_in_the_content_has_its_own_picture()
+    {
+        var db = AVAHack.Content.ContentDb.LoadBuiltIn();
+        var missing = db.Creatures.Select(c => c.Sprite).Distinct().Where(s => !SpriteFactory.Known.Contains(s)).ToList();
+        Assert.Empty(missing);
+        var magenta = Paint.Rgb(200, 0, 200);
+        var art = new SpriteFactory();
+        foreach (var id in SpriteFactory.Known)
+            Assert.DoesNotContain(art.Get(id, SpriteView.Front, SpriteFrame.Idle).Pixels, p => (p & 0xFFFFFF) == (magenta & 0xFFFFFF));
+    }
+
+    [Fact]
     public void The_scene_shows_each_creature_from_the_side_the_camera_sees()
     {
         var level = LevelLoader.Parse("start: 1 1 east\nmap:\n#######\n#.....#\n#######");

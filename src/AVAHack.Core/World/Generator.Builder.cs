@@ -775,26 +775,15 @@ public static partial class Generator
                 bool ns = At(d.Cell.Step(Dir.North)) == CellKind.Wall && At(d.Cell.Step(Dir.South)) == CellKind.Wall;
                 if (we == ns) return false;
             }
-            var openDoors = _doors.Where(d => d.Kind == DoorKind.Hand && d.Key is null || d.Open).Select(d => d.Cell).ToHashSet();
-            var blocked = _chests.Select(c => c.Cell).Concat(_pits.Select(p => p.Cell)).Concat(_altars).ToHashSet();
-            if (_waystone is { } ws) blocked.Add(ws);
-            blocked.UnionWith(_stations.Keys);
-            HashSet<Cell> reach = [];
-            bool grew = true;
-            while (grew)
-            {
-                grew = false;
-                var shut = _doors.Select(d => d.Cell).Where(c => !openDoors.Contains(c)).ToHashSet();
-                shut.UnionWith(blocked);
-                reach = Flood(_start, shut, _secrets.Select(x => x.Cell).ToHashSet()).Keys.ToHashSet();
-                foreach (var (cell, item) in _items)
-                    if (item.KeyId is { } k && reach.Contains(cell))
-                        foreach (var d in _doors.Where(d => d.Key == k)) grew |= openDoors.Add(d.Cell);
-                foreach (var l in _levers) if (reach.Contains(l.Cell)) foreach (var t in l.Targets) grew |= openDoors.Add(t);
-                foreach (var p in _plates) if (reach.Contains(p.Cell)) foreach (var t in p.Targets) grew |= openDoors.Add(t);
-            }
+            var reach = Walk(_start);
             if (!reach.Contains(_down)) return false;
             if (_landing is { } land && !reach.Contains(land)) return false;
+            // A party that falls in lands here, with every barrier still shut: it must find the stairs from there too.
+            if (_landing is { } fell && !Walk(fell).Contains(_down)) return false;
+            // Below the first level the start holds the stairs up, and stepping back on them climbs: the way on
+            // must not run back through the start.
+            if (depth > 1 && !Enum.GetValues<Dir>().Select(d => _start.Step(d)).Where(reach.Contains)
+                    .Any(n => Walk(n, avoid: _start).Contains(_down))) return false;
             if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } tt && !reach.Contains(tt))) return false;
             // Secret doors count as found: what lies behind them must be reachable too.
             bool Reachable(Cell c) => reach.Contains(c) || Enum.GetValues<Dir>().Any(d => reach.Contains(c.Step(d)));
@@ -802,6 +791,31 @@ public static partial class Generator
             if (_chests.Any(c => !Reachable(c.Cell))) return false;
             if (_items.Any(i => !Reachable(i.Cell))) return false;
             return true;
+        }
+
+        /// <summary>Everything a party starting at <paramref name="from"/> can reach, opening barriers as it goes.</summary>
+        private HashSet<Cell> Walk(Cell from, Cell? avoid = null)
+        {
+            var openDoors = _doors.Where(d => d.Kind == DoorKind.Hand && d.Key is null || d.Open).Select(d => d.Cell).ToHashSet();
+            var blocked = _chests.Select(c => c.Cell).Concat(_pits.Select(p => p.Cell)).Concat(_altars).ToHashSet();
+            if (_waystone is { } ws) blocked.Add(ws);
+            blocked.UnionWith(_stations.Keys);
+            if (avoid is { } a) blocked.Add(a);
+            HashSet<Cell> reach = [];
+            bool grew = true;
+            while (grew)
+            {
+                grew = false;
+                var shut = _doors.Select(d => d.Cell).Where(c => !openDoors.Contains(c)).ToHashSet();
+                shut.UnionWith(blocked);
+                reach = Flood(from, shut, _secrets.Select(x => x.Cell).ToHashSet()).Keys.ToHashSet();
+                foreach (var (cell, item) in _items)
+                    if (item.KeyId is { } k && reach.Contains(cell))
+                        foreach (var d in _doors.Where(d => d.Key == k)) grew |= openDoors.Add(d.Cell);
+                foreach (var l in _levers) if (reach.Contains(l.Cell)) foreach (var t in l.Targets) grew |= openDoors.Add(t);
+                foreach (var p in _plates) if (reach.Contains(p.Cell)) foreach (var t in p.Targets) grew |= openDoors.Add(t);
+            }
+            return reach;
         }
 
         public Level Finish(ulong seed, int attempt)

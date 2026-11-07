@@ -303,6 +303,7 @@ public sealed partial class GameEngine
         {
             pile.State = MonsterState.Dead;
             Kills++;
+            AwardKill(pile);
             Float?.Invoke(new FloatText(x, y, 0.2, "crushed", TextKind.Critical));
             Say($"You grind the {pile.Def.Name}'s bones to splinters. It won't rise again.");
             DropLoot(pile);
@@ -345,17 +346,33 @@ public sealed partial class GameEngine
         {
             m.State = MonsterState.Pile;
             m.PileLeft = re.Seconds;
-            Say($"The {m.Def.Name} collapses into a heap of bones.");
+            Say($"{m.TheKind} collapses into a heap of bones.");
             return;
         }
         m.State = MonsterState.Dead;
         if (m.Ally) { Say($"Your {m.Def.Name} is gone."); return; }
         Kills++;
-        Say($"The {m.Name} is slain.");
+        Say($"{m.TheName} is slain.");
+        AwardKill(m);
         if (!(m.Boss == "choir" && m.Raised)) DropLoot(m);
         MonsterDied?.Invoke(m);
         BestiaryDeath(m);
         Event?.Invoke(GameEvent.MonsterDied);
+    }
+
+    /// <summary>
+    /// Character XP for a kill (spec 7.3): every hero still standing gets <see cref="Progression.KillXp"/>, more
+    /// for elites, champions and bosses, nothing for what a creature called up; a split half is worth half.
+    /// </summary>
+    internal void AwardKill(Monster m)
+    {
+        if (m.Ally) return;
+        double rank = m.Boss is not null ? 10 : m.Title is not null ? 3 : m.Elite ? 2 : 1;
+        if (m.SplitHalf) rank *= 0.5;
+        bool calledUp = m.Summoned || m.SummonedBy != 0 || m.Raised;
+        foreach (var c in Party.Standing.ToList())
+            if (c.GainCharacterXp(Progression.KillXp(m.Def.Level, c.Level, rank, calledUp)) > 0)
+                Say($"{c.Name} reaches level {c.Level}!");
     }
 
     /// <summary>Raised when a creature is killed (bosses and champions listen).</summary>

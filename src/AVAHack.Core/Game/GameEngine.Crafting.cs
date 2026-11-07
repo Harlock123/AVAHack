@@ -321,7 +321,7 @@ public sealed partial class GameEngine
             if (Checks.RollD20(Rng.Combat, Advantage.None) + m.SaveBonus(Rules.Attribute.Con) < dc)
             {
                 m.Conditions.Apply(cond, 0, 8);
-                Say($"The {m.Name} is {cond.ToString().ToLowerInvariant()}!");
+                Say($"{m.TheName} is {cond.ToString().ToLowerInvariant()}!");
             }
         }
     }

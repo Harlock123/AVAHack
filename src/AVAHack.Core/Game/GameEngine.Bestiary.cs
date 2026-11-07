@@ -351,12 +351,12 @@ public sealed partial class GameEngine
                     foreach (var a in m.Affixes.Where(a => a != "splitting")) half.Affixes.Add(a);
                     made++;
                 }
-            if (made > 0) Say($"The {m.Def.Name} splits in two!");
+            if (made > 0) Say($"{m.TheKind} splits in two!");
         }
         if (m.Def.Has("explodes") && m.Cell.Distance(PartyCell) <= 1)
         {
             var a = m.Def.Attacks[0];
-            Say($"The {m.Def.Name} bursts in a choking cloud!");
+            Say($"{m.TheKind} bursts in a choking cloud!");
             foreach (var c in Party.Standing.ToList())
             {
                 int dmg = (int)(Dice.Parse(a.Damage).Roll(Rng.Combat) * m.DamageFactor);

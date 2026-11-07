@@ -10,7 +10,7 @@ produces one self-contained executable per platform (Windows, macOS and Linux, x
 
 The design lives in `docs/SPECIFICATION.md`:
 - section 20 has the milestones;
-- sections 22–30 have the implementation decisions, one section per milestone (M0–M8).
+- sections 22–31 have the implementation decisions: one section per milestone (M0–M8), then the balance pass.
 
 Everything in the game is original: the world, names, monsters and art. Keep it that way. Use no names, maps,
 art, text or UI layouts from other games, and no trademarked tabletop content (spec section 2).
@@ -93,8 +93,11 @@ implicit usings, invariant globalization and central package versions. Package v
   - Reports:
     - `BalanceReport`: the Cellars.
     - `ProgressionReport`: callings to level 8.
-    - `DelveReport`: 4-level and 12-level Delves.
-  - `Bot` plays like a fallible person.
+    - `DelveReport`: 4-level and 12-level Delves. `AVAHACK_BALANCE_RUNS` sets the seeds and `AVAHACK_BALANCE_DEBUG=1`
+      adds the heroes' skills. To see why one seed gets stuck, set `AVAHACK_BALANCE_TRACE=<seed code>` and
+      `AVAHACK_BALANCE_TRACE_FILE=<path>`: it writes a map of each level.
+  - `Bot` plays like a fallible person. With `Clears` it clears each level first (hunting, looting, Waystones,
+    valves, locks, searching), as the 12-level report needs.
 - `tests/AVAHack.Render.Tests`:
   - golden images;
   - a sprite sheet that checks every creature has art;

@@ -23,17 +23,21 @@ public sealed class GeneratorTests(ITestOutputHelper output)
         return sb.ToString();
     }
 
-    /// <summary>Walks the level working its locks in order; returns what was reached.</summary>
-    public static HashSet<Cell> Reach(Level l)
+    /// <summary>
+    /// Walks the level working its locks in order, from the start or another cell and never through
+    /// <paramref name="avoid"/>; returns what was reached.
+    /// </summary>
+    public static HashSet<Cell> Reach(Level l, Cell? from = null, Cell? avoid = null)
     {
         var open = l.Doors.Where(d => d.Kind == DoorKind.Hand && !d.Locked || d.IsPassable).Select(d => d.Cell).ToHashSet();
         var blocked = l.Chests.Select(c => c.Cell).Concat(l.Pits.Select(p => p.Cell)).Concat(l.Traps.Where(t => t.Kind == TrapKind.CursedAltar).Select(t => t.Cell)).ToHashSet();
+        if (avoid is { } a) blocked.Add(a);
         HashSet<Cell> reach = [];
         bool grew = true;
         while (grew)
         {
             grew = false;
-            var seen = new HashSet<Cell> { l.Start };
+            var seen = new HashSet<Cell> { from ?? l.Start };
             var q = new Queue<Cell>(seen);
             while (q.Count > 0)
             {
@@ -78,6 +82,11 @@ public sealed class GeneratorTests(ITestOutputHelper output)
             Need(l.Stairs.Count() == 1 && reach.Contains(l.Stairs.Single()), "the stairs down can't be reached");
             Need(depth == 1 || l.StairsUp.Contains(l.Start), "no stairs up at the start");
             Need(l.Landing is not { } land || reach.Contains(land), "the landing can't be reached");
+            // The balance pass: a party that falls in must find the stairs from the landing, and below the first
+            // level the way on mustn't run back over the stairs up (stepping on them climbs).
+            Need(l.Landing is not { } fell || Reach(l, fell).Contains(l.Stairs.Single()), "the stairs can't be reached from the landing");
+            Need(depth == 1 || Enum.GetValues<Dir>().Select(d => l.Start.Step(d)).Where(reach.Contains)
+                .Any(c => Reach(l, c, avoid: l.Start).Contains(l.Stairs.Single())), "the way to the stairs runs over the stairs up");
             Need(l.Spawns.All(s => Near(s.Cell)), "a creature can't be reached");
             Need(l.Chests.All(c => Near(c.Cell)), "a chest can't be reached");
             Need(l.Piles.Keys.All(Near), "something on the floor can't be reached");

@@ -9,9 +9,9 @@ namespace AVAHack.Core.Tests;
 
 /// <summary>
 /// M4's exit test: each calling fights level-matched creatures in an arena until it reaches level 8, sneaking up,
-/// blocking and power-attacking as a player might, and choosing its level-ups and perks. By then it should be a
-/// specialist (its best skill 45 or more) with some breadth (its third-best 35 or more). The spec's first target,
-/// three skills above 40, didn't fit the level curve; see spec section 26.
+/// blocking and power-attacking as a player might, and choosing its level-ups and perks. Since the balance pass
+/// (spec section 31) kills give character XP too, so level 8 comes in tens of fights rather than hundreds, with
+/// skills a little lower: by then it should lean on one skill (35 or more) with a second growing (25 or more).
 /// </summary>
 public sealed class ProgressionReport(ITestOutputHelper output)
 {
@@ -53,7 +53,7 @@ public sealed class ProgressionReport(ITestOutputHelper output)
         }
     }
 
-    public sealed record Result(string Calling, int Level, int Fights, int Deaths, int SkillsOver40, string Top, int Best, int Third, string Magic = "");
+    public sealed record Result(string Calling, int Level, int Fights, int Deaths, int SkillsOver40, string Top, int Best, int Second, string Magic = "");
 
     internal static Result Train(string calling, ulong seed, int targetLevel = 8, int maxFights = 1200)
     {
@@ -93,19 +93,19 @@ public sealed class ProgressionReport(ITestOutputHelper output)
         var start = Hero(db, calling);
         var magic = string.Join(", ", new[] { SkillId.Destruction, SkillId.Restoration, SkillId.Warding, SkillId.Conjuration, SkillId.Illusion }
             .Where(s => hero.Rank(s) > start.Rank(s)).Select(s => $"{s} {hero.Rank(s)}"));
-        return new Result(calling, hero.Level, fights, deaths, Enum.GetValues<SkillId>().Count(s => hero.Rank(s) > 40), string.Join(", ", top), ranks[0], ranks[2], magic);
+        return new Result(calling, hero.Level, fights, deaths, Enum.GetValues<SkillId>().Count(s => hero.Rank(s) > 40), string.Join(", ", top), ranks[0], ranks[1], magic);
     }
 
     [Fact]
-    public void Every_calling_reaches_level_8_as_a_specialist_with_breadth()
+    public void Every_calling_reaches_level_8_leaning_on_a_skill()
     {
         var callings = ContentDb.LoadBuiltIn().Callings.Select(c => c.Id).ToList();
         var results = callings.AsParallel().Select(c => Train(c, 3)).OrderBy(r => r.Calling).ToList();
         foreach (var r in results)
             output.WriteLine($"{r.Calling,-11} level {r.Level}  fights {r.Fights,3}  deaths {r.Deaths,2}  skills>40 {r.SkillsOver40}  ({r.Top})  magic: {r.Magic}");
         Assert.All(results, r => Assert.True(r.Level >= 8, $"{r.Calling} only reached level {r.Level}."));
-        Assert.All(results, r => Assert.True(r.Best >= 45 && r.Third >= 35, $"{r.Calling}: best {r.Best}, third {r.Third} ({r.Top})."));
-        Assert.All(results, r => Assert.InRange(r.Fights, 150, 1200)); // neither a walkover nor a grind
+        Assert.All(results, r => Assert.True(r.Best >= 35 && r.Second >= 25, $"{r.Calling}: best {r.Best}, second {r.Second} ({r.Top})."));
+        Assert.All(results, r => Assert.InRange(r.Fights, 30, 300)); // neither a walkover nor a grind
         // M5: the hybrids use their magic as well as their steel.
         Assert.Contains("Destruction", results.Single(r => r.Calling == "spellblade").Top + results.Single(r => r.Calling == "spellblade").Magic);
         Assert.Matches("Restoration|Warding", results.Single(r => r.Calling == "paladin").Magic);

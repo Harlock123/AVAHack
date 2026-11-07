@@ -9,10 +9,25 @@ public sealed class ProgressionTests
     [Fact]
     public void Skill_xp_curve()
     {
-        Assert.Equal(4, Progression.XpToNext(0));
-        Assert.InRange(Progression.XpToNext(15), 19.5, 20.0);
-        Assert.InRange(Progression.XpToNext(50), 167, 169);
-        Assert.InRange(Progression.XpToNext(90), 520, 523);
+        Assert.Equal(4 / 3.0, Progression.XpToNext(0), 9);
+        Assert.InRange(Progression.XpToNext(15), 6.5, 6.7);
+        Assert.InRange(Progression.XpToNext(50), 55.5, 56.5);
+        Assert.InRange(Progression.XpToNext(90), 173, 175);
+    }
+
+    [Theory]
+    [InlineData(1, 1, 3)]     // 3 × the creature's level
+    [InlineData(10, 8, 30)]
+    [InlineData(4, 10, 1)]    // more than 5 levels below the hero: a tenth (1.2, rounded)
+    [InlineData(5, 10, 15)]   // exactly 5 below still counts in full
+    public void Kill_xp(int creature, int hero, int xp) => Assert.Equal(xp, Progression.KillXp(creature, hero));
+
+    [Fact]
+    public void Kill_xp_for_elites_champions_bosses_and_summons()
+    {
+        Assert.Equal(60, Progression.KillXp(10, 10, rank: 2));
+        Assert.Equal(300, Progression.KillXp(10, 10, rank: 10));
+        Assert.Equal(0, Progression.KillXp(10, 10, calledUp: true));
     }
 
     [Theory]
@@ -43,7 +58,7 @@ public sealed class ProgressionTests
         var b = Heroes.Brannoc();
         Assert.Equal(1 + 0.1 * 12, b.UseXp(SkillId.Blade, 12), 9);          // 1 + 0.1 × damage
         Assert.Equal((20 - 5) / 2.0, b.UseXp(SkillId.Lockpicking, 20), 9);  // (DC − 5) / 2
-        Assert.Equal(8 / 4.0, b.UseXp(SkillId.Restoration, 8), 9);          // healed / 4
+        Assert.Equal(1 + 8 / 4.0, b.UseXp(SkillId.Restoration, 8), 9);      // 1 + healed / 4
         Assert.Equal(0, b.UseXp(SkillId.Lockpicking, 2));                   // never below 0
     }
 

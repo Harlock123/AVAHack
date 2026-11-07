@@ -36,6 +36,11 @@ public sealed class Monster
     public bool Elite { get; internal set; }
     /// <summary>A champion's name ("Grisk the Vampiric"); otherwise the creature's.</summary>
     public string Name => Title ?? Def.Name;
+    /// <summary>The name to start a sentence with: "The Bone Sentry", but "The Unmaker" (not "The The Unmaker").</summary>
+    public string TheName => WithThe(Name);
+    /// <summary>The same for the kind of creature, ignoring a champion's title.</summary>
+    public string TheKind => WithThe(Def.Name);
+    private static string WithThe(string n) => n.StartsWith("The ", StringComparison.Ordinal) ? n : "The " + n;
     public string? Title { get; internal set; }
     /// <summary>Damage soaked before HP, from a ward or a Shielded affix.</summary>
     public int Ward { get; internal set; }

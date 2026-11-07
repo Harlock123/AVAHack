@@ -107,6 +107,28 @@ public sealed class CombatTests
     }
 
     [Fact]
+    public void A_kill_gives_every_standing_hero_character_xp()
+    {
+        var g = new GameEngine(LevelLoader.Parse(Corridor), 1, PartyTests.QuickParty(Heroes.Content), Heroes.Content);
+        var rat = g.AddMonster(Bestiary.Scale(Heroes.Content.Creature("cellarRat"), 4), new Cell(4, 1), Dir.West);
+        var before = g.Party.Members.ToDictionary(c => c, c => c.CharacterXp);
+        g.DamageMonster(rat, 10_000, AVAHack.Rules.DamageType.Slashing);
+        Assert.Equal(1, g.Kills);
+        Assert.All(g.Party.Members, c => Assert.Equal(before[c] + Progression.KillXp(4, c.Level), c.CharacterXp));
+    }
+
+    [Fact]
+    public void A_creature_called_up_by_another_gives_no_character_xp()
+    {
+        var g = Arena();
+        var rat = g.AddMonster("cellarRat", new Cell(4, 1), Dir.West);
+        rat.SummonedBy = 99;
+        int before = g.Hero.CharacterXp;
+        g.DamageMonster(rat, 10_000, AVAHack.Rules.DamageType.Slashing);
+        Assert.Equal(before, g.Hero.CharacterXp);
+    }
+
+    [Fact]
     public void A_creature_closes_in_and_attacks()
     {
         var g = Arena();

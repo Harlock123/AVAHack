@@ -13,11 +13,33 @@ public static class Progression
     public const int LessonsPerLevel = 5;
     public const int TrivialTargetGap = 5;
 
-    /// <summary>Use XP for the next rank: 4 + 0.08 × rank^1.95 (rank 15 needs about 20, rank 50 about 168, rank 90 about 521).</summary>
-    public static double XpToNext(int rank) => 4 + 0.08 * Math.Pow(rank, 1.95);
+    /// <summary>
+    /// Use XP for the next rank: (4 + 0.08 × rank^1.95) / 3 (rank 15 needs about 6.6, rank 50 about 56, rank 90
+    /// about 174). The balance pass divided M4's curve by 3 so skills keep up with the levels kills bring.
+    /// </summary>
+    public static double XpToNext(int rank) => (4 + 0.08 * Math.Pow(rank, 1.95)) / SkillPace;
+
+    /// <summary>How much faster than M4's curve skills rise.</summary>
+    public const double SkillPace = 3;
 
     /// <summary>Character XP a skill's new rank gives: a third of the rank, rounded up (spec 7.3, as tuned in M4).</summary>
     public static int CharacterXpFor(int newRank) => (newRank + 2) / 3;
+
+    /// <summary>Character XP each hero gets per creature level for a kill (spec 7.3, the balance pass).</summary>
+    public const int KillXpPerLevel = 3;
+
+    /// <summary>
+    /// Character XP each standing hero gets when the party kills a creature: 3 × its level, times 2 for an elite,
+    /// 3 for a champion and 10 for a boss; a tenth for one more than 5 levels below the hero, and none for things
+    /// a creature called up (summons, risen dead), so a summoner can't be farmed.
+    /// </summary>
+    public static int KillXp(int creatureLevel, int heroLevel, double rank = 1, bool calledUp = false)
+    {
+        if (calledUp) return 0;
+        double xp = KillXpPerLevel * Math.Max(1, creatureLevel) * rank;
+        if (creatureLevel < heroLevel - TrivialTargetGap) xp *= 0.10;
+        return (int)Math.Round(xp);
+    }
 
     /// <summary>Character XP for the next level: (level + 3) × 25.</summary>
     public static int LevelXp(int level) => (level + 3) * 25;

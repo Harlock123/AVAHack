@@ -37,6 +37,9 @@
 26. Implementation decisions (M4)
 27. Implementation decisions (M5)
 28. Implementation decisions (M6)
+29. Implementation decisions (M7)
+30. Implementation decisions (M8)
+31. Implementation decisions (the balance pass)
 
 ---
 
@@ -324,14 +327,17 @@ at creation).
 Each use gives **use XP**. The XP for the next rank is:
 
 ```
-xpToNext(rank) = 4 + 0.08 × rank^1.95        (rank 15 → about 20; rank 50 → about 168; rank 90 → about 521)
+xpToNext(rank) = (4 + 0.08 × rank^1.95) / 3  (rank 15 → about 6.6; rank 50 → about 56; rank 90 → about 174)
 ```
+
+The divisor of 3 came with the balance pass (section 31); M1–M8 used the curve without it.
 
 Use XP per action is defined in `skills.json`. Examples:
 
 - Blade: 1 + 0.1 × damage dealt.
+- Destruction: 2 + 0.15 × damage dealt (it was 0.5 + 0.1 until the balance pass).
 - Lockpicking: (lock DC − 5) / 2.
-- Restoration: HP healed / 4.
+- Restoration: 1 + HP healed / 4 (it was HP healed / 4 until the balance pass).
 
 **Anti-grind rules:**
 
@@ -357,7 +363,16 @@ levelXp(L) = (L + 3) × 25        (L1→2: 100, L10→11: 325, L30→31: 825)
 ```
 
 Raising skills that are already high levels the character faster. That is intended: specialists level quickly.
-There is no level cap, but the content is tuned for levels 1–35 over a 12-level Delve.
+
+**Kills give character XP too** (added in the balance pass, section 31). Each hero still standing when the party
+kills a creature gains **3 × the creature's level**:
+
+- × 2 for an elite, × 3 for a named champion, × 10 for a boss, and half for a split-off half;
+- a tenth for a creature more than 5 levels below the hero (the same gap as the skill anti-grind rule);
+- nothing for what a creature called up (summons, the risen dead), so a summoner can't be farmed.
+
+Skills still decide what a hero is good at; kills keep the level in step with the depth. There is no level cap, but
+the content is tuned for heroes who end a 12-level Delve in their mid-twenties.
 
 ### 7.4 What a level-up gives
 
@@ -371,7 +386,7 @@ There is no level cap, but the content is tuned for levels 1–35 over a 12-leve
 
 Save proficiency bonus rises with level (section 6.2). The calling's hit die is fixed for life.
 
-Killing monsters gives no character XP: it comes only from skills.
+Character XP comes from skill ranks and from kills (section 7.3).
 
 ### 7.5 Skill ceilings
 
@@ -839,7 +854,10 @@ About 40 handmade rooms, written as text maps with metadata in `vaults/*.txt`. E
 - A level that has been left stays as it was. Monsters don't respawn, apart from wanderers that arrive during
   long rests.
 - **Pits drop the party one level down** into a "landing" cell that the generator always places on the level
-  below.
+  below. The stairs down must be reachable from the landing as well as from the start, working the level's locks
+  from there.
+- Below the first level the start holds the stairs up, and stepping on them climbs. The way from the start to the
+  stairs down must not run back over that cell.
 
 ---
 
@@ -1118,10 +1136,10 @@ Each milestone is finished when its exit test passes.
 | **M1** | Rules core. *Done (2026-11-06)* | Attributes, d20 checks, conditions, the skill XP and level formulas, perks framework, content loader and schemas | Unit tests cover sections 6–8. *Result:* 94 new Core tests (120 in all) |
 | **M2** | One hero, one fight. *Built (2026-11-06); the exit test waits on the user's play* | A Fighter, melee with recovery timers, power attacks and blocking, 6 Upper Hollow monsters, AI blocks, pressure plates and pits | A 15-minute handmade level is playable and fair: the user's own play. *So far:* the balance bot wins The Cellars 10 times in 12, in about 2.6 minutes of game time |
 | **M3** | Party and creation. *Done (2026-11-06)* | 4-hero formation, the creation screens (all ancestries, callings and backgrounds), inventory and paper doll, loot and rarity, saving | Create a party and finish the M2 level with it. *Result:* the quick-start party (bot) gets through The Cellars about 9 times in 12; the creation screens make any party of one to four |
-| **M4** | Progression. *Done (2026-11-06)* | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling. *Revised:* that target didn't fit the level curve; a bot run now shows every calling at level 8 with its best skill at 45 or more and its third-best at 35 or more (section 26) |
+| **M4** | Progression. *Done (2026-11-06)* | Use-based skills for all 22, levelling, all perk trees (placeholders are allowed for later perks), trainers, books | A bot run shows 3+ skills over 40 by level 8 for each calling. *Revised:* that target didn't fit the level curve; a bot run showed every calling at level 8 with its best skill at 45 or more and its third-best at 35 or more (section 26). *Revised again in the balance pass:* kills now give character XP, so level 8 comes after 40–70 fights; each calling's best skill is then 35 or more and its second 25 or more (section 31) |
 | **M5** | Magic. *Done (2026-11-06)* | 5 schools, cantrips, tomes, wands, scrolls, light | Each calling's opening spells work; Spellblade and Paladin hybrids play. *Result:* a test casts every calling's starting spells and checks each one does something; in the progression report the spellblade raises Destruction and the paladin Warding beside their weapons |
 | **M6** | Generator. *Done (2026-11-06)* | 32×32 generation, lock and key, secrets, 20 traps, 15 vaults, Delve options, seed codes | The 1,000-seed invariant suite passes; a 4-level Delve is playable. *Result:* 1,000 seeds at each of depths 1, 5 and 9 give finishable levels with no fallbacks; the bot's quick-start party gets through a 4-level Delve on 6 seeds of 8 (one fell on level 4, one got stuck) |
-| **M7** | The bestiary. *Done (2026-11-07), exit target not met* | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30. *Result:* the bot gets nowhere near. Over 6 seeds it averages depth 3.8 (best 5), and its heroes are still level 1 when they fall. Character level comes only from skill use (M4: about 50–100 fights a level), while a level holds 8–16 creatures, so a 12-level Delve holds roughly 150 fights. The target needs a balance pass on progression against depth (section 29) |
+| **M7** | The bestiary. *Done (2026-11-07); target revised in the balance pass (2026-11-07)* | All 10 families, elites, champions and affixes, the 5 bosses, the Waystones | A full 12-level Delve on Standard takes 8–12 hours (bots) and ends at about level 30. *At M7* the bot averaged depth 3.8 with its heroes still level 1. *After the balance pass* (section 31): a bot that clears each level wins 11 of 16 seeds, averages depth 12.2 of 13, and its heroes end at level 22–26. The bot needs about an hour of game time, since it never stops to think, read or manage its packs; the hours a person takes have to come from the user's play. *Revised target:* a full Delve is winnable and ends in the mid-twenties |
 | **M8** | Crafting and survival. *Done (2026-11-07)* | Alchemy, Smithing, Enchanting, cooking, food and water, resting encounters | Each craft yields an item that matters by mid-game. *Result:* at skill 45, a test brews a healing potion stronger than a bought one, works a weapon to at least +3, binds two affixes into a helm and cooks a meal whose buff lasts over five minutes (section 30) |
 | **M9** | Polish and release | Art from the manifest, audio, the hall of fame, Ironman, help pages, README and screenshots, portfolio card | The user plays through a Delve; v1.0 tag |
 
@@ -1751,3 +1769,61 @@ is built.
   - The 4-level Delve: 6 of 8.
   - The 12-level Delve: average depth 4.8, best 6, heroes still level 1. The M7 balance problem stands.
 
+## 31. Implementation decisions (the balance pass)
+
+The pass that M7's exit test called for, done after M8 so food, rest and crafting were part of it. All the numbers
+below come from the bot reports on 16 seeds.
+
+- **What was wrong.**
+  - **The bot speedran.** It headed for the stairs and killed about 5 creatures a level, so no progression could
+    keep up with creatures at depth × 1.6.
+  - **Skill use alone was far too slow for a Delve.** With M4's curve, 30 fights moved a fighter's Blade from 20
+    to 21. A Delve holds about 200 creatures, shared by four heroes.
+- **The bot now plays a level as a person would** (`Bot.Clears`, used by the 12-level report). It:
+  - hunts what lives on the level, sticking with one creature until it falls;
+  - opens chests and picks things up, dropping its cheapest item when the packs are full and a key needs room;
+  - spends its level-ups (`ProgressionReport.Spend`);
+  - at a Waystone, raises the fallen, rests, and buys lessons in each hero's three best skills with up to half the
+    purse;
+  - pulls levers and steps on toggle plates only while a door they work is shut, and walks round a plate whose
+    doors are already open;
+  - waits for cyclic spikes and blades to pass, and never rests on them;
+  - shuts the Bellwright's valves before fighting it, and goes for the boss last;
+  - picks locks, searches walls when the stairs can't be reached, and walks round creatures in the way where it
+    can;
+  - gives up on a target after two minutes without progress (a kill, a pickup, a lever, a search).
+
+  The four-level report keeps the old stair-rushing bot, as a check on what a hasty party can do.
+- **Kills give character XP** (section 7.3): 3 × the creature's level for each standing hero, more for elites,
+  champions and bosses, none for what a creature called up. The brief asked for D&D-style as well as Skyrim-style
+  progression, and this is the D&D half. Without it no rate of skill growth both kept the heroes level with the
+  depth and left skills meaning anything.
+- **Skills rise three times faster:** `xpToNext` is divided by 3 (`Progression.SkillPace`). At 2.5 the bot won 10
+  of 16 Delves, at 3 it won 11, and at 4 it won 14 (too easy for Standard). At 3 a fighter ends with Blade 50–80.
+- **Destruction and Restoration give more use XP**: 2 + 0.15 × damage, and 1 + healed / 4. Casters cast far
+  less often than fighters swing, so their schools lagged (Destruction 20 → 30 over a whole Delve). Now a wizard
+  ends with Destruction 45–68.
+- **Two generator fixes**, found when the bot got stuck. `Check` now also requires:
+  - **The stairs from the landing.** A party that fell through a pit could land beyond a gate whose lever was on
+    the start's side.
+  - **No way on over the stairs up.** Below level 1, the start (the stairs up) could sit in the only corridor
+    onward, and stepping back on it climbs a level.
+
+  The 1,000-seed suite checks both, with no fallbacks.
+- **Small fixes:** a creature whose name starts with "The" (the Unmaker) is no longer "The The Unmaker"
+  (`Monster.TheName`). A kill that levels a hero says so in the log.
+- **Results:**
+  - **12-level Delve** (clearing bot): 11 of 16 won, average depth 12.2 of 13. Heroes end at level 22–26, and the
+    deepest creatures are level 19–21. Losses come at the Bellwright, the Mother of Coils, the Unmaker and deep
+    packs. The report asserts at least a quarter won, average depth 9 or more, nobody stuck, and winners at level
+    18–32.
+  - **4-level Delve** (rushing bot): 7 of 8.
+  - **The Cellars:**
+    - the party wins 40 of 40;
+    - a lone hero wins 26 of 40 (14 before), since its kills now level it during the run.
+  - **The arena** (`ProgressionReport`): every calling reaches level 8 in 40–70 fights, with its best skill at
+    35–43.
+- **Not changed:** creature levels (depth × 1.6 + 0–2), trap damage and the level curve.
+- **Time.** The spec's 8–12 hours can't be checked by a bot that moves without pause. The bot takes 45–85 minutes
+  of game time for a full Delve, about 5 minutes a level. A person exploring, reading and managing their packs takes
+  several times that. Whether it comes to 8 hours is for the user's play to say.

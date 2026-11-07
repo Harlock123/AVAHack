@@ -7,12 +7,12 @@ skills rise as you use them, and perk trees hang off each skill.
 
 The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 
-**Status: milestone M8.** What's in so far:
+**Status: milestone M8, plus a balance pass.** What's in so far:
 
 - **The Delve.** A seeded, generated descent of up to 12 levels across three regions, ending in the Unmade Heart.
   Choose the seed, depth, monster strength, density, traps, magic items, food and Ironman before you start.
-- **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Skills grow with use, with
-  level-ups and perk trees.
+- **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Skills grow with use and
+  kills bring experience, with level-ups and perk trees.
 - **The bestiary.** 58 creatures in ten families, plus wanderers, each drawn in code. Elites and named champions
   carry the 16 affixes, and five bosses guard the way down.
 - **Magic and loot.** 48 spells, and items with rarity, affixes, sets and uniques.
@@ -21,8 +21,8 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 - **Waystones** after each boss, with a merchant, a trainer, a shrine and a stash.
 - **Saves.** Save slots, quick saves and Ironman.
 
-The handmade first level, The Cellars, is still there to learn on. Balance is not yet tuned for a full 12-level
-Delve (spec section 29).
+The handmade first level, The Cellars, is still there to learn on. A full 12-level Delve is tuned to be winnable,
+ending with heroes in their mid-twenties (spec section 31).
 
 ![A fight in the rat nest](Images/AVAHack-rat-fight.png)
 

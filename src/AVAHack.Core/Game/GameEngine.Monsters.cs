@@ -163,12 +163,12 @@ public sealed partial class GameEngine
         {
             m.FrenzyLeft = 0;
             m.Ally = false;
-            Say($"The {m.Name} comes to its senses.");
+            Say($"{m.TheName} comes to its senses.");
         }
         if (m.Summoned)
         {
             m.SummonLeft -= TickSeconds;
-            if (m.SummonLeft <= 0) { m.State = MonsterState.Dead; Say($"The {m.Def.Name} fades away."); return; }
+            if (m.SummonLeft <= 0) { m.State = MonsterState.Dead; Say($"{m.TheKind} fades away."); return; }
         }
         BestiaryTick(m);
         if (!m.IsAlive) return;
@@ -192,7 +192,8 @@ public sealed partial class GameEngine
                     m.State = MonsterState.Dead;
                     Level.Spot(pit);
                     Kills++;
-                    Say($"The {m.Def.Name} blunders into the pit and is gone.");
+                    Say($"{m.TheKind} blunders into the pit and is gone.");
+                    AwardKill(m);
                     Event?.Invoke(GameEvent.MonsterDied);
                     return;
                 }
@@ -229,7 +230,7 @@ public sealed partial class GameEngine
         {
             m.State = MonsterState.Fleeing;
             m.FleeLeft = FleeSeconds;
-            Say($"The {m.Def.Name} turns tail!");
+            Say($"{m.TheKind} turns tail!");
             if (StepAway(m)) return;
         }
 

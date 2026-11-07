@@ -1,31 +1,83 @@
+using AVAHack.Characters;
 using AVAHack.Content;
 using AVAHack.Game;
 using AVAHack.World;
 
 namespace AVAHack.Core.Tests;
 
-/// <summary>M6's other exit test: the quick-start party plays a four-level Delve, bot-driven, on many seeds.</summary>
+/// <summary>
+/// Bot-driven Delves on many seeds: M6's four-level run and M7's full twelve levels (spec sections 28, 29 and 31).
+/// <list type="bullet">
+/// <item><c>AVAHACK_BALANCE_RUNS</c> sets how many seeds;</item>
+/// <item><c>AVAHACK_BALANCE_DEBUG=1</c> adds each hero's level, HP and best skills to the report;</item>
+/// <item><c>AVAHACK_BALANCE_TRACE=&lt;seed code&gt;</c> with <c>AVAHACK_BALANCE_TRACE_FILE=&lt;path&gt;</c> writes that
+/// seed's mechanisms and a map of each level as the party arrives and where it ends.</item>
+/// </list>
+/// </summary>
 public sealed class DelveReport(ITestOutputHelper output)
 {
     public sealed record Run(string Seed, GameMode Mode, int Depth, double Minutes, int Kills, int Level, string Note);
 
-    public static Run Play(ulong seed, int depth = 4, double limitMinutes = 60)
+    public static Run Play(ulong seed, int depth = 4, double limitMinutes = 60, bool clears = false)
     {
         var db = ContentDb.LoadBuiltIn();
-        var d = Delve.Start(db, PartyTests.QuickParty(db), new DelveOptions { Seed = DelveOptions.Code(seed), Depth = depth });
+        string code = DelveOptions.Code(seed);
+        var d = Delve.Start(db, PartyTests.QuickParty(db), new DelveOptions { Seed = code, Depth = depth });
         var g = d.Engine;
-        var bot = new Bot(g, (int)seed);
+        var bot = new Bot(g, (int)seed) { Clears = clears };
+        string? traceFile = Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE") == code ? Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE_FILE") : null;
         double stuckSince = 0;
         int lastDepth = 1;
         while (g.Mode == GameMode.Playing && g.Time < limitMinutes * 60)
         {
             bot.Think();
             g.Tick();
-            if (d.Depth != lastDepth) { lastDepth = d.Depth; stuckSince = g.Time; }
-            if (g.Time - stuckSince > 15 * 60) break; // fifteen minutes on one level: call it stuck
+            if (d.Depth != lastDepth)
+            {
+                lastDepth = d.Depth;
+                stuckSince = g.Time;
+                if (traceFile is not null) File.AppendAllText(traceFile, Trace(g, d.Depth, $"ARRIVE goal {bot.Goal}"));
+            }
+            if (g.Time - stuckSince > (clears ? 40 : 15) * 60) break; // that long on one level: call it stuck
         }
+        if (traceFile is not null) File.AppendAllText(traceFile, Trace(g, d.Depth, $"END goal {bot.Goal}") + bot.ReachMap());
         string note = g.Mode == GameMode.Playing ? $"stuck on {bot.Goal}" : g.Mode == GameMode.Dead ? "fell" : "";
-        return new Run(DelveOptions.Code(seed), g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
+        if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_DEBUG") is not null)
+            note += " | " + string.Join("; ", g.Party.Members.Select(m => $"{m.Name} L{m.Level} {m.MaxHp}hp " +
+                string.Join(",", Enum.GetValues<SkillId>().OrderByDescending(m.Rank).Take(3).Select(s => $"{s}{m.Rank(s)}"))))
+                + $" | boss {g.LivingBoss?.Name} | {string.Join(" / ", g.Log.TakeLast(2))}";
+        return new Run(code, g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
+    }
+
+    /// <summary>A level's mechanisms and a map: # wall, + / D L doors (shut, open, gate, locked), ^ v levers, o plates,
+    /// O pits, S s secrets (hidden, found), &gt; stairs, M creatures, @ the party.</summary>
+    private static string Trace(GameEngine g, int depth, string title)
+    {
+        var l = g.Level;
+        var sb = new System.Text.StringBuilder($"{title} d{depth} start {l.Start} at {g.PartyCell}\n");
+        foreach (var dr in l.Doors.Where(x => x.Locked)) sb.Append($"locked {dr.Cell} key {dr.KeyId} dc {dr.LockDc}\n");
+        foreach (var (pc, items) in l.Piles) sb.Append($"pile {pc}: {string.Join(",", items.Select(i => i.KeyId ?? i.BaseId))}\n");
+        foreach (var v in l.Levers) sb.Append($"lever {v.Cell} down {v.Down} -> {string.Join(",", v.Targets.Select(t => $"{t}:{l.DoorAt(t)?.Open}"))}\n");
+        foreach (var p in l.Plates) sb.Append($"plate {p.Cell} {p.Mode} pressed {p.Pressed} -> {string.Join(",", p.Targets.Select(t => $"{t}:{l.DoorAt(t)?.Open}"))}\n");
+        for (int y = 0; y < l.Height; y++)
+        {
+            for (int x = 0; x < l.Width; x++)
+            {
+                var c = new Cell(x, y);
+                char ch = l.KindAt(c) == CellKind.Wall ? '#' : '.';
+                if (l.DoorAt(c) is { } dr) ch = dr.IsPassable ? '/' : dr.Locked ? 'L' : dr.Kind == DoorKind.Hand ? '+' : 'D';
+                if (l.Levers.FirstOrDefault(v => v.Cell == c) is { } lever) ch = lever.Down ? 'v' : '^';
+                if (l.PlateAt(c) is not null) ch = 'o';
+                if (l.PitAt(c) is not null) ch = 'O';
+                if (l.SecretAt(c) is { } sec) ch = sec.Found ? 's' : 'S';
+                if (l.Stairs.Contains(c)) ch = '>';
+                if (g.Monsters.Any(m => m.IsAlive && m.Cell == c)) ch = 'M';
+                if (c == g.PartyCell) ch = '@';
+                sb.Append(ch);
+            }
+            sb.Append('\n');
+        }
+        return sb.ToString();
     }
 
     [Fact]
@@ -42,18 +94,24 @@ public sealed class DelveReport(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// M7's exit test: a full 12-level Delve on Standard, with its bosses and the Unmade Heart. The spec's target
-    /// is 8–12 hours ending near level 30; this records what the bot actually does (spec section 29 has the result).
+    /// M7's exit test, as the balance pass left it (spec section 31): a full 12-level Delve on Standard, with its
+    /// bosses and the Unmade Heart, played by a bot that clears each level as a player would. On 16 seeds it wins
+    /// about two in three, and the heroes end in their mid-twenties, level for level with the deepest creatures.
     /// </summary>
     [Fact]
     public void A_full_twelve_level_delve()
     {
-        int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_RUNS"), out int n) ? n : 6;
-        var results = Enumerable.Range(1, runs).AsParallel().Select(i => Play((ulong)i * 104729, 12, 12 * 60)).OrderBy(r => r.Seed).ToList();
+        int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_RUNS"), out int n) ? n : 8;
+        var results = Enumerable.Range(1, runs).AsParallel().Select(i => Play((ulong)i * 104729, 12, 12 * 60, clears: true)).OrderBy(r => r.Seed).ToList();
         foreach (var r in results)
             output.WriteLine($"{r.Seed}: {r.Mode,-7} reached level {r.Depth,2}  {r.Minutes,6:F1} min  kills {r.Kills,4}  heroes at level {r.Level,2}  {r.Note}");
-        output.WriteLine($"won {results.Count(r => r.Mode == GameMode.Won)}/{runs}; average depth {results.Average(r => r.Depth):F1}; " +
+        int won = results.Count(r => r.Mode == GameMode.Won);
+        output.WriteLine($"won {won}/{runs}; average depth {results.Average(r => r.Depth):F1}; " +
                          $"best {results.Max(r => r.Depth)}; average hero level {results.Average(r => r.Level):F1}");
-        Assert.True(results.Average(r => r.Depth) >= 3, "The bot should get past the first boss on some seeds.");
+        Assert.True(won * 4 >= runs, $"The bot should win at least a quarter of full Delves; it won {won} of {runs}.");
+        Assert.True(results.Average(r => r.Depth) >= 9, "The bot should usually get past the third boss.");
+        Assert.DoesNotContain(results, r => r.Mode == GameMode.Playing); // stuck: a level that can't be finished
+        var winners = results.Where(r => r.Mode == GameMode.Won).ToList();
+        Assert.All(winners, r => Assert.InRange(r.Level, 18, 32)); // the heroes keep up with the deep creatures
     }
 }

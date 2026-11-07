@@ -478,6 +478,9 @@ public sealed partial class Character
 
     public int XpToNextLevel => Progression.LevelXp(Level);
 
+    /// <summary>Character XP from deeds rather than skills (a kill, spec 7.3). Returns the levels gained.</summary>
+    public int GainCharacterXp(int amount) => amount > 0 ? AddCharacterXp(amount) : 0;
+
     private int AddCharacterXp(int amount)
     {
         CharacterXp += amount;

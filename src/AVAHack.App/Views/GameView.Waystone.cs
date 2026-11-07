@@ -58,7 +58,7 @@ public sealed partial class GameView
                 foreach (var (index, item, price) in Engine.Stock())
                 {
                     Button(dc, new Rect(box.X + 24, yy, 470, 32), $"{item.Name(Content)} — {price} gold", () => Do(Engine.Buy(index, h)),
-                        enabled: Engine.Party.Gold >= price, size: 13);
+                        enabled: Engine.Party.Gold >= price, size: 13, item: item);
                     yy += 38;
                 }
                 yy = y + 26;
@@ -66,7 +66,7 @@ public sealed partial class GameView
                 {
                     if (h.Backpack[i] is not { } it) continue;
                     int slot = i;
-                    Button(dc, new Rect(box.X + 520, yy, 456, 30), $"{it.Name(Content)} — {Math.Max(1, GameEngine.Worth(Content, it) / GameEngine.BuyMarkup)} gold", () => Do(Engine.Sell(h, slot)), size: 13);
+                    Button(dc, new Rect(box.X + 520, yy, 456, 30), $"{it.Name(Content)} — {Math.Max(1, GameEngine.Worth(Content, it) / GameEngine.BuyMarkup)} gold", () => Do(Engine.Sell(h, slot)), size: 13, item: it);
                     yy += 34;
                     if (yy > box.Bottom - 70) break;
                 }
@@ -107,7 +107,7 @@ public sealed partial class GameView
                 for (int i = 0; i < Engine.Stash.Count && yy < box.Bottom - 70; i++)
                 {
                     int index = i;
-                    Button(dc, new Rect(box.X + 24, yy, 470, 30), Engine.Stash[i].Name(Content), () => Do(Engine.Withdraw(index, h)), size: 13);
+                    Button(dc, new Rect(box.X + 24, yy, 470, 30), Engine.Stash[i].Name(Content), () => Do(Engine.Withdraw(index, h)), size: 13, item: Engine.Stash[i]);
                     yy += 34;
                 }
                 yy = y + 26;
@@ -115,7 +115,7 @@ public sealed partial class GameView
                 {
                     if (h.Backpack[i] is not { } it) continue;
                     int slot = i;
-                    Button(dc, new Rect(box.X + 520, yy, 456, 30), it.Name(Content), () => Do(Engine.Deposit(h, slot)), size: 13);
+                    Button(dc, new Rect(box.X + 520, yy, 456, 30), it.Name(Content), () => Do(Engine.Deposit(h, slot)), size: 13, item: it);
                     yy += 34;
                 }
                 break;

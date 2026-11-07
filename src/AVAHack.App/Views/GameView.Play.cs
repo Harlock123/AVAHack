@@ -3,6 +3,8 @@ using Avalonia;
 using Avalonia.Media;
 using AVAHack.Characters;
 using AVAHack.Game;
+using AVAHack.Content;
+using AVAHack.Render;
 using AVAHack.World;
 
 namespace AVAHack.App.Views;
@@ -201,8 +203,11 @@ public sealed partial class GameView
         DrawText(dc, "XP", card.X + 232, card.Y + 124, 10, Dim);
     }
 
-    private static string LeftIcon(Character h) => h.OffHand is not null ? "shield" : h.OffWeapon is not null ? "sword" : h.MainHand is { TwoHanded: true } ? "two" : "fist";
-    private static string RightIcon(Character h) => h.MainHand?.Kind == "bow" ? "bow" : h.MainHand is null ? "fist" : h.MainHand.Skill == SkillId.Blunt ? "mace" : "sword";
+    /// <summary>The icon for what a hand holds: the item itself, a bare fist, or a cross where a two-handed weapon takes it.</summary>
+    private string LeftIcon(Character h) =>
+        h.Equipped.TryGetValue(EquipSlot.LeftHand, out var it) ? Scene.IconKind(Engine, it) : h.MainHand is { TwoHanded: true } ? "two" : "fist";
+    private string RightIcon(Character h) =>
+        h.Equipped.TryGetValue(EquipSlot.RightHand, out var it) ? Scene.IconKind(Engine, it) : "fist";
 
     private static void Bar(DrawingContext dc, double x, double y, double w, double value, double max, IBrush fill)
     {
@@ -216,7 +221,8 @@ public sealed partial class GameView
     private void DrawHand(DrawingContext dc, Rect box, Hand hand, string key, string icon, bool active)
     {
         dc.FillRectangle(Trough, box);
-        Icons.Hand(dc, box, icon);
+        var art = IconBitmap(icon);
+        dc.DrawImage(art, new Rect(0, 0, art.PixelSize.Width, art.PixelSize.Height), box.Deflate(box.Width * 0.08));
         if (!hand.Ready)
         {
             double share = hand.RecoveryShare;

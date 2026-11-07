@@ -85,18 +85,6 @@ public static class Scene
         return list;
     }
 
-    public static string IconKind(GameEngine g, AVAHack.Items.Item item)
-    {
-        var b = g.Content.Base(item.BaseId);
-        return b.Kind switch
-        {
-            Content.ItemKind.Weapon => "weapon",
-            Content.ItemKind.Shield => "shield",
-            Content.ItemKind.Armour => "armour",
-            Content.ItemKind.Consumable when b.Consumable?.Heal is not null || b.Consumable?.Mana > 0 || b.Consumable?.Stamina > 0 => "potion",
-            Content.ItemKind.Book or Content.ItemKind.Tome or Content.ItemKind.Scroll => "book",
-            Content.ItemKind.Gold => "gold",
-            _ => "other",
-        };
-    }
+    /// <summary>The icon key for an item (<see cref="SpriteFactory.IconFor"/>).</summary>
+    public static string IconKind(GameEngine g, AVAHack.Items.Item item) => SpriteFactory.IconFor(g.Content, item);
 }

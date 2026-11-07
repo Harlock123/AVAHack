@@ -44,6 +44,33 @@ public sealed class SpriteTests
     }
 
     [Fact]
+    public void Every_item_has_its_own_icon()
+    {
+        var db = AVAHack.Content.ContentDb.LoadBuiltIn();
+        var art = new SpriteFactory();
+        var sack = art.ItemIcon("no such item").Pixels;
+        var keys = SpriteFactory.IconKeys(db).ToList();
+        const int cell = 68, cols = 12;
+        int rows = (keys.Count + cols - 1) / cols;
+        var sheet = new uint[cols * cell * rows * cell];
+        Array.Fill(sheet, 0xFF2A2620u);
+        for (int i = 0; i < keys.Count; i++)
+        {
+            var img = art.ItemIcon(keys[i]);
+            Assert.True(img.Pixels.Count(p => p >> 24 != 0) > 120, $"the {keys[i]} icon is nearly empty");
+            Assert.False(img.Pixels.SequenceEqual(sack), $"{keys[i]} has no icon of its own (it shows the plain sack)");
+            for (int y = 0; y < img.Height; y++)
+            for (int x = 0; x < img.Width; x++)
+                if (img[x, y] >> 24 != 0) sheet[(i / cols * cell + 2 + y) * cols * cell + i % cols * cell + 2 + x] = img[x, y];
+        }
+        // Every item in the game maps to one of those keys.
+        foreach (var b in AVAHack.Items.ItemBase.All(db).Values)
+            Assert.Contains(SpriteFactory.IconFor(db, new AVAHack.Items.Item { BaseId = b.Id }), keys);
+        if (Environment.GetEnvironmentVariable("AVAHACK_SHOTS") is { Length: > 0 } dir)
+            Png.Save(Path.Combine(dir, "icons.png"), sheet, cols * cell, rows * cell);
+    }
+
+    [Fact]
     public void Every_creature_in_the_content_has_its_own_picture()
     {
         var db = AVAHack.Content.ContentDb.LoadBuiltIn();

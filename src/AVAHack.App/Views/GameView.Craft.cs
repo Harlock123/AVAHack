@@ -78,7 +78,7 @@ public sealed partial class GameView
             Button(dc, new Rect(box.X + 24, yy, 760, 30), label, () =>
             {
                 if (!_mortar.Remove(slot) && _mortar.Count < 3) _mortar.Add(slot);
-            }, selected: _mortar.Contains(slot), size: 13);
+            }, selected: _mortar.Contains(slot), size: 13, item: it);
             Button(dc, new Rect(box.X + 794, yy, 100, 30), "Taste", () => Crafted(Engine.Taste(h, slot)), size: 13);
             yy += 36;
         }
@@ -97,7 +97,7 @@ public sealed partial class GameView
             string needs = string.Join(" + ", r.Ingredients.GroupBy(i => i).Select(g => $"{(g.Count() > 1 ? g.Count() + "× " : "")}{Content.Base(g.Key).Name} ({Engine.Carried(g.Key)})"));
             string gives = $"food {r.Food:0}, water {r.Water:0}{(r.Buff is { } b ? $", {b}" : "")}";
             var why = Engine.WhyNotCook(r.Id);
-            Button(dc, new Rect(box.X + 24, yy, 1010, 34), $"{r.Name}: {needs} → {gives}", () => Crafted(Engine.Cook(h, r.Id)), enabled: why is null, size: 13);
+            Button(dc, new Rect(box.X + 24, yy, 1010, 34), $"{r.Name}: {needs} → {gives}", () => Crafted(Engine.Cook(h, r.Id)), enabled: why is null, size: 13, item: new Item { BaseId = "meal:" + r.Id });
             yy += 40;
         }
     }
@@ -114,7 +114,7 @@ public sealed partial class GameView
             if (!(b.Kind is ItemKind.Weapon or ItemKind.Shield or ItemKind.Armour || b.Gear is { Ac: > 0 })) continue;
             if (yy > box.Bottom - 80) break;
             Button(dc, new Rect(box.X + 24, yy, 420, 30), $"{it.Name(Content)} → +{it.Quality + 1} ({GameEngine.ImproveCost(it)} scrap)", () => Crafted(Engine.Improve(h, it)),
-                enabled: it.Quality < GameEngine.QualityCap(h), size: 12);
+                enabled: it.Quality < GameEngine.QualityCap(h), size: 12, item: it);
             int slot = Array.IndexOf(h.Backpack, it);
             if (slot >= 0) Button(dc, new Rect(box.X + 450, yy, 90, 30), "Melt", () => Crafted(Engine.Melt(h, slot)), size: 12);
             yy += 34;
@@ -123,7 +123,7 @@ public sealed partial class GameView
         yy = y + 50;
         foreach (var (b, scrap) in Engine.ForgeOptions(h).OrderByDescending(o => o.Base.Value).Take(12))
         {
-            Button(dc, new Rect(box.X + 580, yy, 456, 30), $"{b.Name} ({scrap} scrap)", () => Crafted(Engine.Forge(h, b.Id)), enabled: Engine.Carried("scrapIron") >= scrap, size: 12);
+            Button(dc, new Rect(box.X + 580, yy, 456, 30), $"{b.Name} ({scrap} scrap)", () => Crafted(Engine.Forge(h, b.Id)), enabled: Engine.Carried("scrapIron") >= scrap, size: 12, item: new Item { BaseId = b.Id });
             yy += 34;
         }
     }
@@ -141,7 +141,7 @@ public sealed partial class GameView
             if (b.Kind is not (ItemKind.Weapon or ItemKind.Shield or ItemKind.Armour or ItemKind.Gear or ItemKind.Wand)) continue;
             if (yy > box.Bottom - 80) break;
             var target = it;
-            Button(dc, new Rect(box.X + 24, yy, 420, 30), it.Name(Content), () => _enchantTarget = target, selected: _enchantTarget == it, size: 12);
+            Button(dc, new Rect(box.X + 24, yy, 420, 30), it.Name(Content), () => _enchantTarget = target, selected: _enchantTarget == it, size: 12, item: it);
             int slot = Array.IndexOf(h.Backpack, it);
             if (slot >= 0 && b.Kind == ItemKind.Wand) Button(dc, new Rect(box.X + 450, yy, 100, 30), "Recharge", () => Crafted(Engine.Recharge(h, slot)), size: 12);
             else if (slot >= 0 && it.Affixes.Count > 0) Button(dc, new Rect(box.X + 450, yy, 100, 30), "Unravel", () => Crafted(Engine.Disenchant(h, slot)), size: 12);

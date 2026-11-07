@@ -83,7 +83,8 @@ implicit usings, invariant globalization and central package versions. Package v
   - `SpriteFactory`, `.Bestiary` and `.Creatures`: code-drawn creatures, props and icons, drawn on a 64-unit grid
     at 128 px. `Paint` lays down flat shapes (set `Mat` for fur, metal, bone, slime, stone or cloth; unshaded shapes
     are eyes and glows), then `Paint.Finish` shades, dithers and outlines them as pixel art. Change the look there,
-    not creature by creature.
+    not creature by creature. `SpriteFactory.Items` draws an icon for every item base; `IconFor` gives an item's
+    icon key, and a test fails if any base has no icon of its own.
   - `Scene`: the engine's creatures, missiles and props as sprites, with elite and champion tints.
 - `src/AVAHack.App/`: Avalonia. `Views/GameView*.cs` is one control split by screen:
   - play;

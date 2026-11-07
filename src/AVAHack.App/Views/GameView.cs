@@ -281,12 +281,24 @@ public sealed partial class GameView : Control, ICustomHitTest
 
     // ---- Buttons ----
 
+    /// <summary>A button; with an <paramref name="item"/>, its icon sits at the left and the label follows it.</summary>
     private void Button(DrawingContext dc, Rect r, string label, Action onClick, bool enabled = true, bool selected = false,
-                        double size = 16, Action? onRight = null)
+                        double size = 16, Action? onRight = null, AVAHack.Items.Item? item = null)
     {
         bool hover = r.Contains(_pointer) && enabled;
         var fill = !enabled ? DisabledBrush : selected ? SelectedBrush : hover ? HoverBrush : ButtonBrush;
         dc.DrawRectangle(fill, new Pen(selected ? Gold : PanelEdge, selected ? 2 : 1.5), r, 4, 4);
+        if (item is not null)
+        {
+            double side = r.Height - 2;
+            var icon = IconBitmap(AVAHack.Render.Scene.IconKind(Engine, item));
+            using (dc.PushOpacity(enabled ? 1 : 0.5))
+                dc.DrawImage(icon, new Rect(0, 0, icon.PixelSize.Width, icon.PixelSize.Height), new Rect(r.X + 3, r.Y + 1, side, side));
+            var lt = Text(label, size, enabled ? Parchment : Dim, Bold, r.Width - side - 12);
+            dc.DrawText(lt, new Point(r.X + side + 8, r.Center.Y - lt.Height / 2));
+            if (enabled) _buttons.Add((r, onClick, onRight));
+            return;
+        }
         var ft = Text(label, size, enabled ? Parchment : Dim, Bold, r.Width - 12);
         dc.DrawText(ft, new Point(r.Center.X - ft.Width / 2, r.Center.Y - ft.Height / 2));
         if (enabled) _buttons.Add((r, onClick, onRight));

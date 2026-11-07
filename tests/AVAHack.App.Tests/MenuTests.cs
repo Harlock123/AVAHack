@@ -112,8 +112,10 @@ public sealed class MenuTests
         Pump();
         Assert.Equal(Overlay.Waystone, v.Overlay);
         g.Party.Gold = 5000;
+        v.InvalidateVisual();
+        Pump();
+        Shot(w, "waystone"); // the merchant's goods, with their icons
         Click(w, 164 + 250, 40 + 78); // the Trainer tab
-        Shot(w, "waystone");
         int rank = g.Selected.Rank(SkillId.Athletics);
         int index = Array.IndexOf(Enum.GetValues<SkillId>(), SkillId.Athletics);
         Click(w, 164 + index % 3 * 320 + 150, 40 + 112 + 30 + index / 3 * 38 + 16);

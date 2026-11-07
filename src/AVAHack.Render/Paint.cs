@@ -178,6 +178,19 @@ internal sealed class Paint
         _next++;
     }
 
+    /// <summary>Cuts a hole: what was drawn in the ellipse becomes see-through again (a ring, a key's bow).</summary>
+    public void Clear(double cx, double cy, double rx, double ry)
+    {
+        double s = Scale, X = cx * s, Y = cy * s, RX = rx * s, RY = ry * s;
+        for (int y = (int)(Y - RY - 1); y <= Y + RY + 1; y++)
+        for (int x = (int)(X - RX - 1); x <= X + RX + 1; x++)
+        {
+            if (x < 0 || y < 0 || x >= Image.Width || y >= Image.Height) continue;
+            double dx = (x + 0.5 - X) / RX, dy = (y + 0.5 - Y) / RY;
+            if (dx * dx + dy * dy <= 1) _kind[y * Image.Width + x] = Kind.None;
+        }
+    }
+
     /// <summary>One grid unit of flat colour: an eye, a nostril, a spark.</summary>
     public void Dot(double x, double y, uint c)
     {

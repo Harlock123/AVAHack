@@ -158,49 +158,6 @@ public sealed partial class SpriteFactory
         return _cache[key] = img;
     }
 
-    /// <summary>A small picture for an item lying on the floor, by kind: weapon, shield, armour, potion, book, gold, other.</summary>
-    public SpriteImage ItemIcon(string kind)
-    {
-        var key = ("item-" + kind, SpriteView.Front, SpriteFrame.Idle, false);
-        if (_cache.TryGetValue(key, out var img)) return img;
-        img = new SpriteImage(64, 64);
-        var p = new Paint(img, Scale);
-        switch (kind)
-        {
-            case "weapon":
-                p.Line(6, 26, 26, 6, 3, Paint.Rgb(200, 204, 212));
-                p.Line(4, 22, 10, 28, 3, Paint.Rgb(140, 110, 60));
-                break;
-            case "shield":
-                p.Ellipse(16, 18, 11, 11, Paint.Rgb(120, 80, 44));
-                p.Ellipse(16, 18, 3, 3, Paint.Rgb(170, 170, 176));
-                break;
-            case "armour":
-                p.Rect(8, 10, 24, 28, Paint.Rgb(150, 150, 160));
-                p.Rect(4, 10, 28, 15, Paint.Rgb(130, 130, 140));
-                break;
-            case "potion":
-                p.Ellipse(16, 21, 8, 8, Paint.Rgb(190, 40, 40));
-                p.Rect(13, 6, 19, 14, Paint.Rgb(170, 190, 200));
-                break;
-            case "book":
-                p.Rect(7, 9, 25, 27, Paint.Rgb(110, 40, 30));
-                p.Rect(9, 11, 23, 25, Paint.Rgb(140, 60, 40));
-                break;
-            case "gold":
-                p.Ellipse(12, 22, 6, 3, Paint.Rgb(222, 180, 60));
-                p.Ellipse(19, 20, 6, 3, Paint.Rgb(232, 196, 70));
-                p.Ellipse(15, 17, 6, 3, Paint.Rgb(242, 206, 80));
-                break;
-            default:
-                p.Ellipse(16, 20, 10, 9, Paint.Rgb(150, 120, 80));
-                p.Rect(13, 8, 19, 13, Paint.Rgb(120, 90, 60));
-                break;
-        }
-        p.Outline();
-        return _cache[key] = img;
-    }
-
     private static SpriteImage Draw(string sprite, SpriteView view, SpriteFrame frame)
     {
         var img = new SpriteImage(Size, Size);

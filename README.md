@@ -86,7 +86,16 @@ pixel art:
 - fur, metal, bone, slime, stone and cloth get their own grain or shine;
 - outlines take a deep shade of the colour they border.
 
-![The bestiary](Images/AVAHack-bestiary.png) Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
+![The bestiary](Images/AVAHack-bestiary.png)
+
+Every item has its own icon, drawn and finished the same way:
+- 18 weapons, 8 armours, 3 shields and 12 pieces of gear;
+- potions, scrolls, books by skill, tomes and wands;
+- 40 reagents, the ingredients and meals, home-made brews coloured by their effect, and the crafting tools.
+
+The icons show in the inventory, the hand slots, the Waystone's lists and the crafting screen.
+
+![The item icons](Images/AVAHack-icons.png) Every third-party file is listed in `assets.manifest.json`, and [`CREDITS.md`](CREDITS.md) is
 made from it by `tools/build_credits.py`. Because there is no GPU in the path, the
 tests render real frames and compare them with golden images. A frame takes about 1–3 ms on an 8-core ARM
 machine.

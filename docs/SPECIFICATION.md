@@ -42,6 +42,7 @@
 31. Implementation decisions (the balance pass)
 32. Implementation decisions (M9: textures from an art pack)
 33. Implementation decisions (M9: the creatures redrawn)
+34. Implementation decisions (M9: item icons)
 
 ---
 
@@ -1940,3 +1941,34 @@ The first piece of M9's "art from the manifest": real textures for walls, floors
 - **Tests and art.** The sprite-sheet test still checks every creature, view and frame. The two creature goldens
   were rewritten after looking at them. `Images/AVAHack-bestiary.png` shows every creature from the front. A
   frame still takes 1–3 ms: sprites are drawn once and cached.
+
+## 34. Implementation decisions (M9: item icons)
+
+- **One icon per item base.** Before this, seven generic icons stood for everything (weapon, shield, armour,
+  potion, book, gold, other). `SpriteFactory.Items` now draws:
+  - every weapon (18), armour (8), shield (3) and piece of gear (12);
+  - every consumable (12);
+  - books, coloured and marked by their skill (combat red, each magic school its own colour, crafts green);
+  - tomes, scrolls and wands;
+  - gold and keys;
+  - all 40 reagents and the 10 ingredients;
+  - the 8 meals;
+  - spirit shards, scrap iron, the mortar and the campfire kit;
+  - a bare fist and a two-handed cross.
+- **Drawing.** Icons are drawn on a 32-unit grid at 64 px, with the same `Paint` finish as the creatures.
+  Weapons lie on the diagonal, hilt at the lower left; everything else stands upright. `Paint.Clear` cuts holes
+  (a ring, a key's bow).
+- **Keys.** `SpriteFactory.IconFor(db, item)` gives the key: the base id, `book:<skill>`, or `brew:<effect kind>`,
+  so a home-made brew is red for healing, blue for mana, dark green for a blade coating and so on. Unknown keys
+  get a plain sack.
+- **Where they show.**
+  - the inventory and paper doll;
+  - items on the floor in the view;
+  - the party cards' hand slots, which now show the held item (a bare fist when empty, a cross when a two-handed
+    weapon fills the other hand), replacing the App's vector shapes;
+  - buttons that stand for an item: the merchant's goods, the pack to sell, the stash, reagents, the meals,
+    Smithing's improve and forge lists, and Enchanting's items. `Button` takes an optional item for this.
+- **Tests.** `Every_item_has_its_own_icon` renders every key the game can ask for, fails if one is nearly empty or
+  falls back to the sack, checks every item base maps to one, and writes `icons.png` to `AVAHACK_SHOTS`.
+  `Images/AVAHack-icons.png` is that sheet.
+- **Not done:** portraits are still the App's placeholder shapes.

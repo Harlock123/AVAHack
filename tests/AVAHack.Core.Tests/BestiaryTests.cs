@@ -142,7 +142,7 @@ public sealed class BestiaryTests
     }
 
     [Fact]
-    public void A_summoner_keeps_its_own_number_about_the_Refractor_two()
+    public void A_summoner_keeps_its_own_number_about_the_Refractor_two_glass_shards()
     {
         Assert.Equal(2, Db.Creature("theRefractor").SummonMax);
         Assert.Equal(3, Db.Creature("hollowSaint").SummonMax);
@@ -153,7 +153,7 @@ public sealed class BestiaryTests
             refractor.SpecialTimer = 12;
             g.Tick();
         }
-        Assert.Equal(2, g.Monsters.Count(m => m.IsAlive && m.SummonedBy == refractor.Id && m.Def.Id == "shardling"));
+        Assert.Equal(2, g.Monsters.Count(m => m.IsAlive && m.SummonedBy == refractor.Id && m.Def.Id == "lensShard"));
     }
 
     [Fact]

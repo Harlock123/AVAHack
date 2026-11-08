@@ -82,17 +82,22 @@ public sealed partial class Character
         return c;
     }
 
+    /// <summary>A condition that lasts until cured (a curse) is saved as <see cref="Endless"/>: JSON has no infinity.</summary>
+    public const double Endless = -1;
+
     public static List<ConditionSave> SaveConditions(ConditionSet set) =>
-        set.Active.Select(c => new ConditionSave(c.Id, c.SecondsLeft, c.SaveDc, c.DamagePerSecond?.ToString(), c.SinceSave, c.SinceDamage)).ToList();
+        set.Active.Select(c => new ConditionSave(c.Id, double.IsPositiveInfinity(c.SecondsLeft) ? Endless : c.SecondsLeft, c.SaveDc,
+            c.DamagePerSecond?.ToString(), c.SinceSave, c.SinceDamage)).ToList();
 
     public static void LoadConditions(ConditionSet set, IEnumerable<ConditionSave> saved)
     {
         foreach (var cond in saved)
         {
-            set.Apply(cond.Id, cond.Dc, cond.SecondsLeft, cond.DamagePerSecond is { } d ? Dice.Parse(d) : null);
+            double left = cond.SecondsLeft < 0 ? double.PositiveInfinity : cond.SecondsLeft;
+            set.Apply(cond.Id, cond.Dc, left, cond.DamagePerSecond is { } d ? Dice.Parse(d) : null);
             if (set.Get(cond.Id) is { } a)
             {
-                a.SecondsLeft = cond.SecondsLeft;
+                a.SecondsLeft = left;
                 a.SinceSave = cond.SinceSave;
                 a.SinceDamage = cond.SinceDamage;
             }

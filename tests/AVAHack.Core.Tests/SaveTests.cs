@@ -1,3 +1,4 @@
+using AVAHack.Rules;
 using AVAHack.Characters;
 using AVAHack.Content;
 using AVAHack.Game;
@@ -41,6 +42,18 @@ public sealed class SaveTests
         Assert.Equal(g.Explored.Count, back.Explored.Count);
         Assert.Single(store.List());
         Assert.Contains("Brannoc", store.List()[0].Summary);
+    }
+
+    [Fact]
+    public void A_curse_that_lasts_until_cured_saves_and_loads()
+    {
+        var g = Cellars(5);
+        g.Hero.Conditions.Apply(ConditionId.Cursed, 15);                               // no duration: until cured
+        Assert.True(double.IsPositiveInfinity(g.Hero.Conditions.Get(ConditionId.Cursed)!.SecondsLeft));
+        var store = new SaveStore(TempDir());
+        store.Save("slot1", g.ToSave());                                               // JSON has no infinity
+        var back = GameEngine.FromSave(store.Load("slot1")!, Heroes.Content);
+        Assert.True(double.IsPositiveInfinity(back.Hero.Conditions.Get(ConditionId.Cursed)!.SecondsLeft));
     }
 
     [Fact]

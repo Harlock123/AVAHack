@@ -4496,7 +4496,7 @@
   "summoner",
   "flier"
  ],
- "summons": "shardling",
+ "summons": "lensShard",
  "summonMax": 2,
  "resist": [
   "piercing"
@@ -4833,7 +4833,7 @@
 },
 {
  "id": "lensShard",
- "name": "Shard of the Lens",
+ "name": "Glass Shard",
  "family": "shardborn",
  "tier": "lesser",
  "level": 30,
@@ -4876,7 +4876,7 @@
   "asleep"
  ],
  "sprite": "lensShard",
- "text": "A sliver of the Lens, still turning to the light.",
+ "text": "A sliver of black glass, broken from something greater and still turning to the light.",
  "loot": "glass"
 },
 {

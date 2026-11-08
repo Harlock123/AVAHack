@@ -2300,7 +2300,7 @@ families, rules and boss.
     - the Mirrorling: an unseen phaser that frightens;
     - the Glass Strider: four legs of drawn glass, unyielding;
     - the Obsidian Hulk: an area smash that stuns, and it opens doors;
-    - the Refractor: a flying caster that blinds an area and calls up shardlings, two at a time.
+    - the Refractor: a flying caster that blinds an area and calls up Glass Shards, two at a time.
   - **The Hollowed**, delvers the Unmade emptied. They resist necrotic and psychic, and radiant hurts them double.
     - the Hollow Pilgrim: mindless, and it weakens;
     - the Glass-Eyed Archer: a pack archer;
@@ -2312,7 +2312,7 @@ families, rules and boss.
   The Unmade come through the rifts.
 - **The art.** The Shardborn get new drawers of glass facets in `SpriteFactory.Glass`:
   - kites of black glass, dark on one side and violet-lit on the other;
-  - the shardling, the prisms (the eye, the Refractor ringed with shards, the Lens's shards) and the Lens;
+  - the shardling, the prisms (the eye, the Refractor ringed with shards, the Glass Shards it and the Lens shed) and the Lens;
   - the strider, the hulk, the hound and the Echo use the bug, machine, beast and floater drawers.
 
   The Hollowed are people with glass eyes. Each family has its own cry. Glass has its own sound when hit and when
@@ -2343,7 +2343,7 @@ families, rules and boss.
   - **Its beam.** Every 10 seconds it turns and gathers light down its row or column, whichever the party is nearer
     to. A second and a half later the beam fires down that line. If the party is still in it, within 10 cells and
     in sight, each hero takes 6d8 + depth radiant, with a DEX save for half. Stepping out of the line dodges it.
-  - **Shards.** At half health it sheds three Shards of the Lens.
+  - **Shards.** At half health it sheds three Glass Shards.
 - **The bot** seals an open rift within 8 cells before it hunts, and goes for a creature that summons or raises
   the dead (within 8 cells) before anything else, as a player would.
 - **Results** (6 seeds, 24-level Delves, clearing bot): at first no party got past the Rootdark. After its tuning
@@ -2373,6 +2373,19 @@ families, rules and boss.
     (average depth 21.1) and none got through. After, the average is 23.2: one run in eight reaches the Unmade Heart,
     the rest fall on levels 22–24, shardlings still the worst. One run still stalls on the stairs. More tuning is
     needed.
+- **Tuning, second pass.**
+  - **The Refractor calls Glass Shards**, the lesser shards the Lens sheds (renamed from "Shard of the Lens"), not
+    shardlings: a shardling is a full creature of the region, and with its packs it did most of the damage.
+  - **The bot steps out of the Lens's beam** when the Lens gathers light down its line, as a player who sees the
+    warning would: four times in five it sidesteps (or steps on or back) to a free cell out of the line.
+  - **Two bugs.** A curse that lasts until cured had an infinite time left, which JSON can't hold: saving a game with
+    a cursed hero failed. It is saved as -1 now (`Character.Endless`). And the bot kept what it was hunting from one
+    level to the next, so it could chase a creature of the level above for ever; it forgets it on a new level.
+  - **The report** can keep the parties that reach level 21 (`AVAHACK_BALANCE_PARTIES=<folder>`) and start from
+    them next time, so a change is measured in minutes, not half an hour.
+  - **Results** (4 parties that reached level 21, 6 seeds each): through the Glass Roads 6 of 24 after the first
+    pass, 9 of 24 after the second (average depth 23.7). Deaths on the Lens's level fell from 6 to 3; most deaths are
+    now on level 23 and in the Unmade Heart, which is the next to tune.
 - **Tests.**
   - Glass Roads levels with their families, glass, rifts, mirror walls and the Lens, and the Heart's Waystone after it.
   - Glass crunching once, cutting, waking the hall, and gone.

@@ -152,11 +152,28 @@ public sealed class DelveReport(ITestOutputHelper output)
         Assert.DoesNotContain(results, r => r.Mode == GameMode.Playing);
     }
 
+    private static readonly System.Text.Json.JsonSerializerOptions SnapshotJson = new(ContentDb.JsonOptions)
+    {
+        UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip,
+    };
+
+    [Fact]
+    public void A_party_snapshot_survives_a_round_trip_through_a_file()
+    {
+        var db = ContentDb.LoadBuiltIn();
+        var party = PartyTests.QuickParty(db);
+        var snap = new Snapshot(party.Members.Select(h => h.ToSave()).ToList(), 123);
+        var back = System.Text.Json.JsonSerializer.Deserialize<Snapshot>(System.Text.Json.JsonSerializer.Serialize(snap, SnapshotJson), SnapshotJson)!;
+        Assert.Equal(123, back.Gold);
+        Assert.Equal(party.Members.Select(h => h.Name), back.Heroes.Select(h => Character.FromSave(db, h).Name));
+    }
+
     /// <summary>
     /// Opt-in (AVAHACK_BALANCE_GLASS=1): the Glass Roads on their own. Deep Delves are played to level 21, and each
     /// party that gets there is set down on level 21 of several other seeds and plays on to the Unmade Heart. Many
     /// more Glass Roads runs than the 24-level report gives, for the balance work in spec section 39.
-    /// AVAHACK_BALANCE_RUNS sets the deep seeds (12) and AVAHACK_BALANCE_SEEDS the seeds each party plays (4).
+    /// AVAHACK_BALANCE_RUNS sets the deep seeds (12) and AVAHACK_BALANCE_SEEDS the seeds each party plays (4);
+    /// AVAHACK_BALANCE_PARTIES=&lt;folder&gt; saves the parties that reach level 21 there, and later runs start from them.
     /// </summary>
     [Fact]
     public void The_Glass_Roads_from_level_21()
@@ -165,11 +182,28 @@ public sealed class DelveReport(ITestOutputHelper output)
         int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_RUNS"), out int n) ? n : 12;
         int seeds = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_SEEDS"), out int k) ? k : 4;
         var parties = new System.Collections.Concurrent.ConcurrentBag<(string From, Snapshot Party)>();
-        Enumerable.Range(1, runs).AsParallel().ForAll(i =>
+        // AVAHACK_BALANCE_PARTIES=<folder> keeps the parties that got there, so later runs skip the deep Delves.
+        var json = SnapshotJson;
+        string? folder = Environment.GetEnvironmentVariable("AVAHACK_BALANCE_PARTIES");
+        if (folder is not null && Directory.Exists(folder) && Directory.GetFiles(folder, "*.json").Length > 0)
+            foreach (var f in Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal))
+                parties.Add((Path.GetFileNameWithoutExtension(f), System.Text.Json.JsonSerializer.Deserialize<Snapshot>(File.ReadAllText(f), json)!));
+        else
         {
-            ulong s = (ulong)i * 7919;
-            Play(s, 24, 24 * 60, clears: true, stopAt: 21, arrived: p => parties.Add((DelveOptions.Code(s), p)));
-        });
+            Enumerable.Range(1, runs).AsParallel().ForAll(i =>
+            {
+                ulong s = (ulong)i * 7919;
+                Play(s, 24, 24 * 60, clears: true, stopAt: 21, arrived: p => parties.Add((DelveOptions.Code(s), p)));
+            });
+            if (folder is not null)
+            {
+                Directory.CreateDirectory(folder);
+                foreach (var (from, p) in parties)
+                    try { File.WriteAllText(Path.Combine(folder, from + ".json"), System.Text.Json.JsonSerializer.Serialize(p, json)); }
+                    catch (Exception e) when (e is NotSupportedException or ArgumentException or System.Text.Json.JsonException)
+                    { output.WriteLine($"couldn't keep the party from {from}: {e.Message}"); }
+            }
+        }
         output.WriteLine($"{parties.Count} of {runs} parties reached level 21");
         var results = parties.OrderBy(p => p.From).SelectMany(p => Enumerable.Range(1, seeds).Select(j => (p.From, Seed: (ulong)j * 6151, p.Party)))
             .AsParallel().Select(x => (x.From, Run: Play(x.Seed, 24, 24 * 60, clears: true, party: x.Party, from: 21))).OrderBy(x => x.From).ThenBy(x => x.Run.Seed).ToList();

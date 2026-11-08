@@ -75,11 +75,26 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             _pulledAt.Clear();
             _searched.Clear();
             _usedStone = false;
+            _prey = null;                                                               // what it hunted is on the level above
         }
         if (Clears)
             foreach (var c in g.Party.Members.Where(c => !c.IsDead)) ProgressionReport.Spend(c);
         CastSpells();
         foreach (var p in g.Level.Plates.Where(p => p.Pressed)) _pressed.Add(p);
+
+        // The Lens gathers light down the party's line: step out of it, as a player who sees the warning would.
+        bool inBeam = g.InBeam(g.PartyCell);
+        if (inBeam && !_wasInBeam) _dodgeBeam = Next() < 0.8;
+        _wasInBeam = inBeam;
+        if (inBeam && _dodgeBeam && !g.IsMoving && g.Queued == 0)
+        {
+            foreach (var (act, way) in new[] { (GameAction.StrafeLeft, g.Facing.Left()), (GameAction.StrafeRight, g.Facing.Right()),
+                                               (GameAction.StepForward, g.Facing), (GameAction.StepBack, g.Facing.Opposite()) })
+            {
+                var to = g.PartyCell.Step(way);
+                if (Walkable(to) && !g.InBeam(to) && !g.MonstersAt(to).Any()) { g.Press(act); return; }
+            }
+        }
 
         // Fight anything adjacent.
         var foe = Enum.GetValues<Dir>().Select(d => (Dir: d, M: g.MonstersAt(g.PartyCell.Step(d)).FirstOrDefault(m => !m.Ally)))
@@ -442,6 +457,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     /// <summary>A living node of the Mycel Crown the bot can get to.</summary>
     private Monster? Node() => g.Monsters.FirstOrDefault(m => m.Boss == "crownNode" && m.IsAlive && !_gaveUp.Contains(m) && Reachable(m.Cell));
     private Monster? _prey;
+    private bool _wasInBeam, _dodgeBeam;
 
     /// <summary>For the reports: what the bot is after, where, and in what state.</summary>
     public string PreyReport => _prey is { } p

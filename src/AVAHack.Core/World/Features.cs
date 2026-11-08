@@ -62,6 +62,16 @@ public sealed class Chest(Cell cell, string table, int lockDc = 0, string? key =
 public sealed record Spawn(string Creature, Cell Cell, Dir Facing)
 {
     public int? Level { get; init; }
+    /// <summary>A name of its own (a voice of the Hollow Choir).</summary>
+    public string? Title { get; init; }
+    /// <summary>Its place in an order (the Choir's: which falls silent first).</summary>
+    public int? Order { get; init; }
+}
+
+/// <summary>The Hollow Choir's five voices (spec 12.5), each singing a school: Warding, Restoration, Destruction, Conjuration, Illusion.</summary>
+public static class Choir
+{
+    public static readonly string[] Voices = ["The Low Voice", "The Mending Voice", "The Burning Voice", "The Calling Voice", "The Dreaming Voice"];
 }
 
 /// <summary>What the floor of a cell looks like, for drawing.</summary>

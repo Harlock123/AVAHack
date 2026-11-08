@@ -103,6 +103,7 @@ public sealed record MonsterSave
     public double LastSeen { get; init; } = -100;
     public double Awareness { get; init; }
     public double CalmLeft { get; init; }
+    public double HushLeft { get; init; }
     public double FrenzyLeft { get; init; }
     /// <summary>The level it was scaled to (spec 12.1); its definition is scaled again on load.</summary>
     public int Level { get; init; }

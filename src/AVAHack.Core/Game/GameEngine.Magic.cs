@@ -471,6 +471,15 @@ public sealed partial class GameEngine
                 if (Level.DoorAt(ahead) is { Arcane: true, Locked: true } sealed_) { sealed_.Locked = false; Say("The seal on the door breaks."); }
                 DispelHook?.Invoke(ahead);
                 break;
+            case "hush":
+                if (target is not null)
+                {
+                    target.HushLeft = s.Seconds * (1 + fx.Caster.PerkTotalFor("durationPct", "warding") / 100);
+                    Say($"{target.TheName} opens its mouth, and nothing comes out.");
+                    Practice(fx, target.Def.Level + 2);
+                }
+                else Say("There is nothing ahead to hush.");
+                break;
             case "sanctuary":
                 _sanctuary[ahead] = s.Seconds;
                 Say("A line of light bars the way ahead.");

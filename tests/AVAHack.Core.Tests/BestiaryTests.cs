@@ -262,7 +262,15 @@ public sealed class BestiaryTests
             var eight = Generator.Generate(Db, seed, 8, o);
             Assert.Equal("bellwrightEngine", eight.Boss);
             Assert.Equal(3, eight.Valves.Count);
-            Assert.Equal(5, Generator.Generate(Db, seed, 6, o).Spawns.Count(s => s.Creature == "choirSinger"));
+            var six = Generator.Generate(Db, seed, 6, o);
+            var singers = six.Spawns.Where(s => s.Creature == "choirSinger").ToList();
+            Assert.Equal(5, singers.Count);
+            Assert.Equal(AVAHack.World.Choir.Voices.Order(), singers.Select(s => s.Title!).Order());
+            Assert.Equal([0, 1, 2, 3, 4], singers.Select(s => s.Order!.Value).Order());
+            // The carving names them in their order.
+            var carving = six.Notes.Single(n => n.Text.Contains("Carved under the niches")).Text;
+            var named = singers.OrderBy(s => s.Order).Select(s => carving.IndexOf(s.Title![4..], StringComparison.Ordinal)).ToList();
+            Assert.Equal(named.Order(), named);
             Assert.Equal("motherOfCoils", Generator.Generate(Db, seed, 12, o).Boss);
             var heart = Generator.Generate(Db, seed, 13, o);
             Assert.True(heart.Final);
@@ -352,6 +360,58 @@ public sealed class BestiaryTests
         foreach (var s in singers) Kill(g, s);
         Run(g, 11);
         Assert.DoesNotContain(singers, s => s.IsAlive);
+    }
+
+    /// <summary>Five voices in the carved order <paramref name="order"/> (their places, by voice).</summary>
+    private static List<Monster> Choir(GameEngine g, int[] order) =>
+        Enumerable.Range(0, 5).Select(i =>
+        {
+            var m = Awake(g, "choirSinger", new Cell(4 + i, 1));
+            m.Title = AVAHack.World.Choir.Voices[i];
+            m.Phase = order[i];
+            return m;
+        }).ToList();
+
+    [Fact]
+    public void The_Choir_falls_silent_in_the_carved_order_or_hushed()
+    {
+        var g = Arena();
+        var s = Choir(g, [2, 0, 4, 1, 3]); // the Mending Voice first, then the Calling, the Low, the Dreaming, the Burning
+        Assert.Same(s[1], g.ChoirNext);
+        Kill(g, s[3]);                    // out of turn: it rises
+        Run(g, 10.2);
+        Assert.True(s[3].IsAlive);
+        Kill(g, s[1]);                    // in turn: silent for good
+        Run(g, 10.2);
+        Assert.False(s[1].IsAlive);
+        Assert.Same(s[3], g.ChoirNext);
+        s[4].HushLeft = 5;                // hushed, out of turn: stays fallen too
+        Kill(g, s[4]);
+        Run(g, 10.2);
+        Assert.False(s[4].IsAlive);
+        foreach (var i in new[] { 3, 0, 2 }) Kill(g, s[i]);
+        Run(g, 10.2);
+        Assert.DoesNotContain(s, m => m.IsAlive);
+        Assert.Contains(g.Log, l => l.Contains("The Choir is silent"));
+    }
+
+    [Fact]
+    public void Each_voice_sings_its_school_unless_hushed()
+    {
+        var g = Arena();
+        var s = Choir(g, [0, 1, 2, 3, 4]);
+        s[2].Hp = s[2].MaxHp / 2;
+        s[0].HushLeft = 30;               // the Low Voice can't ward the others
+        Run(g, 9.2);
+        Assert.All(s.Skip(1), m => Assert.Equal(0, m.Ward));
+        Assert.True(s[2].Hp > s[2].MaxHp / 2);   // the Mending Voice mended the most hurt
+        Assert.Contains(g.Monsters, m => m.SummonedBy == s[3].Id); // the Calling Voice called
+        s[0].HushLeft = 0;
+        foreach (var m in s.Skip(1)) m.HushLeft = 30; // only the Low Voice sings now
+        foreach (var m in s) m.LastSeen = g.Time;      // still in the fight
+        foreach (var h in g.Party.Members) h.Rest();
+        Run(g, 9.2);
+        Assert.All(s.Skip(1).Where(m => m.IsAlive), m => Assert.True(m.Ward > 0));
     }
 
     [Fact]

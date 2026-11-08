@@ -327,6 +327,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (_prey is not { IsAlive: true } prey || !Calls(prey))
                 if (g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null && m.IsAware && Calls(m) && m.Cell.Distance(g.PartyCell) <= 8 && !_gaveUp.Contains(m) && Reachable(m.Cell))
                         .MinBy(m => m.Cell.Distance(g.PartyCell)) is { } caller) { Goal = "hunt"; _prey = caller; return (caller.Cell, null, null); }
+            // The Hollow Choir: the singer whose turn it is, as the carving says (spec 12.5).
+            if (g.ChoirNext is { IsAlive: true } voice && !_gaveUp.Contains(voice) && Reachable(voice.Cell)) { Goal = "hunt"; _prey = voice; return (voice.Cell, null, null); }
             if (_prey is { IsAlive: true } p && !_gaveUp.Contains(p) && Reachable(p.Cell)) { Goal = "hunt"; return (p.Cell, null, null); }
             var foe = g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null or "crownNode" && !_gaveUp.Contains(m) && Reachable(m.Cell))
                        .MinBy(m => m.Cell.Distance(g.PartyCell));

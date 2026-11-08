@@ -84,7 +84,7 @@ The rules are a hybrid:
 | Callings | 10 |
 | Skills | 22 |
 | Perks | about 160 (6–10 per skill) |
-| Spells | 48 across 5 schools |
+| Spells | 49 across 5 schools |
 | Monsters | about 60 base types, plus elites, champions and 5 bosses |
 | Trap kinds | 20 |
 | Handmade vaults | about 40 |
@@ -556,13 +556,13 @@ The game runs on a fixed simulation tick of 60 Hz. Everything is real-time:
 
 ### 10.2 Schools
 
-There are 5 schools of 8 spells, plus 8 cantrips (48 in all). The names are original.
+There are 5 schools of 8 spells, plus 8 cantrips and Hush (49 in all). The names are original.
 
 | School | Sample spells (rank required) |
 | --- | --- |
 | Destruction (INT) | Spark (0, cantrip), Firedart (0), Frostlance (15), Thunderclap (25, all cells adjacent), Cinder Wall (40, a wall of fire across the corridor), Acid Rain (55, a 3×3 area over time), Chain Storm (70), Starfall (90) |
 | Restoration (WIS) | Mend (0), Cleanse (15, cures one condition), Rally (25, heals the party), Bastion of Light (40, regen aura), Turn the Dead (40), Restore Limb (55, cures Weakened and Cursed), Second Dawn (70, revives down heroes at 25%), Recall Soul (90, raises the dead) |
-| Warding (WIS) | Ward (0, absorbs 20 + skill), Resist Element (15), Dispel (25), Spell Turning (40), Sanctuary Line (55, monsters can't enter one cell for 10 s), Anti-magic Field (70), Aegis of Ages (90) |
+| Warding (WIS) | Ward (0, absorbs 20 + skill), Resist Element (15), Hush (20, the creature ahead can't sing, cast, shoot or call for 12 s), Dispel (25), Spell Turning (40), Sanctuary Line (55, monsters can't enter one cell for 10 s), Anti-magic Field (70), Aegis of Ages (90) |
 | Conjuration (INT) | Bound Blade (0), Summon Familiar (15, a scout that walks ahead), Raise Bones (25), Summon Flame Spirit (40), Banish (55), Open the Way (70, a two-way portal on the same level), Gate of Teeth (90, summons a horror) |
 | Illusion (INT/CHA) | Light (0, cantrip), Fear (15), Calm (25), Muffle (25, silent steps), Invisibility (40), Mirror Selves (55, decoys draw 3 attacks), Frenzy (70, monsters fight each other), Unmind (90, stuns a 3×3 area) |
 
@@ -728,7 +728,7 @@ Each monster has a behaviour profile made of these blocks:
 | The Hollow King | after level 4 | A crypt with 4 sarcophagi | Raises a Bone Sentry from a sarcophagus every 20 s. Smash the sarcophagi (Blunt) to stop it. At 50% HP he splits his crown into two Ossuary Knights |
 | The Bellwright Engine | after level 8 | A bell foundry with conveyor floors | The floor moves the party one cell every 4 s. The Engine is invulnerable until its 3 pressure valves are shut |
 | Mother of Coils | after level 12 | A flooded temple | Water rises and falls on a cycle. She is only vulnerable when the water drops. She summons Coil Guards from the pools |
-| The Hollow Choir (optional) | a secret level, after 6 | A round hall | 5 singers each cast a school. Silence (Warding) or kill them in the right order or they resurrect each other |
+| The Hollow Choir (optional) | level 6 | The largest spare hall | 5 singers each sing a school. Hush them (Warding) or kill them in the carved order, or they raise each other |
 | The Unmaker | the final level | The Unmade Heart | Phase 1: it unmakes walls, so the arena grows. Phase 2: it uses the run's champion affixes. Phase 3: the Knell tolls and the room rearranges every 15 s |
 
 ---
@@ -1510,7 +1510,7 @@ is built.
 ## 27. Implementation decisions (M5)
 28. Implementation decisions (M6)
 
-- **48 spells** (`spells.json`, checked by the validator): eight in each school, plus cantrips (Minor Mending, Minor
+- **48 spells** (49 with Hush, section 42; `spells.json`, checked by the validator): eight in each school, plus cantrips (Minor Mending, Minor
   Ward, Mage Hand, Detect Traps, Unlock, Frost Touch, Guidance and Beacon; Spark and Light are also cantrips). Some
   names differ from section 10.2:
   - Spell Turning turns missiles back, and Bulwark gives +2 AC.
@@ -1693,8 +1693,8 @@ is built.
     - **Mother of Coils:** the water rises for 12 s (no damage gets through) and falls for 8 s. Each rise brings a
       Coil Guard, at most 3. She comes with two guards.
     - **The Hollow Choir:** five singers in the largest spare room of level 6, an optional fight. A fallen singer
-      rises at half HP 10 s later while another still sings, with no second share of loot; kill all five within
-      10 s. *Changed:* not a secret level, and the school-by-school silencing isn't done.
+      rises at half HP 10 s later while another still sings, with no second share of loot, unless it fell in its
+      turn or hushed (section 42). *Changed:* not a secret level.
     - **The Unmaker,** in **the Unmade Heart**, the level after a 12-level Delve's last:
       - Phase 1 calls Unmade Hounds every 15 s.
       - At two thirds of its HP it takes up to three of the run's champion affixes (Vampiric, Shielded and Frenzied
@@ -2489,3 +2489,26 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
     Its time on each target now adds up until something is done.
 - **Results after the fixes,** 16 seeds of the 12-level Delve: normal parties won 13, heroic ones 11, none stuck.
   The heroic winners ended at level 20–23, the normal ones at 23–26.
+
+## 42. Implementation decisions (the Hollow Choir and Hush)
+
+The Choir was the one boss left short of its design (section 12.5): its five singers only rose again until all
+five fell within 10 s. Now each sings its own school, and there are two ways to make one stay down.
+
+- **The voices** (`Choir.Voices`), each singing every 9 s:
+  - the Low Voice (Warding) wards the others for a sixth of their HP;
+  - the Mending Voice (Restoration) mends the most hurt of the others by a quarter of its HP;
+  - the Burning Voice (Destruction) sets the air alight: 3d6 fire to the party within 6 cells, a DEX save halving it;
+  - the Calling Voice (Conjuration) calls up two of its family's least;
+  - the Dreaming Voice (Illusion) frightens one hero for 6 s, unless a WIS save beats it.
+- **The carving.** The hall's note gives the order, shuffled for each seed: "Let the Mending Voice, then the Low
+  Voice, ... fall silent, in that order". A singer that falls in its turn (every singer before it is silent) is
+  silent for good. One that falls out of turn rises at half HP 10 s later, as before, while another still sings.
+  All five down at once is still silence. `GameEngine.ChoirNext` is the singer whose turn it is.
+- **Hush**, a new Warding spell (rank 20, 8 mana): the creature ahead can't sing, cast, shoot or call for 12 s,
+  and fights only with its hands. A singer that falls while hushed stays fallen, in turn or not. On other
+  creatures it stops ranged attackers' shots and summoners' calls. Saved with the creature (`MonsterSave.HushLeft`).
+- **The bot** hunts the singer whose turn it is, as a player who read the carving would.
+- **Tests.** The order: one out of turn rising, one in turn staying down, a hushed one out of turn staying down,
+  and the silence when all are; each voice's song, and a hushed one's silence; the generator giving five voices,
+  five places in the order and a carving that names them in it; and Hush wearing off after 12 s.

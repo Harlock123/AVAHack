@@ -31,6 +31,8 @@ public sealed partial class GameEngine
             var def = Content.Creature(s.Creature);
             if (s.Level is { } lvl && (lvl > def.Level || (def.Boss is not null && lvl != def.Level))) def = Bestiary.ScaleTo(def, lvl);
             var m = AddMonster(def, s.Cell, s.Facing);
+            if (s.Title is not null) m.Title = s.Title;
+            if (s.Order is { } order) m.Phase = order;
             ApplyDifficulty(m);
             if (Level.Source.StartsWith("gen:", StringComparison.Ordinal)) MaybeChampion(m);
             SpawnHook?.Invoke(m);
@@ -160,6 +162,7 @@ public sealed partial class GameEngine
             return;
         }
         if (m.CalmLeft > 0) m.CalmLeft = Math.Max(0, m.CalmLeft - TickSeconds);
+        if (m.HushLeft > 0 && (m.HushLeft -= TickSeconds) <= 0) { m.HushLeft = 0; Say($"{m.TheName} finds its voice again."); }
         if (m.FrenzyLeft > 0 && (m.FrenzyLeft -= TickSeconds) <= 0)
         {
             m.FrenzyLeft = 0;
@@ -345,7 +348,7 @@ public sealed partial class GameEngine
             }
         }
 
-        if (m.Def.Has("ranged") && toParty is { } line && dist > 1)
+        if (m.Def.Has("ranged") && m.HushLeft <= 0 && toParty is { } line && dist > 1)
         {
             var shot = m.Def.Attacks.FirstOrDefault(a => a.Range >= dist);
             if (shot is not null && HasClearShot(m.Cell, PartyCell))
@@ -406,7 +409,7 @@ public sealed partial class GameEngine
     /// <summary>Takes one step along the shortest path to a cell from which it can strike (or shoot).</summary>
     private void Approach(Monster m)
     {
-        bool ranged = m.Def.Has("ranged");
+        bool ranged = m.Def.Has("ranged") && m.HushLeft <= 0; // hushed, it has only its hands
         int range = ranged ? m.Def.Attacks.Max(a => a.Range) : 1;
         var first = PathStep(m, c =>
         {

@@ -312,6 +312,18 @@
   "name2": "dispel"
  },
  {
+  "id": "hush",
+  "name": "Hush",
+  "school": "warding",
+  "rank": 20,
+  "mana": 8,
+  "target": "ahead",
+  "effect": "utility",
+  "text": "The creature ahead can't sing, cast, shoot or call for 12 s: only its own hands. A voice of the Choir that falls hushed stays fallen.",
+  "name2": "hush",
+  "seconds": 12
+ },
+ {
   "id": "bulwark",
   "name": "Bulwark",
   "school": "warding",

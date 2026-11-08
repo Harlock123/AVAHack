@@ -681,14 +681,20 @@ public static partial class Generator
                 if (hall is not null)
                 {
                     var cells = RoomCells(hall).Where(c => At(c) == CellKind.Floor && !_taken.Contains(c)).ToList();
-                    for (int i = 0; i < 5 && cells.Count > 0; i++)
+                    // Each sings its own school; the carving says in what order they must fall silent.
+                    var order = Enumerable.Range(0, 5).ToList();
+                    for (int i = order.Count - 1; i > 0; i--) { int j = Roll(i + 1); (order[i], order[j]) = (order[j], order[i]); }
+                    int placed = 0;
+                    for (int i = 0; i < 5 && cells.Count > 0; i++, placed++)
                     {
                         var c = cells[Roll(cells.Count)];
                         cells.Remove(c);
                         _taken.Add(c);
-                        _spawns.Add(new Spawn("choirSinger", c, Dir.South) { Level = MonsterLevel() });
+                        _spawns.Add(new Spawn("choirSinger", c, Dir.South) { Level = MonsterLevel(), Title = Choir.Voices[i], Order = order.IndexOf(i) });
                     }
-                    _notes.Add((hall.Centre, "Five voices, singing one note that never ends. The air shapes itself to it."));
+                    var carved = order.Take(placed).Where(v => v < placed).Select(v => Choir.Voices[v][4..]).ToList(); // "Low Voice", ...
+                    _notes.Add((hall.Centre, "Five voices, singing one note that never ends. The air shapes itself to it. Carved under the niches: "
+                        + $"\"Let the {string.Join(", then the ", carved)} fall silent, in that order, or the song goes on.\""));
                 }
             }
         }

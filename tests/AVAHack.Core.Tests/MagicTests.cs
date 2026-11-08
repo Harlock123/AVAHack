@@ -39,9 +39,9 @@ public sealed class MagicTests
     }
 
     [Fact]
-    public void There_are_48_spells_in_five_schools_with_cantrips()
+    public void There_are_49_spells_in_five_schools_with_cantrips()
     {
-        Assert.Equal(48, Db.Spells.Count);
+        Assert.Equal(49, Db.Spells.Count);
         Assert.Equal(5, Db.Spells.Select(s => s.School).Distinct().Count());
         Assert.True(Db.Spells.Count(s => s.Cantrip) >= 8);
     }
@@ -245,6 +245,21 @@ public sealed class MagicTests
         Assert.Contains("points the wand", g.UseItem(h, wand));
         Run(g, 2.5);
         Assert.Contains("spent", g.UseItem(h, wand));
+    }
+
+    [Fact]
+    public void Hush_quiets_the_creature_ahead_for_12_seconds()
+    {
+        var g = Solo("wizard");
+        var h = g.Hero;
+        h.KnownSpells.Add("hush");
+        h.GainSkillXp(SkillId.Warding, 1_000_000, XpSource.Plain);
+        var slinger = g.AddMonster("gutterGoblin", new Cell(3, 2), Dir.West);
+        CastAndWait(g, h, "hush");
+        Assert.InRange(slinger.HushLeft, 9, 12);
+        Run(g, 13);
+        Assert.Equal(0, slinger.HushLeft);
+        Assert.Contains(g.Log, l => l.Contains("finds its voice again"));
     }
 
     [Fact]

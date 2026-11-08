@@ -75,7 +75,7 @@ public sealed partial class GameEngine
             Action = m.Action, ActionLeft = m.ActionLeft, ActionTotal = m.ActionTotal, Attack = m.Attack?.Id,
             FromX = m.From.X, FromY = m.From.Y, StrikeTime = m.StrikeTime, IdleLeft = m.IdleLeft, FleeLeft = m.FleeLeft,
             AffixTimer = m.AffixTimer, LastHitType = m.LastHitType, Conditions = Character.SaveConditions(m.Conditions),
-            LastSeen = m.LastSeen, Awareness = m.Awareness, CalmLeft = m.CalmLeft, FrenzyLeft = m.FrenzyLeft,
+            LastSeen = m.LastSeen, Awareness = m.Awareness, CalmLeft = m.CalmLeft, HushLeft = m.HushLeft, FrenzyLeft = m.FrenzyLeft,
             Level = m.Def.Level, SpecialTimer = m.SpecialTimer, Id = m.Id, SummonedBy = m.SummonedBy, Raised = m.Raised,
             SplitHalf = m.SplitHalf,
         }).ToList(),
@@ -189,6 +189,7 @@ public sealed partial class GameEngine
             m.LastHitType = ms.LastHitType;
             m.LastSeen = ms.LastSeen;
             m.CalmLeft = ms.CalmLeft;
+            m.HushLeft = ms.HushLeft;
             m.FrenzyLeft = ms.FrenzyLeft;
             m.Awareness = ms.Awareness;
             m.SpecialTimer = ms.SpecialTimer;

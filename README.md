@@ -25,7 +25,7 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
   Skills grow with use and kills bring experience, with level-ups and perk trees.
 - **The bestiary.** 71 creatures in twelve families, plus wanderers, each drawn in code. Elites and named champions
   carry the 16 affixes, and six bosses guard the way down.
-- **Magic and loot.** 48 spells, and items with rarity, affixes, sets and uniques.
+- **Magic and loot.** 49 spells, and items with rarity, affixes, sets and uniques.
 - **Crafting.** Alchemy with hidden reagent effects, cooking, Smithing and Enchanting.
 - **Survival.** Food and water, and rests that can be interrupted.
 - **Waystones** after each boss, with a merchant, a trainer, a shrine and a stash.

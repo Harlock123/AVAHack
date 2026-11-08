@@ -130,7 +130,7 @@ public sealed partial class GameEngine
         // Summoners call up their kind every 12 s, three at a time at most.
         bool summoner = m.Def.Has("summoner") || m.Affixes.Contains("summoner");
         bool raiser = m.Def.Has("raises");
-        if (summoner || raiser)
+        if ((summoner || raiser) && m.HushLeft <= 0)
         {
             m.SpecialTimer += TickSeconds;
             if (m.SpecialTimer >= (raiser ? 15 : 12))
@@ -200,7 +200,7 @@ public sealed partial class GameEngine
         var s = SpawnNear(m, def, m.Cell);
         if (s is null) return null;
         s.SummonedBy = m.Id;
-        Say($"{m.Name} calls, and a {def.Name} answers.");
+        Say($"{m.Name} calls, and {("AEIOU".Contains(def.Name[0]) ? "an" : "a")} {def.Name} answers.");
         return s;
     }
 
@@ -334,6 +334,9 @@ public sealed partial class GameEngine
             case "lens":
                 LensTick(m, share);
                 break;
+            case "choir":
+                if (m.SpecialTimer >= 9) { m.SpecialTimer = 0; if (m.HushLeft <= 0) Sing(m); }
+                break;
             case "unmaker":
                 if (m.Phase == 0 && m.SpecialTimer >= 15) { m.SpecialTimer = 0; Summon(m, "unmadeHound", 2); }
                 if (m.Phase == 0 && share <= 2.0 / 3)
@@ -406,13 +409,78 @@ public sealed partial class GameEngine
             if (Party.AllDown) Die();
         }
         if (m.Boss == "crownNode") NodeDied(m);
-        if (m.Boss == "choir")
-        {
-            // A fallen singer returns in 10 s while another still sings.
-            m.SpecialTimer = 10;
-        }
+        if (m.Boss == "choir") ChoirFall(m);
         if (m.Boss == "unmaker") Win("The Unmaker comes apart into silence. The Knell stops. Harrowgate will wake.");
         else if (m.Boss is not null && m.Def.Id == Level.Boss) Say($"{m.Name} has fallen. The way down is open.");
+    }
+
+    // ---- The Hollow Choir (spec 12.5) ----
+
+    /// <summary>The singer whose turn it is to fall silent: the first in the carved order that isn't silent yet.</summary>
+    public Monster? ChoirNext => _monsters.Where(o => o.Boss == "choir" && !ChoirSilent(o)).MinBy(o => o.Phase);
+
+    /// <summary>Fallen for good: dead, and not waiting to rise.</summary>
+    private static bool ChoirSilent(Monster m) => m.State == MonsterState.Dead && m.SpecialTimer <= 0;
+
+    /// <summary>Each voice's song, every 9 s while it isn't hushed.</summary>
+    private void Sing(Monster m)
+    {
+        var others = _monsters.Where(o => o != m && o.Boss == "choir" && o.IsAlive).ToList();
+        switch (Array.IndexOf(Choir.Voices, m.Title))
+        {
+            case 0: // Warding
+                if (others.Count == 0) return;
+                foreach (var o in others) o.Ward = Math.Max(o.Ward, o.MaxHp / 6);
+                Say($"{m.Name} hums low, and a skin of force settles on the choir.");
+                break;
+            case 1: // Restoration
+                if (others.Where(o => o.Hp < o.MaxHp).MinBy(o => (double)o.Hp / o.MaxHp) is not { } hurt) return;
+                hurt.Hp = Math.Min(hurt.MaxHp, hurt.Hp + hurt.MaxHp / 4);
+                Say($"{m.Name} sings, and {hurt.Name} is mended.");
+                break;
+            case 2: // Destruction
+                if (m.Cell.Distance(PartyCell) > 6 || !HasLineOfSight(m.Cell, PartyCell)) return;
+                Say($"{m.Name} rises to a shriek, and the air catches fire!");
+                foreach (var c in Party.Standing.ToList())
+                {
+                    int dmg = (int)(Dice.Parse("3d6").Roll(Rng.Combat) * m.DamageFactor);
+                    if (c.Save(Rng.Combat, Rules.Attribute.Dex, 11 + m.Def.Level / 2)) dmg /= 2;
+                    HurtHero(c, dmg, DamageType.Fire);
+                }
+                if (Party.AllDown) Die();
+                break;
+            case 3: // Conjuration
+                Summon(m, LesserKin(m), 2);
+                break;
+            case 4: // Illusion
+                if (m.Cell.Distance(PartyCell) > 6 || Party.Standing.Where(c => !c.Conditions.Has(ConditionId.Frightened)).ToList() is not { Count: > 0 } calm) return;
+                var hero = calm[Rng.Combat.Next(calm.Count)];
+                if (!hero.Save(Rng.Combat, Rules.Attribute.Wis, 11 + m.Def.Level / 2))
+                {
+                    hero.ApplyCondition(ConditionId.Frightened, 11 + m.Def.Level / 2, 6);
+                    Say($"{m.Name} sings of something behind {hero.Name}.");
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// A singer falls. In its turn (the carving's order), or hushed, it is silent for good; out of turn it rises
+    /// 10 s later while another still sings.
+    /// </summary>
+    private void ChoirFall(Monster m)
+    {
+        bool inTurn = _monsters.Where(o => o != m && o.Boss == "choir" && !ChoirSilent(o)).All(o => o.Phase > m.Phase);
+        if (inTurn || m.HushLeft > 0)
+        {
+            m.SpecialTimer = 0;
+            Say(m.HushLeft > 0 ? $"Hushed, {m.Name} falls without a sound, and stays fallen." : $"{m.Name}'s note ends. It is silent.");
+            if (_monsters.Where(o => o.Boss == "choir").All(ChoirSilent))
+                Say("The Choir is silent. The note that held this place in shape is gone.");
+            return;
+        }
+        m.SpecialTimer = 10;
+        Say($"{m.Name} falls out of turn. The others hold its note.");
     }
 
     /// <summary>Things that happen across the level: the Choir's singers return.</summary>

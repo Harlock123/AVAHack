@@ -94,6 +94,8 @@ public sealed class Monster
     public double LastSeen { get; internal set; } = -100;
     /// <summary>Seconds left of Calm: it won't notice the party unless hurt.</summary>
     public double CalmLeft { get; internal set; }
+    /// <summary>Seconds left of Hush (spec 10.3): no song, spell, shot or summons, only its own hands.</summary>
+    public double HushLeft { get; internal set; }
     /// <summary>Seconds left of Frenzy: it fights its own side.</summary>
     public double FrenzyLeft { get; internal set; }
     /// <summary>Seconds left of the lunge after a blow lands.</summary>

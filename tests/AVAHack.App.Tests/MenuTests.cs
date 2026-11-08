@@ -112,6 +112,25 @@ public sealed class MenuTests
     }
 
     [AvaloniaFact]
+    public void A_hero_rolls_once_and_keeps_it()
+    {
+        var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));
+        Click(w, 640, 408); // Make a party
+        Click(w, 700, 662); // Heroic
+        var roll = v.DraftScores(0);
+        Click(w, 440, 662); // Point buy
+        Assert.Equal(15, v.DraftScores(0)[AVAHack.Rules.Attribute.Str]);
+        Click(w, 570, 662); // Roll 4d6: closed once the hero has rolled heroic
+        Assert.Equal(15, v.DraftScores(0)[AVAHack.Rules.Attribute.Str]);
+        Click(w, 700, 662); // Heroic again: the same roll, not a new one
+        Assert.All(Enum.GetValues<AVAHack.Rules.Attribute>(), a => Assert.Equal(roll[a], v.DraftScores(0)[a]));
+        Click(w, 803, 260); // another calling: the same scores, laid out again
+        var relaid = v.DraftScores(0);
+        Assert.Equal(Enum.GetValues<AVAHack.Rules.Attribute>().Select(a => roll[a]).Order(), Enum.GetValues<AVAHack.Rules.Attribute>().Select(a => relaid[a]).Order());
+        Shot(w, "create-kept");
+    }
+
+    [AvaloniaFact]
     public void A_heroic_hero_is_rolled_and_made()
     {
         var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));

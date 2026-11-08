@@ -220,8 +220,9 @@ gear and one **signature ability**. It does **not** restrict what the character 
 
 ### 5.3 Attributes
 
-Attributes are set by **point buy (27 points, scores 8–15)** or by **4d6, dropping the lowest**. The roll mode
-locks the result in and shows the rolls. Ancestry bonuses are added afterwards.
+Attributes are set by **point buy (27 points, scores 8–15)** or by **4d6, dropping the lowest**. Each hero rolls
+once, either way: the roll is kept for good, so going to point buy and back returns the same scores, and the
+other kind of roll is closed. Ancestry bonuses are added afterwards.
 
 **Heroic attributes** are the third way: 4d6 dropping the lowest, with any 1 rolled again, and a score under 10
 rolled again whole. Scores run 10–18 and average about 14 (4d6 averages about 12). They are laid out for the
@@ -2460,6 +2461,8 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
   would have taken from what the hero is good at, which the scores make up for; slower levels cost perks, HP and
   the attribute points of every 4th level instead. The advantage is largest at the start and narrows as the
   levels fall behind.
+- **One roll per hero.** Rolling again until the 18s came would make Heroic an easy mode, so each hero gets one
+  roll, 4d6 or heroic, and keeps it. Point buy stays open; choosing the roll again brings back the same scores.
 - **Laid out for the calling.** Heroic scores go best first to what the calling needs, as the standard array
   does; the 4d6 roll keeps its order, as before.
 - **A fair trade.** The 12-level Delve report with heroic quick-start parties (`AVAHACK_BALANCE_HEROIC=1`, rolled
@@ -2469,4 +2472,5 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
   one. Neither is in the 8 seeds the test suite plays.)
 - **Tests.** The roll (ones rolled again, a score under 10 rolled again, 10–18 averaging about 14); a heroic hero
   needing 125 XP for level 2 and keeping the flag through a save; creation refusing a heroic score under 10; and,
-  in the App, the Heroic button making a heroic fighter with Strength its best score.
+  in the App, the Heroic button making a heroic fighter with Strength its best score, and a hero's one roll
+  coming back after point buy, with 4d6 closed.

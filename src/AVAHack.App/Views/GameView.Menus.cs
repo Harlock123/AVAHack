@@ -86,6 +86,14 @@ public sealed partial class GameView
         public bool Heroic;
         public int[][]? Rolls;
 
+        // Each hero gets one roll, of either kind (spec 5.3). It is kept, so going to point buy and back costs
+        // nothing, but it can't be rolled again: rerolling until the 18s come would make Heroic an easy mode.
+        private AttributeSet? _kept;
+        private int[][]? _keptRolls;
+        private bool _keptHeroic;
+        public bool HasRolled => _kept is not null;
+        public bool KeptHeroic => _keptHeroic;
+
         private static readonly string[] Names = ["Brannoc", "Pell", "Ama", "Ithren", "Odo", "Sefa", "Kael", "Mirren", "Tova", "Ruun"];
 
         /// <summary>A sensible new hero: the standard array laid out for the calling's needs.</summary>
@@ -106,11 +114,29 @@ public sealed partial class GameView
         /// <summary>Heroic attributes (spec 5.3), laid out for the calling as the standard array is.</summary>
         public void RollHeroic(ContentDb db, Rng dice)
         {
+            if (HasRolled) { TakeRoll(db); return; }
             var (s, rolls) = AttributeGen.RollHeroic(dice);
-            Rolls = rolls;
-            Lay(db, Enum.GetValues<Attribute>().Select(a => s[a]).OrderDescending().ToArray());
-            Heroic = true;
-            Rolled = false;
+            (_kept, _keptRolls, _keptHeroic) = (s, rolls, true);
+            TakeRoll(db);
+        }
+
+        /// <summary>4d6, dropping the lowest, in order (spec 5.3).</summary>
+        public void Roll4d6(ContentDb db, Rng dice)
+        {
+            if (HasRolled) { TakeRoll(db); return; }
+            var (s, rolls) = AttributeGen.Roll4d6DropLowest(dice);
+            (_kept, _keptRolls, _keptHeroic) = (s, rolls, false);
+            TakeRoll(db);
+        }
+
+        /// <summary>Back to the hero's one roll.</summary>
+        private void TakeRoll(ContentDb db)
+        {
+            Rolls = _keptRolls;
+            Heroic = _keptHeroic;
+            Rolled = !_keptHeroic;
+            if (Heroic) Lay(db, Enum.GetValues<Attribute>().Select(a => _kept![a]).OrderDescending().ToArray());
+            else Scores = _kept!.Clone();
         }
 
         /// <summary>Scores, best first, to the attributes the calling needs most.</summary>
@@ -139,6 +165,9 @@ public sealed partial class GameView
     }
 
     private readonly List<HeroDraft> _drafts = new();
+
+    /// <summary>For tests: the scores the hero being made has now.</summary>
+    internal AttributeSet DraftScores(int i) => _drafts[i].Scores.Clone();
     private int _editing;
     private bool _typingName;
     private readonly Pcg32 _dice = new((ulong)Environment.TickCount64);
@@ -193,12 +222,14 @@ public sealed partial class GameView
             y += 36;
         }
         // Three ways to set them (spec 5.3). Heroic scores run 10–18, at the price of slower levels.
-        void Roll4d6() { var (s, rolls) = AttributeGen.Roll4d6DropLowest(_dice); hero.Scores = s; hero.Rolls = rolls; hero.Rolled = true; hero.Heroic = false; }
+        // Each hero rolls once, either way; the roll is kept and the other kind is closed.
         bool buying = !hero.Rolled && !hero.Heroic;
         Button(dc, new Rect(x, y + 6, 120, 36), "Point buy", () => hero.Standard(Content), selected: buying);
-        Button(dc, new Rect(x + 130, y + 6, 120, 36), "Roll 4d6", Roll4d6, selected: hero.Rolled);
-        Button(dc, new Rect(x + 260, y + 6, 120, 36), "Heroic", () => hero.RollHeroic(Content, _dice), selected: hero.Heroic);
-        if (!buying) Button(dc, new Rect(x + 390, y + 6, 110, 36), "Reroll", () => { if (hero.Heroic) hero.RollHeroic(Content, _dice); else Roll4d6(); });
+        Button(dc, new Rect(x + 130, y + 6, 120, 36), "Roll 4d6", () => hero.Roll4d6(Content, _dice), selected: hero.Rolled,
+            enabled: !hero.HasRolled || !hero.KeptHeroic);
+        Button(dc, new Rect(x + 260, y + 6, 120, 36), "Heroic", () => hero.RollHeroic(Content, _dice), selected: hero.Heroic,
+            enabled: !hero.HasRolled || hero.KeptHeroic);
+        DrawText(dc, hero.HasRolled ? "Rolled: kept for good." : "One roll per hero.", x + 392, y + 16, 13, Dim);
 
         // The preview.
         double px = 900, py = 330;

@@ -86,6 +86,8 @@ public sealed class ContentTests
             "works" => r with { Families = ["oozes", "dragons"] },
             "choir" => r with { Boss = "cellarRat" },
             "stacks" => r with { Final = true },
+            "rootdark" => r with { PackMax = 1 },
+            "glass" => r with { MaxLevel = 0 },
             _ => r,
         }).ToList();
         var broken = new ContentDb(db.Skills, db.Ancestries, db.Callings, db.Backgrounds, db.Perks, db.Conditions)
@@ -94,5 +96,7 @@ public sealed class ContentTests
         Assert.Contains("family 'dragons', which has no creatures", problems);
         Assert.Contains("boss 'cellarRat' is not a boss creature", problems);
         Assert.Contains("exactly one region must be final", problems);
+        Assert.Contains("'rootdark' has packMax 1", problems);
+        Assert.Contains("'glass' has maxLevel 0", problems);
     }
 }

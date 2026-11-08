@@ -186,6 +186,9 @@ public sealed record RegionDef
     public int Rifts { get; init; }
     /// <summary>The most creatures in a pack here (packs are 2 to this; 4 unless set).</summary>
     public int PackMax { get; init; } = 4;
+    /// <summary>The highest level its creatures are made at, however deep the region lies (none unless set). The
+    /// Unmade Heart's creatures are made for a 12-level Delve; below a 24-level one they'd outgrow everything else.</summary>
+    public int? MaxLevel { get; init; }
     /// <summary>The share of room walls of polished black glass (only the look).</summary>
     public double MirrorWalls { get; init; }
     public bool Final { get; init; }

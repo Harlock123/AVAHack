@@ -190,7 +190,7 @@ public sealed partial class GameEngine
         string id = table[^1].Id;
         foreach (var t in table) if ((r -= t.Weight) < 0) { id = t.Id; break; }
         var def = Content.Creature(id);
-        int lvl = Math.Max(1, (int)(Level.Depth * 1.6));
+        int lvl = Math.Min(Region.MaxLevel ?? int.MaxValue, Math.Max(1, (int)(Level.Depth * 1.6)));
         if (lvl > def.Level) def = Bestiary.Scale(def, lvl);
         var m = AddMonster(def, spots[Rng.Ai.Next(spots.Count)], Dir.North);
         ApplyDifficulty(m);

@@ -65,6 +65,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
 
     private Level? _level;
 
+    /// <summary>What the bot last decided, for the trace.</summary>
+    public string Why { get; private set; } = "";
+
     public void Think()
     {
         if (g.Mode != GameMode.Playing) return;
@@ -82,6 +85,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             _searched.Clear();
             _usedStone = false;
             _prey = null;                                                               // what it hunted is on the level above
+            _sealing = null;
         }
         if (Clears)
             foreach (var c in g.Party.Members.Where(c => !c.IsDead)) ProgressionReport.Spend(c);
@@ -102,7 +106,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                                                (GameAction.StepForward, g.Facing), (GameAction.StepBack, g.Facing.Opposite()) })
             {
                 var to = g.PartyCell.Step(way);
-                if (Walkable(to) && !g.InBeam(to) && !g.MonstersAt(to).Any() && !g.Level.Traps.Any(t => t.Cell == to && t.Armed && t.Cyclic)) { g.Press(act); return; }
+                // Off the blades, only to a cell it can still fight from: stepping out of reach just brings it back on.
+                bool fights = !onCycle || Enum.GetValues<Dir>().Any(d => g.MonstersAt(to.Step(d)).Any(m => !m.Ally));
+                if (fights && Walkable(to) && !g.InBeam(to) && !g.MonstersAt(to).Any() && !g.Level.Traps.Any(t => t.Cell == to && t.Armed && t.Cyclic)) { g.Press(act); return; }
             }
         }
 
@@ -179,13 +185,14 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             // A hurt that won't mend (a disease, hunger) is no reason to wait forever.
             if (!_resting || worst > _restWorst + 0.01) { _restWorst = worst; _restSince = g.Time; }
             _resting = true;
-            if (g.Time - _restSince < 60) return;
+            if (g.Time - _restSince < 60) { Why = $"resting {worst:F2}"; return; }
         }
         else _resting = false;
 
-        if (g.IsMoving || g.Queued > 0) return;
+        if (g.IsMoving || g.Queued > 0) { Why = "moving"; return; }
         var (target, face, use) = NextObjective();
-        if (target is not { } t) return;
+        if (target is not { } t) { Why = "no target"; return; }
+        Why = $"{Goal} {t} from {g.PartyCell}";
         if (Clears && Goal != "stairs")
         {
             // Two minutes after the last thing done (a kill, a chest, a pickup, a lever), give up on the current target.
@@ -211,7 +218,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         }
         // Round creatures where there's a way round (Clears); through them, fighting, where there isn't.
         var step = (Clears ? PathStep(t, roundFoes: true) : null) ?? PathStep(t) ?? PathStep(t, braveTraps: true);
-        if (step is not { } dir) return;
+        if (step is not { } dir) { Why += " no path"; return; }
+        Why += $" step {dir}";
         var next = g.PartyCell.Step(dir);
         if (dir != g.Facing) { g.Press(TurnToward(g.Facing, dir)); return; }
         // A spotted trap in the only way through: try to disarm it a few times, then go through anyway.
@@ -227,7 +235,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         if (g.Level.Traps.FirstOrDefault(tr => tr.Cell == next && tr.Armed && tr.Cyclic) is { } cyc)
         {
             double cycle = cyc.Kind == TrapKind.SpikeFloor ? GameEngine.SpikeCycle : GameEngine.BladeCycle;
-            if (cyc.Timer % cycle > (cyc.Kind == TrapKind.SpikeFloor ? 0.5 : 0.6)) return;
+            if (cyc.Timer % cycle > (cyc.Kind == TrapKind.SpikeFloor ? 0.5 : 0.6)) { Why += " waits on a trap"; return; }
         }
         // A root tangle: hack through it. A whole pod ahead bursts as the party comes up to it; wait for the cloud.
         if (g.RootsStand(next)) { g.Press(GameAction.Use); return; }
@@ -300,8 +308,12 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                 if (Beside(w) is { } at) return (at.Cell, at.Face, null);
             }
             // An open rift nearby: seal it before more of the Unmade come through, as a player would.
-            foreach (var (rift, _) in g.Level.Stations.Where(s => s.Value == "rift" && g.RiftOpen(s.Key) && s.Key.Distance(g.PartyCell) <= GameEngine.RiftReach + 2).OrderBy(s => s.Key.Distance(g.PartyCell)))
-                if (Beside(rift) is { } at && !Gave("seal", at.Cell)) { Goal = "seal"; return (at.Cell, at.Face, null); }
+            // Once it sets out for one, it keeps going even where the way round takes it further off, or it would
+            // turn back at the edge of that reach for whatever lies nearer.
+            foreach (var (rift, _) in g.Level.Stations.Where(s => s.Value == "rift" && g.RiftOpen(s.Key) && (s.Key == _sealing || s.Key.Distance(g.PartyCell) <= GameEngine.RiftReach + 2))
+                         .OrderBy(s => s.Key == _sealing ? 0 : 1).ThenBy(s => s.Key.Distance(g.PartyCell)))
+                if (Beside(rift) is { } at && !Gave("seal", at.Cell)) { Goal = "seal"; _sealing = rift; return (at.Cell, at.Face, null); }
+            _sealing = null;
             // The nearest living creature (the boss last: it seals the stairs and wakes when the party nears).
             // Stick with the creature it was after until it falls or the bot gives up on it.
             // A creature that calls up more of its kind or raises the dead goes first, as a player would take it.
@@ -471,6 +483,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     /// <summary>A living node of the Mycel Crown the bot can get to.</summary>
     private Monster? Node() => g.Monsters.FirstOrDefault(m => m.Boss == "crownNode" && m.IsAlive && !_gaveUp.Contains(m) && Reachable(m.Cell));
     private Monster? _prey;
+    private Cell? _sealing;                                                             // the rift it set out to seal
     private bool _wasInBeam, _dodgeBeam;
 
     /// <summary>For the reports: what the bot is after, where, and in what state.</summary>

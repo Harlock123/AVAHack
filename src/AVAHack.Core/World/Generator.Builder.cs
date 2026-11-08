@@ -776,7 +776,7 @@ public static partial class Generator
                 }
         }
 
-        private int MonsterLevel() => Math.Max(1, (int)(depth * 1.6)) + Roll(2);
+        private int MonsterLevel() => Math.Min(Region.MaxLevel ?? int.MaxValue, Math.Max(1, (int)(depth * 1.6)) + Roll(2));
 
         private string Weighted(IReadOnlyList<(string Id, double Weight)> table)
         {

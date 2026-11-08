@@ -41,6 +41,8 @@ public sealed class DelveReport(ITestOutputHelper output)
         string? traceFile = Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE") == code ? Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE_FILE") : null;
         double stuckSince = g.Time;
         int lastDepth = d.Depth;
+        int traced = 0;
+        string lastWhy = "";
         while (g.Mode == GameMode.Playing && g.Time < limitMinutes * 60)
         {
             bot.Think();
@@ -57,6 +59,9 @@ public sealed class DelveReport(ITestOutputHelper output)
                 }
                 if (traceFile is not null) File.AppendAllText(traceFile, Trace(g, d.Depth, $"ARRIVE goal {bot.Goal}"));
             }
+            // Stuck a while: write down each new thing the bot decides, a few hundred of them.
+            if (traceFile is not null && g.Time - stuckSince > 10 * 60 && bot.Why != lastWhy && bot.Why != "moving" && traced++ < 300)
+                File.AppendAllText(traceFile, $"{g.Time / 60:F2} min at {g.PartyCell} facing {g.Facing}: {lastWhy = bot.Why}\n");
             if (g.Time - stuckSince > (clears ? 40 : 15) * 60) break; // that long on one level: call it stuck
         }
         if (traceFile is not null) File.AppendAllText(traceFile, Trace(g, d.Depth, $"END goal {bot.Goal}") + bot.ReachMap());
@@ -65,7 +70,7 @@ public sealed class DelveReport(ITestOutputHelper output)
             note += " | " + string.Join("; ", g.Party.Members.Select(m => $"{m.Name} L{m.Level} {m.MaxHp}hp AC{m.ArmourClass} " +
                 string.Join(",", Enum.GetValues<SkillId>().OrderByDescending(m.Rank).Take(3).Select(s => $"{s}{m.Rank(s)}"))))
                 + $" | hurt by {string.Join(", ", struck.OrderByDescending(x => x.Value).Take(5).Select(x => $"{x.Key} {x.Value}"))}"
-                + $" | boss {g.LivingBoss?.Name} {bot.NodeReport} {bot.PreyReport} | about: {string.Join(", ", g.Monsters.Where(m => m.IsAlive && !m.Ally && m.IsAware && m.Cell.Distance(g.PartyCell) <= 8).Select(m => $"{m.Name}({m.Def.Level},{m.Hp:F0}hp)"))} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
+                + $" | boss {g.LivingBoss?.Name} {g.LivingBoss?.Hp:F0}/{g.LivingBoss?.MaxHp:F0} {bot.NodeReport} {bot.PreyReport} | about: {string.Join(", ", g.Monsters.Where(m => m.IsAlive && !m.Ally && m.IsAware && m.Cell.Distance(g.PartyCell) <= 8).Select(m => $"{m.Name}({m.Def.Level},{m.Hp:F0}hp)"))} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
         return new Run(code, g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
     }
 
@@ -79,6 +84,9 @@ public sealed class DelveReport(ITestOutputHelper output)
         foreach (var (pc, items) in l.Piles) sb.Append($"pile {pc}: {string.Join(",", items.Select(i => i.KeyId ?? i.BaseId))}\n");
         foreach (var v in l.Levers) sb.Append($"lever {v.Cell} down {v.Down} -> {string.Join(",", v.Targets.Select(t => $"{t}:{l.DoorAt(t)?.Open}"))}\n");
         foreach (var p in l.Plates) sb.Append($"plate {p.Cell} {p.Mode} pressed {p.Pressed} -> {string.Join(",", p.Targets.Select(t => $"{t}:{l.DoorAt(t)?.Open}"))}\n");
+        foreach (var (c, kind) in l.Stations) sb.Append($"station {c} {kind}{(g.IsRift(c) ? $" open {g.RiftOpen(c)}" : "")}\n");
+        foreach (var t in l.Traps.Where(t => t.Cell.Distance(g.PartyCell) <= 8)) sb.Append($"trap {t.Cell} {t.Kind} spotted {t.Spotted} armed {t.Armed}\n");
+        sb.Append($"facing {g.Facing}; last said: {string.Join(" / ", g.Log.TakeLast(6))}\n");
         for (int y = 0; y < l.Height; y++)
         {
             for (int x = 0; x < l.Width; x++)
@@ -213,5 +221,50 @@ public sealed class DelveReport(ITestOutputHelper output)
         output.WriteLine($"through the Glass Roads: {results.Count(x => x.Run.Depth >= 25 || x.Run.Mode == GameMode.Won)}/{results.Count}; " +
                          $"won {results.Count(x => x.Run.Mode == GameMode.Won)}; average depth {results.Average(x => x.Run.Depth):F1}; " +
                          $"deaths by level {string.Join(", ", results.Where(x => x.Run.Mode == GameMode.Dead).GroupBy(x => x.Run.Depth).OrderBy(gr => gr.Key).Select(gr => $"{gr.Key}: {gr.Count()}"))}");
+    }
+
+    /// <summary>
+    /// Opt-in (AVAHACK_BALANCE_HEART=1): the Unmade Heart on its own. The parties kept at level 21
+    /// (AVAHACK_BALANCE_PARTIES) play the Glass Roads on AVAHACK_BALANCE_SEEDS seeds (4), and those that come down
+    /// the last stairs are kept in AVAHACK_BALANCE_HEART_PARTIES, if it's set; later runs start from them. Each plays
+    /// the Heart of AVAHACK_BALANCE_HEART_SEEDS other seeds (3). For the balance work in spec section 39.
+    /// </summary>
+    [Fact]
+    public void The_Unmade_Heart()
+    {
+        if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_HEART") != "1") return;
+        int seeds = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_SEEDS"), out int k) ? k : 4;
+        int heartSeeds = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_HEART_SEEDS"), out int h) ? h : 3;
+        var json = SnapshotJson;
+        static IEnumerable<(string From, Snapshot Party)> Load(string? folder, System.Text.Json.JsonSerializerOptions json) =>
+            folder is null || !Directory.Exists(folder) ? [] :
+            Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal)
+                .Select(f => (Path.GetFileNameWithoutExtension(f), System.Text.Json.JsonSerializer.Deserialize<Snapshot>(File.ReadAllText(f), json)!));
+        string? keep = Environment.GetEnvironmentVariable("AVAHACK_BALANCE_HEART_PARTIES");
+        var parties = Load(keep, json).ToList();
+        if (parties.Count == 0)
+        {
+            var glass = Load(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_PARTIES"), json).ToList();
+            Assert.True(glass.Count > 0, "set AVAHACK_BALANCE_PARTIES to the parties kept at level 21 by The_Glass_Roads_from_level_21");
+            var arrived = new System.Collections.Concurrent.ConcurrentBag<(string From, Snapshot Party)>();
+            glass.SelectMany(p => Enumerable.Range(1, seeds).Select(j => (p.From, Seed: (ulong)j * 6151, p.Party))).AsParallel()
+                .ForAll(x => Play(x.Seed, 24, 24 * 60, clears: true, party: x.Party, from: 21, stopAt: 25,
+                    arrived: s => arrived.Add(($"{x.From}-{DelveOptions.Code(x.Seed)}", s))));
+            parties = arrived.OrderBy(p => p.From, StringComparer.Ordinal).ToList();
+            if (keep is not null)
+            {
+                Directory.CreateDirectory(keep);
+                foreach (var (from, p) in parties) File.WriteAllText(Path.Combine(keep, from + ".json"), System.Text.Json.JsonSerializer.Serialize(p, json));
+            }
+        }
+        output.WriteLine($"{parties.Count} parties came down to the Unmade Heart");
+        var results = parties.SelectMany(p => Enumerable.Range(1, heartSeeds).Select(j => (p.From, Seed: (ulong)j * 4099, p.Party)))
+            .AsParallel().Select(x => (x.From, Run: Play(x.Seed, 24, 24 * 60, clears: true, party: x.Party, from: 25)))
+            .OrderBy(x => x.From, StringComparer.Ordinal).ThenBy(x => x.Run.Seed, StringComparer.Ordinal).ToList();
+        foreach (var (from, r) in results)
+            output.WriteLine($"{from} on {r.Seed}: {r.Mode,-7} {r.Minutes,6:F1} min  kills {r.Kills,4}  heroes at level {r.Level,2}  {r.Note}");
+        if (results.Count == 0) return;
+        output.WriteLine($"won the Heart: {results.Count(x => x.Run.Mode == GameMode.Won)}/{results.Count}; fell {results.Count(x => x.Run.Mode == GameMode.Dead)}; " +
+                         $"stuck {results.Count(x => x.Run.Mode == GameMode.Playing)}");
     }
 }

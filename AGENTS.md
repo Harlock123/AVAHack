@@ -119,7 +119,8 @@ implicit usings, invariant globalization and central package versions. Package v
     - `DelveReport`: 4-level and 12-level Delves. `AVAHACK_BALANCE_RUNS` sets the seeds and `AVAHACK_BALANCE_DEBUG=1`
       adds the heroes' skills. To see why one seed gets stuck, set `AVAHACK_BALANCE_TRACE=<seed code>` and
       `AVAHACK_BALANCE_TRACE_FILE=<path>`: it writes a map of each level. `AVAHACK_BALANCE_DEEP=1` adds the 24-level
-      Delve, and `AVAHACK_BALANCE_GLASS=1` the Glass Roads on their own, from parties that reached level 21.
+      Delve, `AVAHACK_BALANCE_GLASS=1` the Glass Roads on their own, from parties that reached level 21, and
+      `AVAHACK_BALANCE_HEART=1` the Unmade Heart on its own, from parties that came down to it.
   - `Bot` plays like a fallible person. With `Clears` it clears each level first (hunting, looting, Waystones,
     valves, locks, searching), as the 12-level report needs.
 - `tests/AVAHack.Render.Tests`:

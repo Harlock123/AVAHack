@@ -2412,3 +2412,33 @@ families, rules and boss.
   - Its beam hitting a party in line, and missing one that stepped aside.
   - It shedding shards at half health.
   - A golden of a Glass Roads hall, and `Images/AVAHack-glass.png`.
+
+## 40. Implementation decisions (the Unmade Heart below a 24-level Delve)
+
+The Heart's creatures (the Unmade and the aberrations) are made for the Heart of a 12-level Delve, at level 20–21.
+Below a 24-level Delve they were made at level 40 instead, scaled up from levels 7–18, and scaling that far
+outgrows the deep regions' own creatures, which are made near their depth. An Unmade Hound had 670 hit points, AC
+25 and +21 to hit; a Glass Roads shardling has 230, AC 20 and +13.
+
+- **The report.** `AVAHACK_BALANCE_HEART=1` plays the Heart on its own. The parties kept at level 21 (section 39)
+  play the Glass Roads; those that come down the last stairs are kept in `AVAHACK_BALANCE_HEART_PARTIES`, and each
+  plays the Heart of three other seeds.
+- **Before:** 0 of 42 won. Every party fell within ten minutes, and none touched the Unmaker.
+- **A ceiling.** A new region field, `maxLevel`, is the highest level its creatures are made at, however deep the
+  region lies (wanderers during a rest too). The Heart's is 28; it is out of reach below a 12-level Delve, so that
+  Heart is unchanged. Its packs are 2 to 3 (`packMax`, section 39). The Unmaker keeps its own level, the depth + 1.
+- **Choosing 28.** At a ceiling of 30 the bot won 11 of 42; at 28, 18 of 42 (43%); at 27, 36 of 42. With 54% of
+  parties through the Glass Roads, about one 24-level Delve in four is won, where a 12-level Delve is won about
+  half the time. Tendril Horrors, Unmade Hounds and Eye Moth Swarms still do most of the harm. Most parties that
+  fall do so before they reach the Unmaker, and quickly (half within three minutes).
+- **Two bot stalls, fixed.**
+  - Setting out for a rift that lay just inside its reach, the bot's way round took it out of that reach, and it
+    turned back for a pile of loot nearer by; there the rift was back in reach. It went to and fro for ever. Once it
+    sets out for a rift, it keeps on until it's sealed.
+  - Fighting on spikes, it stepped off them to a cell from which it couldn't reach the creature, then stepped
+    back on to get at it. It steps off only to a cell it can still fight from.
+- **The trace** (`AVAHACK_BALANCE_TRACE`) also lists the level's rifts, the traps near the party and the last things
+  said, and, once a run has been stuck ten minutes, each new decision the bot makes (`Bot.Why`).
+- **Results**, the Glass Roads after the fixes: 14 of 24 through and none stuck (was 13, with two stuck).
+- **Tests.** The Heart's creatures are level 28 below a 24-level Delve and 20–21 below a 12-level one. The validator
+  rejects a `packMax` under 2 and a `maxLevel` under 1.

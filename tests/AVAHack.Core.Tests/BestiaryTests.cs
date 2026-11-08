@@ -385,6 +385,22 @@ public sealed class BestiaryTests
         Assert.Contains(back.Engine.Monsters, m => m.Boss == "unmaker");
     }
 
+    [Fact]
+    public void The_Hearts_creatures_stop_at_level_28_below_a_long_Delve()
+    {
+        var heart = Db.Region("heart");
+        Assert.Equal(28, heart.MaxLevel);
+        Assert.Equal(3, heart.PackMax);
+        Assert.Null(Db.Region("glass").MaxLevel);                                       // no other region has a ceiling
+        static List<int> Levels(int depth, int maxDepth) => Enumerable.Range(1, 12)
+            .SelectMany(i => Generator.Generate(Db, (ulong)i * 613, depth, new GenOptions { MaxDepth = maxDepth }).Spawns)
+            .Where(s => Db.Creature(s.Creature).Boss is null).Select(s => s.Level ?? 0).ToList();
+        // Below a 24-level Delve they'd be made at level 40, far above the Glass Roads' own creatures: 28 at most.
+        Assert.All(Levels(25, 24), l => Assert.Equal(28, l));
+        // Below a 12-level Delve the ceiling is out of reach: depth × 1.6, as everywhere else.
+        Assert.All(Levels(13, 12), l => Assert.InRange(l, 20, 21));
+    }
+
     // ---- Waystones ----
 
     private static GameEngine AtStone()

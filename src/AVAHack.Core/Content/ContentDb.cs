@@ -198,6 +198,7 @@ public sealed class ContentDb
             foreach (var f in r.Families) if (!families.Contains(f)) p.Add($"regions: '{r.Id}' sends family '{f}', which has no creatures.");
             if (r.Boss is { } b && Creatures.FirstOrDefault(c => c.Id == b) is not { Boss: not null }) p.Add($"regions: '{r.Id}''s boss '{b}' is not a boss creature.");
             if (r.Wanderers < 0 || r.ForgeOneIn < 0) p.Add($"regions: '{r.Id}' has a negative rate.");
+            if (r.MaxLevel is < 1) p.Add($"regions: '{r.Id}' has maxLevel {r.MaxLevel}; a creature is at least level 1.");
             if (r.PackMax < 2) p.Add($"regions: '{r.Id}' has packMax {r.PackMax}; a pack is at least 2.");
         }
         Unique(Skills, s => s.Id.ToString(), "skills");

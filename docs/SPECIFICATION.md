@@ -222,7 +222,7 @@ gear and one **signature ability**. It does **not** restrict what the character 
 
 Attributes are set by **point buy (27 points, scores 8–15)** or by **4d6, dropping the lowest**. Each hero rolls
 once, either way: the roll is kept for good, so going to point buy and back returns the same scores, and the
-other kind of roll is closed. Ancestry bonuses are added afterwards.
+other kind of roll is closed. Any two rolled scores can swap places (click Swap on one, then on the other). Ancestry bonuses are added afterwards.
 
 **Heroic attributes** are the third way: 4d6 dropping the lowest, with any 1 rolled again, and a score under 10
 rolled again whole. Scores run 10–18 and average about 14 (4d6 averages about 12). They are laid out for the
@@ -2464,7 +2464,9 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
 - **One roll per hero.** Rolling again until the 18s came would make Heroic an easy mode, so each hero gets one
   roll, 4d6 or heroic, and keeps it. Point buy stays open; choosing the roll again brings back the same scores.
 - **Laid out for the calling.** Heroic scores go best first to what the calling needs, as the standard array
-  does; the 4d6 roll keeps its order, as before.
+  does; the 4d6 roll keeps its order. Either can then have two scores swapped, as often as the player likes; the
+  4d6 roll keeps its swaps through point buy and back, and heroic scores are laid out again when the calling
+  changes.
 - **A fair trade.** The 12-level Delve report with heroic quick-start parties (`AVAHACK_BALANCE_HEROIC=1`, rolled
   from the seed and laid out by the quick-start heroes' own scores), on 16 seeds: normal parties won 10, heroic
   ones 9. The heroic winners ended at level 21–22, the normal ones at 23–26. A quarter more XP is the price.

@@ -129,6 +129,13 @@ public sealed partial class GameView
             TakeRoll(db);
         }
 
+        /// <summary>Swaps two rolled scores (spec 5.3). A 4d6 roll keeps the swap if the hero goes to point buy and back.</summary>
+        public void Swap(Attribute a, Attribute b)
+        {
+            (Scores[a], Scores[b]) = (Scores[b], Scores[a]);
+            if (Rolled && _kept is not null) (_kept[a], _kept[b]) = (_kept[b], _kept[a]);
+        }
+
         /// <summary>Back to the hero's one roll.</summary>
         private void TakeRoll(ContentDb db)
         {
@@ -169,6 +176,7 @@ public sealed partial class GameView
     /// <summary>For tests: the scores the hero being made has now.</summary>
     internal AttributeSet DraftScores(int i) => _drafts[i].Scores.Clone();
     private int _editing;
+    private Attribute? _swapFrom;                                                       // the first of two rolled scores to swap
     private bool _typingName;
     private readonly Pcg32 _dice = new((ulong)Environment.TickCount64);
 
@@ -184,7 +192,7 @@ public sealed partial class GameView
             int k = i;
             var d = _drafts[i];
             string label = $"{(string.IsNullOrWhiteSpace(d.Name) ? "Nameless" : d.Name)}\n{Content.Ancestries[d.Ancestry].Name} {Content.Callings[d.Calling].Name}";
-            Button(dc, new Rect(40, 110 + i * 84, 280, 72), label, () => { _editing = k; _typingName = false; }, selected: i == _editing, size: 15);
+            Button(dc, new Rect(40, 110 + i * 84, 280, 72), label, () => { _editing = k; _typingName = false; _swapFrom = null; }, selected: i == _editing, size: 15);
         }
         if (_drafts.Count < 4) Button(dc, new Rect(40, 110 + _drafts.Count * 84, 280, 44), "+ Add a hero", () => { _drafts.Add(HeroDraft.For(Content, _drafts.Count)); _editing = _drafts.Count - 1; });
         if (_drafts.Count > 1) Button(dc, new Rect(40, 470, 280, 40), "Remove this hero", () => { _drafts.RemoveAt(_editing); _editing = Math.Max(0, _editing - 1); });
@@ -207,6 +215,7 @@ public sealed partial class GameView
                    : hero.Rolled ? "Attributes (rolled: 4d6, drop the lowest)"
                    : $"Attributes (point buy: {AttributeGen.PointBuyBudget - AttributeGen.PointsSpent(hero.Scores)} points left)", x, y, 15, Gold, face: Bold);
         y += 30;
+        if (!hero.Rolled && !hero.Heroic) _swapFrom = null;
         var preview = Safe(() => hero.Build(Content));
         foreach (var a in Enum.GetValues<Attribute>())
         {
@@ -214,7 +223,17 @@ public sealed partial class GameView
             DrawText(dc, attr.ToString().ToUpperInvariant(), x, y + 4, 15, Parchment, face: Bold);
             int final = preview?.Score(attr) ?? hero.Scores[attr];
             DrawText(dc, $"{hero.Scores[attr]} → {final} ({AttributeSet.Modifier(final):+0;-0;0})", x + 60, y + 4, 15, Parchment);
-            if (!hero.Rolled && !hero.Heroic)
+            if (hero.Rolled || hero.Heroic)
+            {
+                // A rolled score can trade places with another: click one, then the other.
+                bool from = _swapFrom == attr;
+                Button(dc, new Rect(x + 200, y, 74, 30), from ? "Cancel" : _swapFrom is null ? "Swap" : "Here", () =>
+                {
+                    if (_swapFrom is { } first && first != attr) hero.Swap(first, attr);
+                    _swapFrom = _swapFrom is null ? attr : null;
+                }, selected: from, size: 13);
+            }
+            else
             {
                 Button(dc, new Rect(x + 200, y, 34, 30), "−", () => Nudge(hero, attr, -1), enabled: hero.Scores[attr] > AttributeGen.PointBuyMin);
                 Button(dc, new Rect(x + 240, y, 34, 30), "+", () => Nudge(hero, attr, +1), enabled: hero.Scores[attr] < AttributeGen.PointBuyMax && CanAfford(hero, attr));

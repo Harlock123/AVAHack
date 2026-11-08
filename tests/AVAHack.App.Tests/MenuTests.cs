@@ -131,6 +131,24 @@ public sealed class MenuTests
     }
 
     [AvaloniaFact]
+    public void Rolled_scores_can_be_swapped()
+    {
+        var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));
+        Click(w, 640, 408); // Make a party
+        Click(w, 570, 662); // Roll 4d6
+        var roll = v.DraftScores(0);
+        Click(w, 617, 435); // Swap on STR
+        Click(w, 617, 543); // Here on INT
+        var swapped = v.DraftScores(0);
+        Assert.Equal(roll[AVAHack.Rules.Attribute.Int], swapped[AVAHack.Rules.Attribute.Str]);
+        Assert.Equal(roll[AVAHack.Rules.Attribute.Str], swapped[AVAHack.Rules.Attribute.Int]);
+        Shot(w, "create-swap");
+        Click(w, 440, 662); // Point buy
+        Click(w, 570, 662); // the roll again: with the swap kept
+        Assert.Equal(roll[AVAHack.Rules.Attribute.Int], v.DraftScores(0)[AVAHack.Rules.Attribute.Str]);
+    }
+
+    [AvaloniaFact]
     public void A_heroic_hero_is_rolled_and_made()
     {
         var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));

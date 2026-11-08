@@ -175,7 +175,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (use is { } lever) { g.Press(GameAction.Use); _pulled.Add(lever); _pulledAt[lever] = g.Time; }
             if (Goal == "key") MakeRoom();
             if (Goal is "key" or "loot") { g.Press(GameAction.PickUp); _looted.Add(t); }
-            if (Goal is "chest" or "snuff") g.Press(GameAction.Use);
+            if (Goal is "chest" or "snuff" or "seal") g.Press(GameAction.Use);
             if (Goal == "waystone") UseStone();
             if (Goal == "search" && face is { } wf)
             {
@@ -273,8 +273,15 @@ internal sealed class Bot(GameEngine g, int seed = 1)
                 if (g.AtWaystone) return (g.PartyCell, null, null);
                 if (Beside(w) is { } at) return (at.Cell, at.Face, null);
             }
+            // An open rift nearby: seal it before more of the Unmade come through, as a player would.
+            foreach (var (rift, _) in g.Level.Stations.Where(s => s.Value == "rift" && g.RiftOpen(s.Key) && s.Key.Distance(g.PartyCell) <= GameEngine.RiftReach + 2).OrderBy(s => s.Key.Distance(g.PartyCell)))
+                if (Beside(rift) is { } at && !Gave("seal", at.Cell)) { Goal = "seal"; return (at.Cell, at.Face, null); }
             // The nearest living creature (the boss last: it seals the stairs and wakes when the party nears).
             // Stick with the creature it was after until it falls or the bot gives up on it.
+            // A creature that calls up more of its kind or raises the dead goes first, as a player would take it.
+            if (_prey is not { IsAlive: true } prey || !Calls(prey))
+                if (g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null && m.IsAware && Calls(m) && m.Cell.Distance(g.PartyCell) <= 8 && !_gaveUp.Contains(m) && Reachable(m.Cell))
+                        .MinBy(m => m.Cell.Distance(g.PartyCell)) is { } caller) { Goal = "hunt"; _prey = caller; return (caller.Cell, null, null); }
             if (_prey is { IsAlive: true } p && !_gaveUp.Contains(p) && Reachable(p.Cell)) { Goal = "hunt"; return (p.Cell, null, null); }
             var foe = g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null or "crownNode" && !_gaveUp.Contains(m) && Reachable(m.Cell))
                        .MinBy(m => m.Cell.Distance(g.PartyCell));
@@ -424,6 +431,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     private Lever? OpenValve() =>
         g.Level.Levers.FirstOrDefault(l => g.Level.Valves.Contains(l.Cell) && !l.Down && !Gave("valve", l.Cell) && Reachable(l.Cell));
 
+    private static bool Calls(Monster m) => m.Def.Has("summoner") || m.Def.Has("raises") || m.Affixes.Contains("summoner");
+
     private bool Gave(string goal, Cell c) => _gaveUp.Contains((goal, c));
 
     /// <summary>For the reports: each node of the Crown, alive or not, reachable, given up on.</summary>
@@ -433,6 +442,11 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     /// <summary>A living node of the Mycel Crown the bot can get to.</summary>
     private Monster? Node() => g.Monsters.FirstOrDefault(m => m.Boss == "crownNode" && m.IsAlive && !_gaveUp.Contains(m) && Reachable(m.Cell));
     private Monster? _prey;
+
+    /// <summary>For the reports: what the bot is after, where, and in what state.</summary>
+    public string PreyReport => _prey is { } p
+        ? $"prey {p.Def.Id}@{p.Cell} {p.Hp:F0}hp {p.State}{(p.IsAlive ? "" : " dead")}{(_gaveUp.Contains(p) ? " gaveup" : "")}{(Reachable(p.Cell) ? "" : " unreachable")} gaveup {_gaveUp.Count}"
+        : "";
 
     private bool Reachable(Cell c) => c == g.PartyCell || PathStep(c) is not null || PathStep(c, braveTraps: true) is not null;
 

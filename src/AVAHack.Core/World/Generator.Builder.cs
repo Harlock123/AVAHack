@@ -895,6 +895,9 @@ public static partial class Generator
             if (_waystone is { } ws) blocked.Add(ws);
             blocked.UnionWith(_stations.Where(s => s.Value is not ("roots" or "pod")).Select(s => s.Key)); // tangles are cut, pods burst
             if (avoid is { } a) blocked.Add(a);
+            // A teleporter's sigil can't be counted on to be disarmed deep down (its DC grows with depth): there must be
+            // a way round it.
+            blocked.UnionWith(_traps.Where(t => t.Kind == TrapKind.Teleporter).Select(t => t.Cell));
             HashSet<Cell> reach = [];
             bool grew = true;
             while (grew)

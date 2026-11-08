@@ -2293,23 +2293,23 @@ The last new region, levels 21–24, between the Rootdark and the Unmade Heart. 
 families, rules and boss.
 
 - **Two new families**, six creatures each:
-  - **The Shardborn**, glass the Unmade's breaking-through left alive. Glass resists slashing and piercing, takes
-    double from bludgeoning, and is immune to poison and bleeding: a hammer is the weapon here.
+  - **The Shardborn**, glass the Unmade's breaking-through left alive. Glass turns arrows and spears (it resists
+    piercing), takes double from bludgeoning, and is immune to poison and bleeding: a hammer is the weapon here.
     - the Shardling: a scuttling pack of splinters that makes you bleed;
     - the Prism Eye: a floating prism whose beam blinds;
     - the Mirrorling: an unseen phaser that frightens;
     - the Glass Strider: four legs of drawn glass, unyielding;
     - the Obsidian Hulk: an area smash that stuns, and it opens doors;
-    - the Refractor: a flying caster that blinds an area and calls up shardlings.
+    - the Refractor: a flying caster that blinds an area and calls up shardlings, two at a time.
   - **The Hollowed**, delvers the Unmade emptied. They resist necrotic and psychic, and radiant hurts them double.
     - the Hollow Pilgrim: mindless, and it weakens;
     - the Glass-Eyed Archer: a pack archer;
     - the Void-Torn Hound: a pack hunter;
     - the Hollow Templar: an unyielding guard;
     - the Echo of the Fallen: a flying phaser with an area keen;
-    - the Unsaid: a caster that curses and raises the fallen.
+    - the Unsaid: a caster that curses and raises the fallen as Hollow Pilgrims, three at a time.
 
-  The Unmade live here too.
+  The Unmade come through the rifts.
 - **The art.** The Shardborn get new drawers of glass facets in `SpriteFactory.Glass`:
   - kites of black glass, dark on one side and violet-lit on the other;
   - the shardling, the prisms (the eye, the Refractor ringed with shards, the Lens's shards) and the Lens;
@@ -2318,19 +2318,20 @@ families, rules and boss.
   The Hollowed are people with glass eyes. Each family has its own cry. Glass has its own sound when hit and when
   it shatters.
 - **The glass loot table**: gold, reagents, gear, scrolls and potions.
-- **The region's switches** in `regions.json`: `shards` (8% of floor cells), `rifts` (3 a level) and `mirrorWalls`
+- **The region's switches** in `regions.json`: `shards` (8% of floor cells), `rifts` (2 a level) and `mirrorWalls`
   (25% of room walls).
 - **Broken glass.**
   - **Placing.** It lies on floor cells away from the start, the stairs and the stations, and is drawn as shards
     over the floor.
-  - **Stepping on it.** The first time the party steps on it, it crunches. Anything unaware within 6 steps along
+  - **Stepping on it.** The first time the party steps on it, it crunches. Anything unaware within 4 steps along
     the passages wakes (a shut door counts as three). Each hero makes a DEX save against 13 + depth / 3, or takes
     2d6 + depth / 3 slashing.
   - **After.** The glass is ground to powder: the cell is kept in the level's flags, so saves keep it.
 - **Rifts.**
   - **Placing.** A rift is a station in a room.
   - **Spawning.** While the party is within 6 cells, an open rift lets one of the Unmade through every 12 seconds,
-    at the region's level, already aware. After three it is spent.
+    at depth + 2, already aware. Only those that don't summon come through (Unmade Hounds), so a rift can't
+    loose a Hollow Saint and its endless hounds. After three it is spent.
   - **Sealing.** Use seals a rift: d20 + the better of Warding and Lore / 5 + WIS against 16, and the third try
     always works. Either way it trains Warding.
   - **Saves.** Sealed and spent rifts are kept in the level's flags. Spawning stops after three so a level can't
@@ -2343,10 +2344,35 @@ families, rules and boss.
     to. A second and a half later the beam fires down that line. If the party is still in it, within 10 cells and
     in sight, each hero takes 6d8 + depth radiant, with a DEX save for half. Stepping out of the line dodges it.
   - **Shards.** At half health it sheds three Shards of the Lens.
-- **The bot** needs nothing new: rifts block like any station, and a spent rift stops spawning.
+- **The bot** seals an open rift within 8 cells before it hunts, and goes for a creature that summons or raises
+  the dead (within 8 cells) before anything else, as a player would.
 - **Results** (6 seeds, 24-level Delves, clearing bot): at first no party got past the Rootdark. After its tuning
   (section 38) two reach the Glass Roads and fall there, on levels 21 and 22, to the Refractor's shardlings and the
   rifts' Unmade. Tuning the Glass Roads is next.
+- **Tuning, first pass.** A new opt-in report, `The_Glass_Roads_from_level_21` (`AVAHACK_BALANCE_GLASS=1`), plays
+  deep Delves to level 21 and sets each party that gets there down on level 21 of other seeds (`AVAHACK_BALANCE_SEEDS`),
+  so the region gets many runs in a few minutes. Its debug note lists the damage each kind of creature dealt on the
+  last level (from the engine's `HeroStruck` event), the creatures awake near the party, and what the bot was hunting.
+  What it found, and what changed:
+  - **The Unmade were scaled far past the region.** Their base level is 18, so at the region's level (about 34) a
+    hound had about 87d10. They no longer spawn here as residents; the rifts bring them, at depth + 2, and never a
+    summoner.
+  - **Callers.** Hollow Saints from rifts called hounds without end; the Unsaid raised the dead without a limit, and
+    as spore Shamblers. Raisers now keep three raised about at most, the Unsaid's rise as Hollow Pilgrims, and a new
+    creature field, `summonMax` (3 unless set), holds the Refractor to two shardlings.
+  - **Dread creatures** weigh half as much in every region's spawn table, so a level holds fewer of them.
+  - **Numbers.** Against the Rootdark at the depths they meet the party, the region's creatures hit 2 to 3 more often,
+    had 20–30% more health and up to 40% more damage, and the Shardborn halved the party's blades. Every Shardborn and
+    Hollowed attack lost 2 to hit, and their hit dice fell by a fifth; the Shardborn resist only piercing. The
+    shardling, which dealt most of the damage, is slower (recovery 2.0 s), bleeds less (15%) and has 11d10+32; the
+    Torn Hound does 2d8+6, the Refractor's spectrum 3d8+4 and the Echo's keen 2d10+6.
+  - **Noise and rifts.** Glass wakes creatures within 4 steps (was 6), and a level has 2 rifts (was 3).
+  - **Teleporters**, in every region: a sigil's disarm DC grows with depth and is out of reach deep down, so a
+    level must have a way round every teleporter. A party walked into one, fumbled, and was thrown back for ever.
+  - **Results** (one party that reached level 21, on 8 seeds): before, 11 of 12 runs fell on level 21 itself
+    (average depth 21.1) and none got through. After, the average is 23.2: one run in eight reaches the Unmade Heart,
+    the rest fall on levels 22–24, shardlings still the worst. One run still stalls on the stairs. More tuning is
+    needed.
 - **Tests.**
   - Glass Roads levels with their families, glass, rifts, mirror walls and the Lens, and the Heart's Waystone after it.
   - Glass crunching once, cutting, waking the hall, and gone.

@@ -122,6 +122,41 @@ public sealed class BestiaryTests
     }
 
     [Fact]
+    public void The_Unsaid_raises_the_dead_as_hollow_pilgrims_three_at_a_time()
+    {
+        var g = Arena();
+        var dead = new[] { new Cell(6, 1), new Cell(7, 1), new Cell(6, 4), new Cell(7, 4), new Cell(5, 4) }
+            .Select(c => g.AddMonster("cellarRat", c, Dir.West)).ToList();
+        foreach (var rat in dead) Kill(g, rat);
+        var unsaid = Awake(g, "theUnsaid", new Cell(8, 2));
+        for (int i = 0; i < 5; i++)
+        {
+            unsaid.SpecialTimer = 15;                                                  // a raise is due
+            g.Tick();
+        }
+        var raised = g.Monsters.Where(m => m.IsAlive && m.SummonedBy == unsaid.Id).ToList();
+        Assert.Equal(3, raised.Count);                                                 // three about at most
+        Assert.All(raised, m => Assert.Equal("hollowPilgrim", m.Def.Id));
+        Assert.Contains(g.Log, l => l.Contains("gets up, hollow", StringComparison.Ordinal));
+        Assert.DoesNotContain(g.Log, l => l.Contains("Spores", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_summoner_keeps_its_own_number_about_the_Refractor_two()
+    {
+        Assert.Equal(2, Db.Creature("theRefractor").SummonMax);
+        Assert.Equal(3, Db.Creature("hollowSaint").SummonMax);
+        var g = Arena();
+        var refractor = Awake(g, "theRefractor", new Cell(8, 2));
+        for (int i = 0; i < 5; i++)
+        {
+            refractor.SpecialTimer = 12;
+            g.Tick();
+        }
+        Assert.Equal(2, g.Monsters.Count(m => m.IsAlive && m.SummonedBy == refractor.Id && m.Def.Id == "shardling"));
+    }
+
+    [Fact]
     public void Invisible_creatures_show_only_close_up()
     {
         var g = Arena();

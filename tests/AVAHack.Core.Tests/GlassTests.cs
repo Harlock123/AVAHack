@@ -38,12 +38,16 @@ public sealed class GlassTests
         var levels = Enumerable.Range(1, 8).Select(i => Generator.Generate(Db, (ulong)i * 41, 21 + i % 3, new GenOptions { MaxDepth = 24 })).ToList();
         Assert.All(levels, l => Assert.Equal("glass", l.Theme));
         Assert.All(levels, l => Assert.StartsWith("The Glass Roads", l.Name));
-        Assert.True(levels.Average(l => l.Stations.Count(s => s.Value == "rift")) >= 2);
+        Assert.InRange(levels.Average(l => l.Stations.Count(s => s.Value == "rift")), 1.5, 2);
         Assert.True(levels.Average(l => l.Shards.Count) >= 10, string.Join(",", levels.Select(l => l.Shards.Count)));
         Assert.True(levels.Average(l => l.MirrorWalls.Count) >= 15);
         var families = levels.SelectMany(l => l.Spawns).Select(s => Db.Creature(s.Creature).Family).ToHashSet();
         Assert.Contains("shardborn", families);
         Assert.Contains("hollowed", families);
+        Assert.DoesNotContain("unmade", families);                                     // they come through the rifts
+        var table = SpawnTables.For(Db, "glass", 22);
+        Assert.Equal(0.5, table.Single(t => t.Id == "theRefractor").Weight);           // the dread are rarer
+        Assert.Equal(1.0, table.Single(t => t.Id == "shardling").Weight);
         var boss = Generator.Generate(Db, 99, 24, new GenOptions { MaxDepth = 24 });
         Assert.Equal("theLens", boss.Boss);
         Assert.Contains(boss.Spawns, s => s.Creature == "theLens");
@@ -82,6 +86,8 @@ public sealed class GlassTests
             Assert.Equal(before + 1, g.Monsters.Count);
             var came = g.Monsters[^1];
             Assert.Equal("unmade", came.Def.Family);
+            Assert.False(came.Def.Has("summoner"));                                     // no Hollow Saints: no endless hounds
+            Assert.Equal(g.Level.Depth + GameEngine.RiftLevel, came.Def.Level);         // at the region's strength
             g.DamageMonster(came, came.Hp + 100, DamageType.Force);
         }
         Assert.False(g.RiftOpen(rift));                                                // spent after three

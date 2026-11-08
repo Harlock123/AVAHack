@@ -18,16 +18,29 @@ public sealed class DelveReport(ITestOutputHelper output)
 {
     public sealed record Run(string Seed, GameMode Mode, int Depth, double Minutes, int Kills, int Level, string Note);
 
-    public static Run Play(ulong seed, int depth = 4, double limitMinutes = 60, bool clears = false)
+    /// <summary>A party as it stood: its heroes' saves and its gold.</summary>
+    public sealed record Snapshot(IReadOnlyList<Saves.CharacterSave> Heroes, int Gold);
+
+    /// <summary>
+    /// One bot-played Delve. With <paramref name="party"/> it starts from that party at <paramref name="from"/> (the
+    /// levels above are generated and passed through, unplayed); with <paramref name="stopAt"/> it stops on arriving
+    /// there and returns the party in <paramref name="arrived"/>.
+    /// </summary>
+    public static Run Play(ulong seed, int depth = 4, double limitMinutes = 60, bool clears = false,
+        Snapshot? party = null, int from = 1, int stopAt = 0, Action<Snapshot>? arrived = null)
     {
         var db = ContentDb.LoadBuiltIn();
         string code = DelveOptions.Code(seed);
-        var d = Delve.Start(db, PartyTests.QuickParty(db), new DelveOptions { Seed = code, Depth = depth });
+        var heroes = party is null ? PartyTests.QuickParty(db) : new Party(party.Heroes.Select(h => Character.FromSave(db, h)).ToArray()) { Gold = party.Gold };
+        var d = Delve.Start(db, heroes, new DelveOptions { Seed = code, Depth = depth });
+        while (d.Depth < from) d.Descend();
         var g = d.Engine;
         var bot = new Bot(g, (int)seed) { Clears = clears };
+        var struck = new Dictionary<string, int>();                                        // damage dealt to the heroes on this level, by creature
+        g.HeroStruck += (m, _, dmg) => struck[m.Def.Id] = struck.GetValueOrDefault(m.Def.Id) + dmg;
         string? traceFile = Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE") == code ? Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE_FILE") : null;
-        double stuckSince = 0;
-        int lastDepth = 1;
+        double stuckSince = g.Time;
+        int lastDepth = d.Depth;
         while (g.Mode == GameMode.Playing && g.Time < limitMinutes * 60)
         {
             bot.Think();
@@ -36,6 +49,12 @@ public sealed class DelveReport(ITestOutputHelper output)
             {
                 lastDepth = d.Depth;
                 stuckSince = g.Time;
+                struck.Clear();
+                if (d.Depth == stopAt)
+                {
+                    arrived?.Invoke(new Snapshot(g.Party.Members.Select(h => h.ToSave()).ToList(), g.Party.Gold));
+                    break;
+                }
                 if (traceFile is not null) File.AppendAllText(traceFile, Trace(g, d.Depth, $"ARRIVE goal {bot.Goal}"));
             }
             if (g.Time - stuckSince > (clears ? 40 : 15) * 60) break; // that long on one level: call it stuck
@@ -43,9 +62,10 @@ public sealed class DelveReport(ITestOutputHelper output)
         if (traceFile is not null) File.AppendAllText(traceFile, Trace(g, d.Depth, $"END goal {bot.Goal}") + bot.ReachMap());
         string note = g.Mode == GameMode.Playing ? $"stuck on {bot.Goal}" : g.Mode == GameMode.Dead ? "fell" : "";
         if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_DEBUG") is not null)
-            note += " | " + string.Join("; ", g.Party.Members.Select(m => $"{m.Name} L{m.Level} {m.MaxHp}hp " +
+            note += " | " + string.Join("; ", g.Party.Members.Select(m => $"{m.Name} L{m.Level} {m.MaxHp}hp AC{m.ArmourClass} " +
                 string.Join(",", Enum.GetValues<SkillId>().OrderByDescending(m.Rank).Take(3).Select(s => $"{s}{m.Rank(s)}"))))
-                + $" | boss {g.LivingBoss?.Name} {bot.NodeReport} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
+                + $" | hurt by {string.Join(", ", struck.OrderByDescending(x => x.Value).Take(5).Select(x => $"{x.Key} {x.Value}"))}"
+                + $" | boss {g.LivingBoss?.Name} {bot.NodeReport} {bot.PreyReport} | about: {string.Join(", ", g.Monsters.Where(m => m.IsAlive && !m.Ally && m.IsAware && m.Cell.Distance(g.PartyCell) <= 8).Select(m => $"{m.Name}({m.Def.Level},{m.Hp:F0}hp)"))} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
         return new Run(code, g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
     }
 
@@ -130,5 +150,34 @@ public sealed class DelveReport(ITestOutputHelper output)
         output.WriteLine($"won {results.Count(r => r.Mode == GameMode.Won)}/{runs}; average depth {results.Average(r => r.Depth):F1}; " +
                          $"best {results.Max(r => r.Depth)}; average hero level {results.Average(r => r.Level):F1}");
         Assert.DoesNotContain(results, r => r.Mode == GameMode.Playing);
+    }
+
+    /// <summary>
+    /// Opt-in (AVAHACK_BALANCE_GLASS=1): the Glass Roads on their own. Deep Delves are played to level 21, and each
+    /// party that gets there is set down on level 21 of several other seeds and plays on to the Unmade Heart. Many
+    /// more Glass Roads runs than the 24-level report gives, for the balance work in spec section 39.
+    /// AVAHACK_BALANCE_RUNS sets the deep seeds (12) and AVAHACK_BALANCE_SEEDS the seeds each party plays (4).
+    /// </summary>
+    [Fact]
+    public void The_Glass_Roads_from_level_21()
+    {
+        if (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_GLASS") != "1") return;
+        int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_RUNS"), out int n) ? n : 12;
+        int seeds = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_SEEDS"), out int k) ? k : 4;
+        var parties = new System.Collections.Concurrent.ConcurrentBag<(string From, Snapshot Party)>();
+        Enumerable.Range(1, runs).AsParallel().ForAll(i =>
+        {
+            ulong s = (ulong)i * 7919;
+            Play(s, 24, 24 * 60, clears: true, stopAt: 21, arrived: p => parties.Add((DelveOptions.Code(s), p)));
+        });
+        output.WriteLine($"{parties.Count} of {runs} parties reached level 21");
+        var results = parties.OrderBy(p => p.From).SelectMany(p => Enumerable.Range(1, seeds).Select(j => (p.From, Seed: (ulong)j * 6151, p.Party)))
+            .AsParallel().Select(x => (x.From, Run: Play(x.Seed, 24, 24 * 60, clears: true, party: x.Party, from: 21))).OrderBy(x => x.From).ThenBy(x => x.Run.Seed).ToList();
+        foreach (var (from, r) in results)
+            output.WriteLine($"{from} on {r.Seed}: {r.Mode,-7} reached level {r.Depth,2}  {r.Minutes,6:F1} min  kills {r.Kills,4}  heroes at level {r.Level,2}  {r.Note}");
+        if (results.Count == 0) return;
+        output.WriteLine($"through the Glass Roads: {results.Count(x => x.Run.Depth >= 25 || x.Run.Mode == GameMode.Won)}/{results.Count}; " +
+                         $"won {results.Count(x => x.Run.Mode == GameMode.Won)}; average depth {results.Average(x => x.Run.Depth):F1}; " +
+                         $"deaths by level {string.Join(", ", results.Where(x => x.Run.Mode == GameMode.Dead).GroupBy(x => x.Run.Depth).OrderBy(gr => gr.Key).Select(gr => $"{gr.Key}: {gr.Count()}"))}");
     }
 }

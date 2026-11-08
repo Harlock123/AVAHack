@@ -24,7 +24,7 @@ namespace AVAHack.Game;
 /// </summary>
 public sealed partial class GameEngine
 {
-    public const int CrunchReach = 6, RiftReach = 6, RiftMax = 3;
+    public const int CrunchReach = 4, RiftReach = 6, RiftMax = 3, RiftLevel = 2;
     public const double RiftSeconds = 12, BeamSeconds = 10, BeamCharge = 1.5, LensLearned = 0.75;
 
     // ---- Broken glass ----
@@ -86,9 +86,9 @@ public sealed partial class GameEngine
             double t = _riftTimers.GetValueOrDefault(cell) + TickSeconds;
             if (t < RiftSeconds) { _riftTimers[cell] = t; continue; }
             _riftTimers[cell] = 0;
-            var pick = Content.Creatures.Where(c => c.Family == "unmade" && c.Boss is null && !c.Has("boss")).OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
+            var pick = Content.Creatures.Where(c => c.Family == "unmade" && c.Boss is null && !c.Has("boss") && !c.Has("summoner")).OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
             if (pick.Count == 0) return;
-            var def = Bestiary.ScaleTo(pick[Rng.Ai.Next(pick.Count)], Level.Depth + 8);
+            var def = Bestiary.ScaleTo(pick[Rng.Ai.Next(pick.Count)], Level.Depth + RiftLevel);
             var probe = new Monster(0, def, cell, Dir.North, 1, Content);
             var spot = Enum.GetValues<Dir>().Select(d => cell.Step(d)).FirstOrDefault(c => c != PartyCell && Level.IsPassable(c) && !StationBlocks(c) && CanEnter(probe, c, false));
             if (spot == default) continue;

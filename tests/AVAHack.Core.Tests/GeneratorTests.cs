@@ -27,11 +27,12 @@ public sealed class GeneratorTests(ITestOutputHelper output)
     /// Walks the level working its locks in order, from the start or another cell and never through
     /// <paramref name="avoid"/>; returns what was reached.
     /// </summary>
-    public static HashSet<Cell> Reach(Level l, Cell? from = null, Cell? avoid = null)
+    public static HashSet<Cell> Reach(Level l, Cell? from = null, Cell? avoid = null, IEnumerable<Cell>? walls = null)
     {
         var open = l.Doors.Where(d => d.Kind == DoorKind.Hand && !d.Locked || d.IsPassable).Select(d => d.Cell).ToHashSet();
         var blocked = l.Chests.Select(c => c.Cell).Concat(l.Pits.Select(p => p.Cell)).Concat(l.Traps.Where(t => t.Kind == TrapKind.CursedAltar).Select(t => t.Cell)).ToHashSet();
         if (avoid is { } a) blocked.Add(a);
+        if (walls is not null) blocked.UnionWith(walls);
         HashSet<Cell> reach = [];
         bool grew = true;
         while (grew)
@@ -91,6 +92,9 @@ public sealed class GeneratorTests(ITestOutputHelper output)
             Need(l.Chests.All(c => Near(c.Cell)), "a chest can't be reached");
             Need(l.Piles.Keys.All(Near), "something on the floor can't be reached");
             Need(l.Traps.Where(t => t.Kind == TrapKind.Teleporter).All(t => t.Target is { } tt && reach.Contains(tt)), "a teleporter goes nowhere reachable");
+            // Deep down a sigil can't be disarmed: there must be a way round every teleporter.
+            Need(Reach(l, walls: l.Traps.Where(t => t.Kind == TrapKind.Teleporter).Select(t => t.Cell)).Contains(l.Stairs.Single()),
+                "the only way to the stairs runs over a teleporter");
             Need(l.Traps.Count <= 16, "too many traps");
             Need(l.Secrets.Count() is >= 0 and <= 6, "too many secrets");
             foreach (var d in l.Doors)

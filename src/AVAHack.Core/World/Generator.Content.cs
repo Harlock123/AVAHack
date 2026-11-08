@@ -20,7 +20,7 @@ public static class SpawnTables
         };
         var list = db.Creatures.Where(c => fams.Contains(c.Family) && Fits(c) && !c.Has("boss") && !c.Has("rooted") && c.Family != "summoned" && c.Id != "mimic")
                                .OrderBy(c => c.Id, StringComparer.Ordinal)
-                               .Select(c => (c.Id, c.Tier == Tier.Lesser && depth > 4 ? 0.5 : 1.0)).ToList();
+                               .Select(c => (c.Id, c.Tier == Tier.Dread || (c.Tier == Tier.Lesser && depth > 4) ? 0.5 : 1.0)).ToList();
         if (list.Count < 3)
             list = db.Creatures.Where(c => c.Family is not ("summoned" or "unmade") && c.Id != "mimic" && !c.Has("boss"))
                                .OrderBy(c => c.Id, StringComparer.Ordinal).Select(c => (c.Id, 1.0)).ToList();

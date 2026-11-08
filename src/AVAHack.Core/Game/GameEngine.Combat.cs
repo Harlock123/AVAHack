@@ -445,6 +445,9 @@ public sealed partial class GameEngine
         return RelativeSide.Behind;
     }
 
+    /// <summary>A creature's blow or missile lands on a hero, for how much (after blocks and wards): for reports.</summary>
+    public event Action<Monster, Character, int>? HeroStruck;
+
     /// <summary>A creature's blow or missile reaches the party, coming from cell <paramref name="from"/>.</summary>
     private void HitHero(Monster m, CreatureAttackDef a, Cell from, Character? target = null)
     {
@@ -517,6 +520,7 @@ public sealed partial class GameEngine
         }
 
         double ward = c.Ward;
+        HeroStruck?.Invoke(m, c, dmg);
         c.TakeDamage(dmg);
         if (ward > c.Ward && c.WardFrom is { } warder) warder.UseSkill(SkillId.Warding, warder.UseXp(SkillId.Warding, ward - c.Ward), XpSource.Plain);
         Concentrate(c, dmg);

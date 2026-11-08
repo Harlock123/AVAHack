@@ -4182,7 +4182,7 @@
  "family": "shardborn",
  "tier": "common",
  "level": 30,
- "hitDice": "16d10+32",
+ "hitDice": "11d10+32",
  "ac": 18,
  "perception": 14,
  "stepSeconds": 0.5,
@@ -4192,14 +4192,14 @@
   {
    "id": "shear",
    "windup": 0.5,
-   "recovery": 1.4,
-   "toHit": 12,
-   "damage": "2d10+6",
+   "recovery": 2.0,
+   "toHit": 10,
+   "damage": "2d8+5",
    "type": "slashing",
    "onHit": {
     "condition": "bleeding",
     "dc": 17,
-    "chance": 25
+    "chance": 15
    }
   }
  ],
@@ -4211,7 +4211,6 @@
   "pack"
  ],
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [
@@ -4228,7 +4227,7 @@
   "asleep"
  ],
  "sprite": "shardling",
- "text": "A scuttling knot of black glass splinters. It hunts in clattering packs. A hammer shatters it; a blade only chips it.",
+ "text": "A scuttling knot of black glass splinters. It hunts in clattering packs. A hammer shatters it; an arrow only chips it.",
  "loot": "glass"
 },
 {
@@ -4237,7 +4236,7 @@
  "family": "shardborn",
  "tier": "common",
  "level": 30,
- "hitDice": "14d10+28",
+ "hitDice": "11d10+28",
  "ac": 17,
  "perception": 17,
  "stepSeconds": 0.9,
@@ -4248,7 +4247,7 @@
    "id": "glare",
    "windup": 1.0,
    "recovery": 2.6,
-   "toHit": 12,
+   "toHit": 10,
    "damage": "3d8+4",
    "type": "radiant",
    "range": 6,
@@ -4267,7 +4266,6 @@
   "flier"
  ],
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [
@@ -4293,7 +4291,7 @@
  "family": "shardborn",
  "tier": "common",
  "level": 31,
- "hitDice": "15d10+30",
+ "hitDice": "12d10+30",
  "ac": 17,
  "perception": 15,
  "stepSeconds": 0.6,
@@ -4304,7 +4302,7 @@
    "id": "reflection",
    "windup": 0.7,
    "recovery": 1.8,
-   "toHit": 12,
+   "toHit": 10,
    "damage": "3d8+5",
    "type": "psychic",
    "onHit": {
@@ -4323,7 +4321,6 @@
   "invisible"
  ],
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [
@@ -4349,7 +4346,7 @@
  "family": "shardborn",
  "tier": "greater",
  "level": 33,
- "hitDice": "19d10+57",
+ "hitDice": "15d10+57",
  "ac": 18,
  "perception": 15,
  "stepSeconds": 0.6,
@@ -4360,7 +4357,7 @@
    "id": "impale",
    "windup": 0.8,
    "recovery": 2.0,
-   "toHit": 13,
+   "toHit": 11,
    "damage": "3d10+7",
    "type": "piercing",
    "onHit": {
@@ -4377,7 +4374,6 @@
   "unyielding"
  ],
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [
@@ -4403,7 +4399,7 @@
  "family": "shardborn",
  "tier": "greater",
  "level": 34,
- "hitDice": "21d10+63",
+ "hitDice": "17d10+63",
  "ac": 19,
  "perception": 13,
  "stepSeconds": 1.0,
@@ -4414,7 +4410,7 @@
    "id": "smash",
    "windup": 1.1,
    "recovery": 2.6,
-   "toHit": 13,
+   "toHit": 11,
    "damage": "4d10+7",
    "type": "bludgeoning",
    "area": true,
@@ -4434,7 +4430,6 @@
   "opener"
  ],
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [
@@ -4460,7 +4455,7 @@
  "family": "shardborn",
  "tier": "dread",
  "level": 36,
- "hitDice": "22d10+66",
+ "hitDice": "18d10+66",
  "ac": 18,
  "perception": 17,
  "stepSeconds": 0.8,
@@ -4471,7 +4466,7 @@
    "id": "splinter",
    "windup": 0.8,
    "recovery": 2.0,
-   "toHit": 14,
+   "toHit": 12,
    "damage": "3d10+7",
    "type": "slashing"
   },
@@ -4479,8 +4474,8 @@
    "id": "spectrum",
    "windup": 1.2,
    "recovery": 3.0,
-   "toHit": 13,
-   "damage": "4d8+4",
+   "toHit": 11,
+   "damage": "3d8+4",
    "type": "radiant",
    "range": 6,
    "projectileSpeed": 9,
@@ -4502,8 +4497,8 @@
   "flier"
  ],
  "summons": "shardling",
+ "summonMax": 2,
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [
@@ -4529,7 +4524,7 @@
  "family": "hollowed",
  "tier": "common",
  "level": 30,
- "hitDice": "17d10+34",
+ "hitDice": "14d10+34",
  "ac": 16,
  "perception": 13,
  "stepSeconds": 0.8,
@@ -4540,7 +4535,7 @@
    "id": "grasp",
    "windup": 0.7,
    "recovery": 1.8,
-   "toHit": 12,
+   "toHit": 10,
    "damage": "2d10+6",
    "type": "necrotic",
    "onHit": {
@@ -4579,7 +4574,7 @@
  "family": "hollowed",
  "tier": "common",
  "level": 30,
- "hitDice": "15d10+30",
+ "hitDice": "12d10+30",
  "ac": 17,
  "perception": 17,
  "stepSeconds": 0.8,
@@ -4590,7 +4585,7 @@
    "id": "knife",
    "windup": 0.6,
    "recovery": 1.6,
-   "toHit": 12,
+   "toHit": 10,
    "damage": "2d8+5",
    "type": "slashing"
   },
@@ -4598,7 +4593,7 @@
    "id": "arrow",
    "windup": 0.9,
    "recovery": 2.2,
-   "toHit": 13,
+   "toHit": 11,
    "damage": "3d8+5",
    "type": "piercing",
    "range": 7,
@@ -4634,7 +4629,7 @@
  "family": "hollowed",
  "tier": "common",
  "level": 31,
- "hitDice": "16d10+32",
+ "hitDice": "13d10+32",
  "ac": 17,
  "perception": 16,
  "stepSeconds": 0.45,
@@ -4645,8 +4640,8 @@
    "id": "rend",
    "windup": 0.5,
    "recovery": 1.4,
-   "toHit": 13,
-   "damage": "3d8+6",
+   "toHit": 11,
+   "damage": "2d8+6",
    "type": "slashing",
    "onHit": {
     "condition": "bleeding",
@@ -4683,7 +4678,7 @@
  "family": "hollowed",
  "tier": "greater",
  "level": 33,
- "hitDice": "20d10+60",
+ "hitDice": "16d10+60",
  "ac": 19,
  "perception": 14,
  "stepSeconds": 0.8,
@@ -4694,7 +4689,7 @@
    "id": "greatsword",
    "windup": 0.9,
    "recovery": 2.2,
-   "toHit": 14,
+   "toHit": 12,
    "damage": "4d8+7",
    "type": "slashing"
   }
@@ -4728,7 +4723,7 @@
  "family": "hollowed",
  "tier": "greater",
  "level": 34,
- "hitDice": "18d10+54",
+ "hitDice": "14d10+54",
  "ac": 17,
  "perception": 16,
  "stepSeconds": 0.6,
@@ -4739,8 +4734,8 @@
    "id": "lament",
    "windup": 0.9,
    "recovery": 2.2,
-   "toHit": 13,
-   "damage": "3d10+6",
+   "toHit": 11,
+   "damage": "2d10+6",
    "type": "psychic",
    "area": true,
    "onHit": {
@@ -4780,7 +4775,7 @@
  "family": "hollowed",
  "tier": "dread",
  "level": 36,
- "hitDice": "22d10+66",
+ "hitDice": "18d10+66",
  "ac": 18,
  "perception": 17,
  "stepSeconds": 0.8,
@@ -4791,7 +4786,7 @@
    "id": "silence",
    "windup": 0.8,
    "recovery": 2.0,
-   "toHit": 14,
+   "toHit": 12,
    "damage": "3d10+7",
    "type": "necrotic"
   },
@@ -4799,7 +4794,7 @@
    "id": "unword",
    "windup": 1.2,
    "recovery": 3.0,
-   "toHit": 13,
+   "toHit": 11,
    "damage": "4d8+4",
    "type": "psychic",
    "range": 6,
@@ -4842,7 +4837,7 @@
  "family": "shardborn",
  "tier": "lesser",
  "level": 30,
- "hitDice": "10d10+20",
+ "hitDice": "8d10+20",
  "ac": 17,
  "perception": 14,
  "stepSeconds": 0.5,
@@ -4853,7 +4848,7 @@
    "id": "cut",
    "windup": 0.5,
    "recovery": 1.4,
-   "toHit": 12,
+   "toHit": 10,
    "damage": "2d10+5",
    "type": "slashing"
   }
@@ -4865,7 +4860,6 @@
   "mindless"
  ],
  "resist": [
-  "slashing",
   "piercing"
  ],
  "vulnerable": [

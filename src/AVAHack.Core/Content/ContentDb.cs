@@ -339,6 +339,7 @@ public sealed class ContentDb
             foreach (var s in c.Special.Where(s => s.Kind != "reassemble")) p.Add($"creatures: {c.Id} has an unknown special '{s.Kind}'.");
             if (c.FleeAtPercent is < 0 or > 90) p.Add($"creatures: {c.Id} flees at {c.FleeAtPercent}%; it must be 0–90.");
             if (c.FleeAtPercent > 0 && c.Has("mindless")) p.Add($"creatures: {c.Id} is mindless, so it can't flee.");
+            if (c.SummonMax < 1) p.Add($"creatures: {c.Id} has summonMax {c.SummonMax}; it must be at least 1.");
             if (c.Has("summoner") && (c.Summons is null || Creatures.All(x => x.Id != c.Summons))) p.Add($"creatures: {c.Id} summons '{c.Summons}', which isn't a creature.");
         }
     }

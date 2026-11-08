@@ -76,6 +76,9 @@ public sealed record CreatureDef
     public string? Loot { get; init; }
     /// <summary>What a summoner calls up every so often.</summary>
     public string? Summons { get; init; }
+
+    /// <summary>How many of its summons a summoner keeps about at once (3 unless set).</summary>
+    public int SummonMax { get; init; } = 3;
     /// <summary>A boss's script: hollowKing, bellwright, motherOfCoils, choir, archivist, mycelCrown, crownNode, lens or unmaker.</summary>
     public string? Boss { get; init; }
     public required string Sprite { get; init; }

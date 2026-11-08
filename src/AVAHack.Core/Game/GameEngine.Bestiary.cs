@@ -136,7 +136,7 @@ public sealed partial class GameEngine
             if (m.SpecialTimer >= (raiser ? 15 : 12))
             {
                 m.SpecialTimer = 0;
-                if (summoner) Summon(m, m.Def.Summons ?? LesserKin(m), 3);
+                if (summoner) Summon(m, m.Def.Summons ?? LesserKin(m), m.Def.Summons is null ? 3 : m.Def.SummonMax);
                 if (raiser) RaiseDead(m);
             }
         }
@@ -221,19 +221,25 @@ public sealed partial class GameEngine
         return s;
     }
 
-    /// <summary>A Spore Shepherd sows a corpse within 5 cells, and it rises as a Shambler.</summary>
+    /// <summary>
+    /// A raiser brings back a corpse within 5 cells, three at a time at most: a Spore Shepherd's or a Bloomheart's
+    /// rises as a Shambler, the Unsaid's as a Hollow Pilgrim.
+    /// </summary>
     private void RaiseDead(Monster m)
     {
+        if (_monsters.Count(o => o.IsAlive && o.SummonedBy == m.Id) >= 3) return;
+        bool hollow = m.Def.Family == "hollowed";
         var corpse = _monsters.Where(o => o.State == MonsterState.Dead && !o.FellInPit && !o.Raised && !o.Ally && o.Boss is null && o.Cell.Distance(m.Cell) <= 5)
                               .OrderBy(o => o.Cell.Distance(m.Cell)).ThenBy(o => o.Id).FirstOrDefault();
         if (corpse is null) return;
         corpse.Raised = true;
-        var def = Content.Creature("shambler");
+        var def = Content.Creature(hollow ? "hollowPilgrim" : "shambler");
         def = Bestiary.ScaleTo(def, Math.Max(1, m.Def.Level - 2));
         if (SpawnNear(m, def, corpse.Cell) is { } s)
         {
             s.SummonedBy = m.Id;
-            Say($"Spores settle on the dead {corpse.Def.Name}. It gets up.");
+            Say(hollow ? $"{m.Name} says a word that isn't there over the dead {corpse.Def.Name}. It gets up, hollow."
+                       : $"Spores settle on the dead {corpse.Def.Name}. It gets up.");
         }
     }
 

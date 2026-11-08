@@ -13,6 +13,6 @@
  { "id": "choir", "name": "The Drowned Choir", "families": ["sporeKin", "serpentCult", "aberrations", "restlessDead", "oozes"], "boss": "motherOfCoils", "wanderers": 1.4 },
  { "id": "stacks", "name": "The Ossuary Stacks", "families": ["inkbound", "mourners", "restlessDead"], "boss": "archivist", "wanderers": 1.5, "hush": true, "candles": 6, "shelves": 0.35 },
  { "id": "rootdark", "name": "The Rootdark", "families": ["burrowers", "sporeThralls", "sporeKin"], "boss": "mycelCrown", "wanderers": 1.7, "pods": 6, "roots": 4, "rootWalls": 0.3 },
- { "id": "glass", "name": "The Glass Roads", "families": ["shardborn", "hollowed", "unmade"], "boss": "theLens", "wanderers": 1.9, "shards": 0.08, "rifts": 3, "mirrorWalls": 0.25 },
+ { "id": "glass", "name": "The Glass Roads", "families": ["shardborn", "hollowed"], "boss": "theLens", "wanderers": 1.9, "shards": 0.08, "rifts": 2, "mirrorWalls": 0.25 },
  { "id": "heart", "name": "The Unmade Heart", "families": ["unmade", "aberrations"], "boss": "unmaker", "wanderers": 2.0, "final": true }
 ]

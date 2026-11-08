@@ -117,5 +117,7 @@ public sealed partial class GameView
         if (!_typingSeed) return;
         foreach (char ch in text)
             if ((char.IsLetterOrDigit(ch) || ch is ' ' or '-') && _options.Seed.Length < 24) _options = _options with { Seed = _options.Seed + ch };
+        // Text arrives after the key's own redraw, so the box must ask for another or the letter shows only when the mouse moves.
+        InvalidateVisual();
     }
 }

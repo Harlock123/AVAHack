@@ -74,6 +74,22 @@ public sealed class MenuTests
     }
 
     [AvaloniaFact]
+    public void A_seed_is_typed_into_the_Delve_options()
+    {
+        var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));
+        Click(w, 640, 344); // Quick start
+        Click(w, 440, 138); // the seed box
+        w.KeyTextInput("HAPPYDAX");
+        w.KeyPressQwerty(PhysicalKey.Backspace, RawInputModifiers.None);
+        w.KeyTextInput("Y");
+        Shot(w, "delve-seed");
+        w.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Click(w, 1110, 753); // Begin the Delve
+        Assert.Equal(Screen.Play, v.Screen);
+        Assert.Equal("HAPPYDAY", v.CurrentDelve!.SeedCode);
+    }
+
+    [AvaloniaFact]
     public void Making_a_party_of_two()
     {
         var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));

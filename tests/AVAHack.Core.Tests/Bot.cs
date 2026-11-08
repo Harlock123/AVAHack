@@ -32,6 +32,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     private readonly HashSet<Cell> _looted = new();
     // A target the bot has chased for two minutes without getting there is one it gives up on, as a player would.
     private readonly HashSet<object> _gaveUp = new();
+    private readonly Dictionary<object, double> _gaveUpAt = new();
     private object? _chasing;
     private double _chasingSince;
     private int _killsThen;
@@ -72,6 +73,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             _pressed.Clear();
             _looted.Clear();
             _gaveUp.Clear();
+            _gaveUpAt.Clear();
             _pulledAt.Clear();
             _searched.Clear();
             _usedStone = false;
@@ -182,7 +184,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             object key = Goal == "hunt" && _prey is not null ? _prey : (Goal!, t);
             int progress = g.Kills + _searched.Count + _looted.Count + _pulled.Count + _pressed.Count + g.Level.Chests.Count(c => c.Opened);
             if (!Equals(_chasing, Goal) || progress != _killsThen) { _chasing = Goal; _chasingSince = g.Time; _killsThen = progress; }
-            else if (g.Time - _chasingSince > 120) { _gaveUp.Add(key); _chasingSince = g.Time; return; }
+            else if (g.Time - _chasingSince > 120) { _gaveUp.Add(key); _gaveUpAt[key] = g.Time; _chasingSince = g.Time; return; }
         }
         if (g.PartyCell == t)
         {
@@ -270,7 +272,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     private (Cell? Cell, Dir? Face, Lever? Use) NextObjective()
     {
         foreach (var (cell, items) in g.Level.Piles)
-            if (items.Any(i => i.KeyId is not null) && !Gave("key", cell) && Reachable(cell)) { Goal = "key"; return (cell, null, null); }
+            if (items.Any(i => i.KeyId is not null) && !GaveLately("key", cell) && Reachable(cell)) { Goal = "key"; return (cell, null, null); }
         // A woken Engine: its valves come before anything else; a woken Archivist: his candles.
         if (Clears && g.LivingBoss is { IsAware: true } && OpenValve() is { } valve) { Goal = "valve"; return (valve.Cell, valve.Face, valve); }
         if (Clears && g.LivingBoss is { Boss: "archivist", IsAware: true } archivist)
@@ -449,6 +451,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     private static bool Calls(Monster m) => m.Def.Has("summoner") || m.Def.Has("raises") || m.Affixes.Contains("summoner");
 
     private bool Gave(string goal, Cell c) => _gaveUp.Contains((goal, c));
+
+    /// <summary>A key it gave up on is worth another try after three minutes: a locked door may need it.</summary>
+    private bool GaveLately(string goal, Cell c) => _gaveUpAt.TryGetValue((goal, c), out double at) && g.Time - at < 180;
 
     /// <summary>For the reports: each node of the Crown, alive or not, reachable, given up on.</summary>
     public string NodeReport => string.Join(" ", g.Monsters.Where(m => m.Boss == "crownNode").Select(m =>

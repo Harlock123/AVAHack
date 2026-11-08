@@ -2386,6 +2386,8 @@ families, rules and boss.
   - **Results** (4 parties that reached level 21, 6 seeds each): through the Glass Roads 6 of 24 after the first
     pass, 9 of 24 after the second (average depth 23.7). Deaths on the Lens's level fell from 6 to 3; most deaths are
     now on level 23 and in the Unmade Heart, which is the next to tune.
+  - **A key it gave up on** is worth another try after three minutes: one run stood for ever at a lock it couldn't
+    pick (DC 37), its key reachable but given up on while it was fighting.
 - **Tests.**
   - Glass Roads levels with their families, glass, rifts, mirror walls and the Lens, and the Heart's Waystone after it.
   - Glass crunching once, cutting, waking the hall, and gone.

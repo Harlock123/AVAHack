@@ -36,8 +36,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     /// <summary>Tries at each lock without its key; after <see cref="LockTries"/> the bot looks for the key instead.</summary>
     private readonly Dictionary<Cell, int> _lockTries = new();
     private const int LockTries = 20;
-    private object? _chasing;
-    private double _chasingSince;
+    private readonly Dictionary<object, double> _spent = new();                       // time on each target since the last thing done
+    private double _lastThink;
     private int _killsThen;
     private bool _usedStone;
 
@@ -83,6 +83,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             _lockTries.Clear();
             _pulledAt.Clear();
             _searched.Clear();
+            _killsThen = 0;                                                             // the level's counts start again
+            _spent.Clear();
             _usedStone = false;
             _prey = null;                                                               // what it hunted is on the level above
             _sealing = null;
@@ -193,13 +195,18 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         var (target, face, use) = NextObjective();
         if (target is not { } t) { Why = "no target"; return; }
         Why = $"{Goal} {t} from {g.PartyCell}";
+        double dt = Math.Min(1, g.Time - _lastThink);                                    // a rest in between is not time on the target
+        _lastThink = g.Time;
         if (Clears && Goal != "stairs")
         {
-            // Two minutes after the last thing done (a kill, a chest, a pickup, a lever), give up on the current target.
+            // Two minutes on one target since the last thing done (a kill, a chest, a pickup, a lever): give up on it.
+            // The time adds up across other goals taken in between, as when a knight lies in bones for a while
+            // and gets up again (AAABKTUF's level 4). Only a new high counts as done: a singer of the Choir that
+            // rises takes its kill back, and kill-rise-kill must not keep the chase alive for ever (AAAAVFWY's level 6).
             object key = Goal == "hunt" && _prey is not null ? _prey : (Goal!, t);
             int progress = g.Kills + _searched.Count + _looted.Count + _pulled.Count + _pressed.Count + g.Level.Chests.Count(c => c.Opened);
-            if (!Equals(_chasing, Goal) || progress != _killsThen) { _chasing = Goal; _chasingSince = g.Time; _killsThen = progress; }
-            else if (g.Time - _chasingSince > 120) { _gaveUp.Add(key); _gaveUpAt[key] = g.Time; _chasingSince = g.Time; return; }
+            if (progress > _killsThen) { _killsThen = progress; _spent.Clear(); }
+            else if ((_spent[key] = _spent.GetValueOrDefault(key) + dt) > 120) { _gaveUp.Add(key); _gaveUpAt[key] = g.Time; _spent.Remove(key); return; }
         }
         if (g.PartyCell == t)
         {

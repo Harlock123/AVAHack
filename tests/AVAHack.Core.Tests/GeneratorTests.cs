@@ -25,9 +25,9 @@ public sealed class GeneratorTests(ITestOutputHelper output)
 
     /// <summary>
     /// Walks the level working its locks in order, from the start or another cell and never through
-    /// <paramref name="avoid"/>; returns what was reached.
+    /// <paramref name="avoid"/>; returns what was reached. Hidden doors count as found unless <paramref name="secrets"/> is false.
     /// </summary>
-    public static HashSet<Cell> Reach(Level l, Cell? from = null, Cell? avoid = null, IEnumerable<Cell>? walls = null)
+    public static HashSet<Cell> Reach(Level l, Cell? from = null, Cell? avoid = null, IEnumerable<Cell>? walls = null, bool secrets = true)
     {
         var open = l.Doors.Where(d => d.Kind == DoorKind.Hand && !d.Locked || d.IsPassable).Select(d => d.Cell).ToHashSet();
         var blocked = l.Chests.Select(c => c.Cell).Concat(l.Pits.Select(p => p.Cell)).Concat(l.Traps.Where(t => t.Kind == TrapKind.CursedAltar).Select(t => t.Cell)).ToHashSet();
@@ -47,7 +47,7 @@ public sealed class GeneratorTests(ITestOutputHelper output)
                 {
                     var n = c.Step(d);
                     var k = l.KindAt(n);
-                    bool secret = l.SecretAt(n) is not null; // findable: counts as a way through
+                    bool secret = secrets && l.SecretAt(n) is not null; // findable: counts as a way through
                     if ((k == CellKind.Wall && !secret) || blocked.Contains(n) || (k == CellKind.Door && !open.Contains(n)) || !seen.Add(n)) continue;
                     q.Enqueue(n);
                 }
@@ -84,8 +84,10 @@ public sealed class GeneratorTests(ITestOutputHelper output)
             Need(depth == 1 || l.StairsUp.Contains(l.Start), "no stairs up at the start");
             Need(l.Landing is not { } land || reach.Contains(land), "the landing can't be reached");
             // The balance pass: a party that falls in must find the stairs from the landing, and below the first
-            // level the way on mustn't run back over the stairs up (stepping on them climbs).
-            Need(l.Landing is not { } fell || Reach(l, fell).Contains(l.Stairs.Single()), "the stairs can't be reached from the landing");
+            // level the way on mustn't run back over the stairs up (stepping on them climbs). From the landing that
+            // holds without a hidden door and without crossing the stairs up either (AAAA62RB's level 12).
+            Need(l.Landing is not { } fell || Reach(l, fell, avoid: depth > 1 ? l.Start : null, secrets: false).Contains(l.Stairs.Single()),
+                "the stairs can't be reached from the landing without a hidden door or the stairs up");
             Need(depth == 1 || Enum.GetValues<Dir>().Select(d => l.Start.Step(d)).Where(reach.Contains)
                 .Any(c => Reach(l, c, avoid: l.Start).Contains(l.Stairs.Single())), "the way to the stairs runs over the stairs up");
             Need(l.Spawns.All(s => Near(s.Cell)), "a creature can't be reached");

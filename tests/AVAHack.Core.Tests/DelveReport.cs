@@ -146,7 +146,7 @@ public sealed class DelveReport(ITestOutputHelper output)
     /// <summary>
     /// M7's exit test, as the balance pass left it (spec section 31): a full 12-level Delve on Standard, with its
     /// bosses and the Unmade Heart, played by a bot that clears each level as a player would. On 16 seeds it wins
-    /// about two in three, and the heroes end in their mid-twenties, level for level with the deepest creatures.
+    /// about four in five (13 of 16), and the heroes end in their mid-twenties, level for level with the deepest creatures.
     /// </summary>
     [Fact]
     public void A_full_twelve_level_delve()

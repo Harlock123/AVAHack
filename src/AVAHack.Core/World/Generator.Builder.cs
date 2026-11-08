@@ -869,8 +869,9 @@ public static partial class Generator
             var reach = Walk(_start);
             if (!reach.Contains(_down)) return false;
             if (_landing is { } land && !reach.Contains(land)) return false;
-            // A party that falls in lands here, with every barrier still shut: it must find the stairs from there too.
-            if (_landing is { } fell && !Walk(fell).Contains(_down)) return false;
+            // A party that falls in lands here, with every barrier still shut: it must find the stairs from there too,
+            // without a hidden door, and without crossing the stairs up, which would climb (AAAA62RB's level 12).
+            if (_landing is { } fell && !Walk(fell, avoid: depth > 1 ? _start : null, secrets: false).Contains(_down)) return false;
             // Below the first level the start holds the stairs up, and stepping back on them climbs: the way on
             // must not run back through the start.
             if (depth > 1 && !Enum.GetValues<Dir>().Select(d => _start.Step(d)).Where(reach.Contains)

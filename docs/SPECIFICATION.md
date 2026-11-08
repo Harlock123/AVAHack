@@ -881,7 +881,7 @@ About 40 handmade rooms, written as text maps with metadata in `vaults/*.txt`. E
   long rests.
 - **Pits drop the party one level down** into a "landing" cell that the generator always places on the level
   below. The stairs down must be reachable from the landing as well as from the start, working the level's locks
-  from there.
+  from there. From the landing, the way must need no hidden door and must not cross the stairs up.
 - Below the first level the start holds the stairs up, and stepping on them climbs. The way from the start to the
   stairs down must not run back over that cell.
 
@@ -2469,8 +2469,21 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
   from the seed and laid out by the quick-start heroes' own scores), on 16 seeds: normal parties won 10, heroic
   ones 9. The heroic winners ended at level 21–22, the normal ones at 23–26. A quarter more XP is the price.
   (Both runs had a seed stuck on the bot: AAAA62RB on its stairs in both, and AAAAVFWY on a hunt in the heroic
-  one. Neither is in the 8 seeds the test suite plays.)
+  one. Neither is in the 8 seeds the test suite plays. Both are fixed below.)
 - **Tests.** The roll (ones rolled again, a score under 10 rolled again, 10–18 averaging about 14); a heroic hero
   needing 125 XP for level 2 and keeping the flag through a save; creation refusing a heroic score under 10; and,
   in the App, the Heroic button making a heroic fighter with Strength its best score, and a hero's one roll
   coming back after point buy, with 4d6 closed.
+- **Three stuck seeds, fixed.**
+  - **AAAA62RB, a generator fix.** The party fell through a pit into a pocket of level 12 whose only ways out were
+    a hidden door it never found and the start's cell, where the stairs up would have climbed it a level. `Check`
+    already required the landing to reach the stairs down, but let that way run through hidden doors and over the
+    stairs up. Now it may use neither, as a teleporter's landing already may not. The 1,000-seed suite checks it
+    (with the old check it finds four such levels at depths 5 and 9).
+  - **AAAAVFWY, the bot.** Hunting a rat in the Hollow Choir's hall, it kept killing singers that rose again, and
+    each kill counted as progress, so it never gave up. Only a new high counts now.
+  - **AAABKTUF, the bot** (with the heroic party). An Ossuary Knight fell into bones and stood up again without a
+    crushing blow. While it lay there the bot turned to other things, and turning back restarted its two minutes.
+    Its time on each target now adds up until something is done.
+- **Results after the fixes,** 16 seeds of the 12-level Delve: normal parties won 13, heroic ones 11, none stuck.
+  The heroic winners ended at level 20–23, the normal ones at 23–26.

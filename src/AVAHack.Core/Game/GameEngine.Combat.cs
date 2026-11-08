@@ -445,8 +445,11 @@ public sealed partial class GameEngine
         return RelativeSide.Behind;
     }
 
-    /// <summary>A creature's blow or missile lands on a hero, for how much (after blocks and wards): for reports.</summary>
-    public event Action<Monster, Character, int>? HeroStruck;
+    /// <summary>
+    /// A hero is hurt, for how much (after blocks and wards), and by what: a creature's id for its blows, "hazard" for
+    /// traps, hazards and broken glass, or the condition (bleeding, poisoned...) for damage over time. For reports.
+    /// </summary>
+    public event Action<string, Character, int>? HeroStruck;
 
     /// <summary>A creature's blow or missile reaches the party, coming from cell <paramref name="from"/>.</summary>
     private void HitHero(Monster m, CreatureAttackDef a, Cell from, Character? target = null)
@@ -520,7 +523,7 @@ public sealed partial class GameEngine
         }
 
         double ward = c.Ward;
-        HeroStruck?.Invoke(m, c, dmg);
+        HeroStruck?.Invoke(m.Def.Id, c, dmg);
         c.TakeDamage(dmg);
         if (ward > c.Ward && c.WardFrom is { } warder) warder.UseSkill(SkillId.Warding, warder.UseXp(SkillId.Warding, ward - c.Ward), XpSource.Plain);
         Concentrate(c, dmg);
@@ -602,7 +605,9 @@ public sealed partial class GameEngine
         foreach (var c in Party.Members)
         {
             bool wasDown = c.IsDown;
+            var dotFrom = c.Conditions.Active.FirstOrDefault(x => x.DamagePerSecond is not null)?.Id;
             int dot = c.Update(TickSeconds, Rng.Combat);
+            if (dot > 0) HeroStruck?.Invoke(dotFrom?.ToString().ToLowerInvariant() ?? "condition", c, dot);
             if (dot > 0) FloatAtHero($"-{dot}", TextKind.HeroHurt);
             if (c.IsDown && !wasDown) Say($"{c.Name} falls!");
         }

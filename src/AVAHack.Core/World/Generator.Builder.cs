@@ -799,7 +799,7 @@ public static partial class Generator
                 var id = Weighted(table);
                 var def = db.Creature(id);
                 var at = Pick(spots);
-                int group = def.Has("pack") ? 2 + Roll(3) : 1;
+                int group = def.Has("pack") ? 2 + Roll(Region.PackMax - 1) : 1;
                 for (int g = 0; g < group && placed < want; g++)
                 {
                     var cell = def.Size == CreatureSize.Small ? at : spots.OrderBy(s => s.Distance(at)).Skip(g).FirstOrDefault();

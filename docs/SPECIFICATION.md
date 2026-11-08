@@ -2388,6 +2388,22 @@ families, rules and boss.
     now on level 23 and in the Unmade Heart, which is the next to tune.
   - **A key it gave up on** is worth another try after three minutes: one run stood for ever at a lock it couldn't
     pick (DC 37), its key reachable but given up on while it was fighting.
+- **Tuning, third pass.**
+  - **Smaller packs.** A new region field, `packMax` (4 unless set: packs are 2 to it), is 3 here. On the Lens's level
+    the creatures are level 38–39, and packs of shardlings, Void-Torn Hounds and archers did most of the killing. A
+    level has the same number of creatures; fewer come at once.
+  - **Numbers.** The Obsidian Hulk's smash is 3d10+7 and stuns one time in seven (was 4d10+7 and one in four); the
+    archers' arrows are 2d8+5; the shardling's shear 2d6+5.
+  - **The bot** treats a lock that has beaten it twenty times, with no key, as a wall until it has the key (it stood
+    at a DC 37 door, in the sweep of a blade trap, until the party fell); and, fighting on spikes or blades that cycle,
+    it steps off them first. (Stepping off them whenever it stood on them made it bounce at the edge of every cycling
+    trap: only in a fight.)
+  - **The report** names every source of harm: a creature, `hazard` (traps), `brokenGlass`, `lensBeam`, or a
+    condition such as `bleeding`. The engine's `HeroStruck` event now carries that name. Traps had been hidden: one
+    level's blades did more than 4,000.
+  - **Results** (2 parties, 12 seeds each): through the Glass Roads 13 of 24 (was 5 of 24 at the start of this pass),
+    average depth 24.1; deaths on the Lens's level 3 (was 9), on level 23 six. Two runs still stall, with the bot
+    standing by a rift or a closed door; that is the bot, not the region.
 - **Tests.**
   - Glass Roads levels with their families, glass, rifts, mirror walls and the Lens, and the Heart's Waystone after it.
   - Glass crunching once, cutting, waking the hall, and gone.

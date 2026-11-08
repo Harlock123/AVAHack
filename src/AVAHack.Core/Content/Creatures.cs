@@ -184,6 +184,8 @@ public sealed record RegionDef
     public double Shards { get; init; }
     /// <summary>Rifts in each level: tears that let the Unmade through until Use seals them.</summary>
     public int Rifts { get; init; }
+    /// <summary>The most creatures in a pack here (packs are 2 to this; 4 unless set).</summary>
+    public int PackMax { get; init; } = 4;
     /// <summary>The share of room walls of polished black glass (only the look).</summary>
     public double MirrorWalls { get; init; }
     public bool Final { get; init; }

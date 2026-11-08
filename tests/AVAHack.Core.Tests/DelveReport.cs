@@ -36,8 +36,8 @@ public sealed class DelveReport(ITestOutputHelper output)
         while (d.Depth < from) d.Descend();
         var g = d.Engine;
         var bot = new Bot(g, (int)seed) { Clears = clears };
-        var struck = new Dictionary<string, int>();                                        // damage dealt to the heroes on this level, by creature
-        g.HeroStruck += (m, _, dmg) => struck[m.Def.Id] = struck.GetValueOrDefault(m.Def.Id) + dmg;
+        var struck = new Dictionary<string, int>();                                        // damage to the heroes on this level, by creature, hazard or condition
+        g.HeroStruck += (from, _, dmg) => struck[from] = struck.GetValueOrDefault(from) + dmg;
         string? traceFile = Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE") == code ? Environment.GetEnvironmentVariable("AVAHACK_BALANCE_TRACE_FILE") : null;
         double stuckSince = g.Time;
         int lastDepth = d.Depth;

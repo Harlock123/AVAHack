@@ -33,6 +33,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
     // A target the bot has chased for two minutes without getting there is one it gives up on, as a player would.
     private readonly HashSet<object> _gaveUp = new();
     private readonly Dictionary<object, double> _gaveUpAt = new();
+    /// <summary>Tries at each lock without its key; after <see cref="LockTries"/> the bot looks for the key instead.</summary>
+    private readonly Dictionary<Cell, int> _lockTries = new();
+    private const int LockTries = 20;
     private object? _chasing;
     private double _chasingSince;
     private int _killsThen;
@@ -74,6 +77,7 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             _looted.Clear();
             _gaveUp.Clear();
             _gaveUpAt.Clear();
+            _lockTries.Clear();
             _pulledAt.Clear();
             _searched.Clear();
             _usedStone = false;
@@ -88,13 +92,17 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         bool inBeam = g.InBeam(g.PartyCell);
         if (inBeam && !_wasInBeam) _dodgeBeam = Next() < 0.8;
         _wasInBeam = inBeam;
-        if (inBeam && _dodgeBeam && !g.IsMoving && g.Queued == 0)
+        // Fighting while standing on spikes or blades that cycle: step off and fight from beside them, as a player
+        // would. (Crossing them is the path's business: it waits for them to pass.)
+        bool onCycle = g.Level.Traps.Any(t => t.Cell == g.PartyCell && t.Armed && t.Cyclic)
+                       && Enum.GetValues<Dir>().Any(d => g.MonstersAt(g.PartyCell.Step(d)).Any(m => !m.Ally));
+        if ((onCycle || (inBeam && _dodgeBeam)) && !g.IsMoving && g.Queued == 0)
         {
             foreach (var (act, way) in new[] { (GameAction.StrafeLeft, g.Facing.Left()), (GameAction.StrafeRight, g.Facing.Right()),
                                                (GameAction.StepForward, g.Facing), (GameAction.StepBack, g.Facing.Opposite()) })
             {
                 var to = g.PartyCell.Step(way);
-                if (Walkable(to) && !g.InBeam(to) && !g.MonstersAt(to).Any()) { g.Press(act); return; }
+                if (Walkable(to) && !g.InBeam(to) && !g.MonstersAt(to).Any() && !g.Level.Traps.Any(t => t.Cell == to && t.Armed && t.Cyclic)) { g.Press(act); return; }
             }
         }
 
@@ -226,7 +234,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         if (g.PodWhole(next)) return;
         if (g.Level.DoorAt(next) is { Kind: DoorKind.Hand, IsPassable: false } door)
         {
-            // Open it with the key or pick it (Use does both); keep trying.
+            // Open it with the key or pick it (Use does both); keep trying, for a while.
+            if (door.Locked && !HasKey(door.KeyId)) _lockTries[next] = _lockTries.GetValueOrDefault(next) + 1;
             if (!door.Opening || door.Locked) g.Press(GameAction.Use);
             return;
         }
@@ -485,7 +494,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
         if (g.Level.PlateAt(c) is { Mode: PlateMode.Toggle } plate && c != g.PartyCell && !WantsPress(plate) && !braveTraps) return false; // round it, unless it's the only way
         if (g.Level.DoorAt(c) is { } d && !d.IsPassable)
         {
-            if (d.Locked) return HasKey(d.KeyId) || (Clears && d.LockDc > 0); // a lock can be picked
+            // A lock can be picked, unless it has beaten the bot often enough that the key is the only way.
+            if (d.Locked) return HasKey(d.KeyId) || (Clears && d.LockDc > 0 && _lockTries.GetValueOrDefault(c) < LockTries);
             if (d.Kind != DoorKind.Hand && !d.Opening) return false;
         }
         return true; // creatures in the way get fought when the bot bumps into them

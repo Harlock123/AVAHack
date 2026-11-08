@@ -4194,7 +4194,7 @@
    "windup": 0.5,
    "recovery": 2.0,
    "toHit": 10,
-   "damage": "2d8+5",
+   "damage": "2d6+5",
    "type": "slashing",
    "onHit": {
     "condition": "bleeding",
@@ -4411,13 +4411,13 @@
    "windup": 1.1,
    "recovery": 2.6,
    "toHit": 11,
-   "damage": "4d10+7",
+   "damage": "3d10+7",
    "type": "bludgeoning",
    "area": true,
    "onHit": {
     "condition": "stunned",
     "dc": 18,
-    "chance": 25,
+    "chance": 15,
     "seconds": 2
    }
   }
@@ -4594,7 +4594,7 @@
    "windup": 0.9,
    "recovery": 2.2,
    "toHit": 11,
-   "damage": "3d8+5",
+   "damage": "2d8+5",
    "type": "piercing",
    "range": 7,
    "projectileSpeed": 12

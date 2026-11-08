@@ -251,10 +251,11 @@ public sealed partial class GameEngine
     }
 
     /// <summary>Damage from a trap or hazard to a hero (no attack roll), with what being hurt always brings.</summary>
-    private void HurtHero(Character c, int dmg, DamageType type)
+    private void HurtHero(Character c, int dmg, DamageType type, string from = "hazard")
     {
         if (dmg <= 0 || c.IsDown) return;
         if (type == DamageType.Fire && !_igniting) { _igniting = true; FireAt(PartyCell); _igniting = false; }
+        HeroStruck?.Invoke(from, c, dmg);
         c.TakeDamage(dmg);
         c.HurtFlash = 0.3;
         HeroHurt = 0.3;

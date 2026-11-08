@@ -55,6 +55,19 @@ public sealed class GlassTests
     }
 
     [Fact]
+    public void Packs_on_the_Glass_Roads_are_two_or_three()
+    {
+        Assert.Equal(3, Db.Region("glass").PackMax);
+        Assert.Equal(4, Db.Region("rootdark").PackMax);                                // the rest keep 2 to 4
+        // A pack of small creatures (shardlings) shares one cell: none holds more than three.
+        var levels = Enumerable.Range(1, 40).Select(i => Generator.Generate(Db, (ulong)i * 977, 22, new GenOptions { MaxDepth = 24 }));
+        var packs = levels.SelectMany(l => l.Spawns.Where(s => Db.Creature(s.Creature) is { Size: CreatureSize.Small } d && d.Has("pack"))
+                                                    .GroupBy(s => (s.Cell, s.Creature)).Select(g => g.Count())).ToList();
+        Assert.NotEmpty(packs);
+        Assert.InRange(packs.Max(), 2, 3);
+    }
+
+    [Fact]
     public void Broken_glass_crunches_once_cutting_the_careless_and_waking_the_hall()
     {
         var g = Make();

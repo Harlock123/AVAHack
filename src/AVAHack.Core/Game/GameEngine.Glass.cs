@@ -41,7 +41,7 @@ public sealed partial class GameEngine
         foreach (var h in Party.Standing.ToList())
         {
             if (h.Save(Rng.Combat, Attribute.Dex, dc)) continue;
-            HurtHero(h, Combat.ApplyAffinity(Dice.Parse("2d6").Roll(Rng.Combat) + Level.Depth / 3, h.Resistances.For(DamageType.Slashing)), DamageType.Slashing);
+            HurtHero(h, Combat.ApplyAffinity(Dice.Parse("2d6").Roll(Rng.Combat) + Level.Depth / 3, h.Resistances.For(DamageType.Slashing)), DamageType.Slashing, "brokenGlass");
             cut++;
         }
         int woken = 0;
@@ -162,7 +162,7 @@ public sealed partial class GameEngine
                 {
                     int dmg = Dice.Parse("6d8").Roll(Rng.Combat) + Level.Depth;
                     if (h.Save(Rng.Combat, Attribute.Dex, 16 + Level.Depth / 4)) dmg /= 2;
-                    HurtHero(h, Combat.ApplyAffinity(dmg, h.Resistances.For(DamageType.Radiant)), DamageType.Radiant);
+                    HurtHero(h, Combat.ApplyAffinity(dmg, h.Resistances.For(DamageType.Radiant)), DamageType.Radiant, "lensBeam");
                 }
                 if (Party.AllDown) Die();
             }

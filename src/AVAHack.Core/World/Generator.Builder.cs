@@ -906,6 +906,10 @@ public static partial class Generator
             // must not run back through the start.
             if (depth > 1 && !Enum.GetValues<Dir>().Select(d => _start.Step(d)).Where(reach.Contains)
                     .Any(n => Walk(n, avoid: _start).Contains(_down))) return Fail("the way on runs over the stairs up");
+            // Nor may the stairs up be the only link between the cells round them: a party that went one way first
+            // would have to climb to get back the other (AAAC3RX6's level 2).
+            if (depth > 1 && Enum.GetValues<Dir>().Select(d => _start.Step(d)).Where(reach.Contains).ToList() is { Count: > 1 } round
+                && Walk(round[0], avoid: _start) is var without && round.Any(n => !without.Contains(n))) return Fail("the stairs up part the level");
             if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } tt && !reach.Contains(tt))) return Fail("a teleporter goes nowhere reachable");
             // A teleporter must not drop the party in a pocket it can only leave through a hidden door: from where
             // it lands, it must find its way back to the start without one.

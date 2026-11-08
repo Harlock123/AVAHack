@@ -2543,9 +2543,7 @@ lived) lead down one more level to it.
   27. At its own level, on 16 seeds of the 12-level Delve: 12 normal parties reached it and 10 broke it; 10 heroic
   ones reached it and 7 broke it. Unmade Hounds do most of the harm there.
 - **After the vaults (section 44)**, which change most levels' layouts, the same 16 seeds went worse: normal
-  parties won 7 (11 reached the Knell), heroic ones 3 (8 reached it), with more falling at the Bellwright Engine
-  and on level 12, none stuck. Whether that is the seeds or a real change in difficulty is the next thing to find
-  out; Tendril Horrors do the most harm in the Heart and the Knell's hall.
+  parties won 7, heroic ones 3. On 32 seeds that was mostly the seeds (section 45).
 - **Tests.** The Knell tolling through the party and calling hounds, holding its toll while hushed, cracking at
   half HP and its fall winning; the Unmaker's fall opening the way on; a 12-level Delve going down to the Knell (a
   Waystone, no stairs, and a save that comes back there); the boss of each depth; and the validator.
@@ -2574,4 +2572,29 @@ Heart had none.
   - `Check` says why it failed (`Builder.Failure`), for tests.
 - **Results.** Depths 1, 5, 9, 13, 14, 18 and 22: 1,000 seeds each and no problems; 3 of 1,000 fell back at depth
   14 and 4 at depth 18 (was 12 levels with problems at depth 14 and 1 at 22, all of them fallbacks).
+
+## 45. Implementation decisions (the drop in wins after the Knell and the vaults)
+
+After sections 43 and 44 the 16-seed 12-level report fell from 10 wins to 7 (normal) and 7 to 3 (heroic). To find
+out why, each suspect was switched off in turn, on 32 seeds with normal parties:
+
+| Run | Won | Stuck |
+| --- | --- | --- |
+| As it stands | 16 | 1, on level 2 |
+| The bot hunting what bosses call up, except the Knell's | 15 | 5: four on level 6, killing what the Choir's Calling Voice called, for ever |
+| The old 16 vaults, their traps on top of the level's | 18 | 0 |
+| The bot fighting the Choir at any level | 18 | 2 |
+
+The wins are within a few of each other: on 32 seeds that is the seeds, not a change in difficulty. Leaving what a
+boss calls up alone is needed, or the bot farms the Choir. The one real fault was the stuck run on level 2.
+
+- **The stairs up mustn't part the level.** On AAAC3RX6's level 2 the start (and the stairs up) was the only
+  link between the west of the level and the east, where the stairs down were. `Check` only asked that one cell
+  round the start reached the stairs without it, which the east one did; but a party that went west first had to
+  climb a level to come back. Now every cell round the start must reach the others without it. The 1,000-seed suite
+  checks it (the Waystone, beside the start, blocks its cell and doesn't count).
+- **Results,** 32 seeds of the 12-level Delve, the Heart and the Knell: normal parties won 17 (53%), heroic ones 12
+  (38%), none stuck. Most falls are at the Bellwright Engine (4), on level 12 (3 to 6) and in the Knell's hall (5).
+  Heroic parties now lag by five wins in 32, more than the one or two of section 41; the extra level may make their
+  slower levels count for more. Worth another look before calling the trade fair again.
 

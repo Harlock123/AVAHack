@@ -96,6 +96,8 @@ public sealed class GeneratorTests(ITestOutputHelper output)
                 "the stairs can't be reached from the landing without a hidden door or the stairs up");
             Need(depth == 1 || Enum.GetValues<Dir>().Select(d => l.Start.Step(d)).Where(reach.Contains)
                 .Any(c => Reach(l, c, avoid: l.Start).Contains(l.Stairs.Single())), "the way to the stairs runs over the stairs up");
+            var round = Enum.GetValues<Dir>().Select(d => l.Start.Step(d)).Where(c => reach.Contains(c) && c != l.Waystone).ToList(); // the stone blocks its cell
+            Need(depth == 1 || round.Count < 2 || round.All(Reach(l, round[0], avoid: l.Start).Contains), "the stairs up part the level");
             Need(l.Spawns.All(s => Near(s.Cell)), "a creature can't be reached");
             Need(l.Chests.All(c => Near(c.Cell)), "a chest can't be reached");
             Need(l.Piles.Keys.All(Near), "something on the floor can't be reached");

@@ -337,6 +337,9 @@ public sealed partial class GameEngine
             case "choir":
                 if (m.SpecialTimer >= 9) { m.SpecialTimer = 0; if (m.HushLeft <= 0) Sing(m); }
                 break;
+            case "knell":
+                KnellTick(m, share);
+                break;
             case "unmaker":
                 if (m.Phase == 0 && m.SpecialTimer >= 15) { m.SpecialTimer = 0; Summon(m, "unmadeHound", 2); }
                 if (m.Phase == 0 && share <= 2.0 / 3)
@@ -410,8 +413,41 @@ public sealed partial class GameEngine
         }
         if (m.Boss == "crownNode") NodeDied(m);
         if (m.Boss == "choir") ChoirFall(m);
-        if (m.Boss == "unmaker") Win("The Unmaker comes apart into silence. The Knell stops. Harrowgate will wake.");
+        if (m.Boss == "knell") Win("The Knell cracks from crown to lip, and its last note runs out into the stone. The Hollow is still. Harrowgate wakes.");
+        else if (m.Boss == "unmaker" && !Level.Stairs.Any()) Win("The Unmaker comes apart into silence. The Knell stops. Harrowgate will wake.");
+        else if (m.Boss == "unmaker") Say("The Unmaker comes apart into silence. But below, the Knell tolls on without it. The way down is open.");
         else if (m.Boss is not null && m.Def.Id == Level.Boss) Say($"{m.Name} has fallen. The way down is open.");
+    }
+
+    // ---- The Knell (section 43) ----
+
+    /// <summary>Seconds between tolls: 12, and 8 once it has cracked (half its HP).</summary>
+    public static double KnellEvery(Monster m) => m.Phase == 0 ? 12 : 8;
+
+    /// <summary>
+    /// The Knell tolls: force through the whole party, a CON save halving it, and each toll calls up an echo of the
+    /// Unmade, two at a time at most. Hushed, it holds its toll until it can ring again.
+    /// </summary>
+    private void KnellTick(Monster m, double share)
+    {
+        if (m.Phase == 0 && share <= 0.5)
+        {
+            m.Phase = 1;
+            Say("The Knell cracks, and its tolls come quicker.");
+        }
+        if (m.SpecialTimer < KnellEvery(m) || m.HushLeft > 0) return;
+        m.SpecialTimer = 0;
+        CueHere("bell");
+        Say("The Knell tolls. The stone shivers into new shapes.");
+        int dc = 11 + m.Def.Level / 2;
+        foreach (var c in Party.Standing.ToList())
+        {
+            int dmg = (int)(Dice.Parse($"{2 + m.Def.Level / 6}d8").Roll(Rng.Combat) * m.DamageFactor); // 5d8 at level 23
+            if (c.Save(Rng.Combat, Rules.Attribute.Con, dc)) dmg /= 2;
+            HurtHero(c, dmg, DamageType.Force);
+        }
+        if (Party.AllDown) { Die(); return; }
+        Summon(m, "unmadeHound", 2);
     }
 
     // ---- The Hollow Choir (spec 12.5) ----
@@ -443,14 +479,14 @@ public sealed partial class GameEngine
                 Say($"{m.Name} rises to a shriek, and the air catches fire!");
                 foreach (var c in Party.Standing.ToList())
                 {
-                    int dmg = (int)(Dice.Parse("3d6").Roll(Rng.Combat) * m.DamageFactor);
+                    int dmg = (int)(Dice.Parse("2d6").Roll(Rng.Combat) * m.DamageFactor);
                     if (c.Save(Rng.Combat, Rules.Attribute.Dex, 11 + m.Def.Level / 2)) dmg /= 2;
                     HurtHero(c, dmg, DamageType.Fire);
                 }
                 if (Party.AllDown) Die();
                 break;
             case 3: // Conjuration
-                Summon(m, LesserKin(m), 2);
+                Summon(m, LesserKin(m), 1);
                 break;
             case 4: // Illusion
                 if (m.Cell.Distance(PartyCell) > 6 || Party.Standing.Where(c => !c.Conditions.Has(ConditionId.Frightened)).ToList() is not { Count: > 0 } calm) return;

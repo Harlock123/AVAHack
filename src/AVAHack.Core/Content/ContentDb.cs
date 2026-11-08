@@ -200,6 +200,8 @@ public sealed class ContentDb
             if (r.Wanderers < 0 || r.ForgeOneIn < 0) p.Add($"regions: '{r.Id}' has a negative rate.");
             if (r.MaxLevel is < 1) p.Add($"regions: '{r.Id}' has maxLevel {r.MaxLevel}; a creature is at least level 1.");
             if (r.PackMax < 2) p.Add($"regions: '{r.Id}' has packMax {r.PackMax}; a pack is at least 2.");
+            if (r.Beneath is { } under && (!r.Final || Creatures.FirstOrDefault(c => c.Id == under) is not { Boss: not null }))
+                p.Add($"regions: '{r.Id}''s beneath '{under}' must be a boss creature, under the final region.");
         }
         Unique(Skills, s => s.Id.ToString(), "skills");
         Unique(Ancestries, a => a.Id, "ancestries");

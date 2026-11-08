@@ -192,4 +192,6 @@ public sealed record RegionDef
     /// <summary>The share of room walls of polished black glass (only the look).</summary>
     public double MirrorWalls { get; init; }
     public bool Final { get; init; }
+    /// <summary>The final region only: the boss of one more level below it, the last of the Delve (the Knell).</summary>
+    public string? Beneath { get; init; }
 }

@@ -10,7 +10,8 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 **Status: milestone M8, plus a balance pass.** What's in so far:
 
 - **The Delve.** A seeded, generated descent of up to 24 levels across six regions of four, each with its own
-  creatures and boss, ending in the Unmade Heart. The newest regions:
+  creatures and boss, then the Unmade Heart, and below it the Knell, the bell whose tolls reshape the Hollow: break
+  it to win. The newest regions:
   - **The Ossuary Stacks** (levels 13–16), a buried archive. Noise wakes its dead, candlelight gives you away, its
     shelves hold books, and the many-handed Archivist reads by his candles.
   - **The Rootdark** (levels 17–20), giant roots beneath the Works. Spore pods burst in clouds that fire sets
@@ -23,11 +24,13 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
 - **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Attributes come from a point
   buy, a 4d6 roll, or a heroic roll (10–18) that costs a quarter more XP for each level; each hero rolls once.
   Skills grow with use and kills bring experience, with level-ups and perk trees.
-- **The bestiary.** 71 creatures in twelve families, plus wanderers, each drawn in code. Elites and named champions
-  carry the 16 affixes, and six bosses guard the way down.
+- **The bestiary.** 100 creatures in seventeen families, plus wanderers, each drawn in code. Elites and named champions
+  carry the 16 affixes, and bosses guard each region's way down. On level 6 the optional Hollow Choir sings five
+  schools: silence its voices in the order carved in their hall, or hush them.
 - **Magic and loot.** 49 spells, and items with rarity, affixes, sets and uniques.
 - **Crafting.** Alchemy with hidden reagent effects, cooking, Smithing and Enchanting.
 - **Survival.** Food and water, and rests that can be interrupted.
+- **28 handmade vaults,** at least two in every region, stitched into the generated levels.
 - **Waystones** after each boss, with a merchant, a trainer, a shrine and a stash.
 - **Saves.** Save slots, quick saves and Ironman.
 

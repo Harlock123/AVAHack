@@ -140,6 +140,8 @@ The town sends delvers down to silence it.
   through until you seal them, and its boss, the Lens, learns every blow you strike. (Section 39.)
 - **The Unmade Heart (final level).** Below the last level of any Delve of 12 levels or more. It leads to the
   Unmaker.
+- **The Knell.** One level further down: the bell whose tolls shape the Hollow. Breaking it ends the Delve.
+  (Section 43.)
 
 ### Bosses
 
@@ -729,7 +731,8 @@ Each monster has a behaviour profile made of these blocks:
 | The Bellwright Engine | after level 8 | A bell foundry with conveyor floors | The floor moves the party one cell every 4 s. The Engine is invulnerable until its 3 pressure valves are shut |
 | Mother of Coils | after level 12 | A flooded temple | Water rises and falls on a cycle. She is only vulnerable when the water drops. She summons Coil Guards from the pools |
 | The Hollow Choir (optional) | level 6 | The largest spare hall | 5 singers each sing a school. Hush them (Warding) or kill them in the carved order, or they raise each other |
-| The Unmaker | the final level | The Unmade Heart | Phase 1: it unmakes walls, so the arena grows. Phase 2: it uses the run's champion affixes. Phase 3: the Knell tolls and the room rearranges every 15 s |
+| The Unmaker | the final region | The Unmade Heart | Phase 1: it unmakes walls, so the arena grows. Phase 2: it uses the run's champion affixes. Phase 3: the Knell tolls and the room rearranges every 15 s |
+| The Knell | the level below the Heart | The Knell's hall | A bell that can't move. It tolls through the whole party every 12 s (8 once cracked), calling an Unmade Hound each time; Hush stills it for 4 s. Its fall wins the Delve |
 
 ---
 
@@ -1700,7 +1703,7 @@ is built.
       - At two thirds of its HP it takes up to three of the run's champion affixes (Vampiric, Shielded and Frenzied
         if there were none).
       - Below a third, the Knell moves the party to a random cell near it every 15 s.
-      - Its death wins the Delve.
+      - Its death opens the way down to the Knell (section 43). Without a level below (a test's arena), it wins.
 
       *Not done:* unmaking walls.
 - **Waystones** are a stone next to the start of the level after each boss, and of the Heart.
@@ -2498,8 +2501,8 @@ five fell within 10 s. Now each sings its own school, and there are two ways to 
 - **The voices** (`Choir.Voices`), each singing every 9 s:
   - the Low Voice (Warding) wards the others for a sixth of their HP;
   - the Mending Voice (Restoration) mends the most hurt of the others by a quarter of its HP;
-  - the Burning Voice (Destruction) sets the air alight: 3d6 fire to the party within 6 cells, a DEX save halving it;
-  - the Calling Voice (Conjuration) calls up two of its family's least;
+  - the Burning Voice (Destruction) sets the air alight: 2d6 fire to the party within 6 cells, a DEX save halving it;
+  - the Calling Voice (Conjuration) calls up its family's least, one at a time;
   - the Dreaming Voice (Illusion) frightens one hero for 6 s, unless a WIS save beats it.
 - **The carving.** The hall's note gives the order, shuffled for each seed: "Let the Mending Voice, then the Low
   Voice, ... fall silent, in that order". A singer that falls in its turn (every singer before it is silent) is
@@ -2508,7 +2511,67 @@ five fell within 10 s. Now each sings its own school, and there are two ways to 
 - **Hush**, a new Warding spell (rank 20, 8 mana): the creature ahead can't sing, cast, shoot or call for 12 s,
   and fights only with its hands. A singer that falls while hushed stays fallen, in turn or not. On other
   creatures it stops ranged attackers' shots and summoners' calls. Saved with the creature (`MonsterSave.HushLeft`).
-- **The bot** hunts the singer whose turn it is, as a player who read the carving would.
+- **The bot** hunts the singer whose turn it is, as a player who read the carving would, once its heroes are at
+  least the singers' level; below that it leaves the optional fight alone. (With 3d6 fire, two called creatures and
+  the bot going in at level 7, seed AAABKTUF's party fell to the Choir on level 6.)
 - **Tests.** The order: one out of turn rising, one in turn staying down, a hushed one out of turn staying down,
   and the silence when all are; each voice's song, and a hushed one's silence; the generator giving five voices,
   five places in the order and a carving that names them in it; and Hush wearing off after 12 s.
+
+## 43. Implementation decisions (the Knell, below the Heart)
+
+The story always had the Knell in it: the bell whose tolls rearrange the Hollow, which the Unmaker rang. Now it is a
+place. When the Unmaker falls, the Knell tolls on without it, and the Heart's stairs (sealed while the Unmaker
+lived) lead down one more level to it.
+
+- **Where.** The final region (`regions.json`, the Unmade Heart) names a boss `beneath` it: `theKnell`. Below a
+  Delve of 12 or more, the level after the Heart (depth + 2: level 14 of a 12-level Delve, 26 of a 24) is its hall,
+  built like the Heart's levels, with the Heart's look and creatures, a Waystone at the start (it follows a boss)
+  and no stairs down. `Generator.IsBeneath` says which level that is. The validator checks `beneath` is a boss
+  creature and sits on the final region.
+- **The Knell** (`theKnell`): a level-23 bell that can't move (`rooted`), with 28d10+90 HP and AC 17, striking what
+  stands next to it with a peal (3d10+6 force, the whole front rank). Other bosses are made at the depth + 1; the
+  Delve's last is never made smaller than its own level.
+  - **The toll,** every 12 s: force through the whole party, (2 + level / 6)d8 (5d8 at level 23), a CON save halving
+    it, and an Unmade Hound answers, two at a time at most.
+  - **Cracked,** at half HP, it tolls every 8 s.
+  - **Hush** stills it, but only for 4 s; the toll waits until it can ring.
+  - **Its fall wins the Delve:** "The Knell cracks from crown to lip ... Harrowgate wakes."
+- **The bot** goes for the boss and leaves alone what a living boss has called up (it fights them where they stand
+  in its way): a first try hunted the Knell's hounds for ever and never reached the bell.
+- **Choosing it.** Made at the depth + 1 like the other bosses, it had 137 HP and fell in seconds to heroes of level
+  27. At its own level, on 16 seeds of the 12-level Delve: 12 normal parties reached it and 10 broke it; 10 heroic
+  ones reached it and 7 broke it. Unmade Hounds do most of the harm there.
+- **After the vaults (section 44)**, which change most levels' layouts, the same 16 seeds went worse: normal
+  parties won 7 (11 reached the Knell), heroic ones 3 (8 reached it), with more falling at the Bellwright Engine
+  and on level 12, none stuck. Whether that is the seeds or a real change in difficulty is the next thing to find
+  out; Tendril Horrors do the most harm in the Heart and the Knell's hall.
+- **Tests.** The Knell tolling through the party and calling hounds, holding its toll while hushed, cracking at
+  half HP and its fall winning; the Unmaker's fall opening the way on; a 12-level Delve going down to the Knell (a
+  Waystone, no stairs, and a save that comes back there); the boss of each depth; and the validator.
+
+## 44. Implementation decisions (vaults for every region, and the generator's fallback)
+
+The 16 vaults were all for the first three regions: the Ossuary Stacks, the Rootdark, the Glass Roads and the
+Heart had none.
+
+- **12 new vaults** (`vaults.txt`), 28 in all, at least two in every region:
+  - the Deep Works: the Collapsed Drift;
+  - the Ossuary Stacks: the Reading Room, the Sealed Stack and the Index;
+  - the Rootdark: the Hollow Stump, the Rot Pit and the Root Gate;
+  - the Glass Roads: the Mirror Gallery, the Shattered Rotunda and the Glass Maze;
+  - the Unmade Heart: the Unfinished Room and the Hall of Echoes.
+- **A vault's traps count against the level's trap budget,** taking the place of traps scattered elsewhere. With
+  the Glass Roads' new trap vaults, 613 of 1,000 levels on depth 22 had more than 16 traps.
+- **The 1,000-seed suite** now also builds the Heart (depth 13) and depths 14, 18 and 22 of a 24-level Delve, and
+  checks every vault made for a region turns up in it. Its count of fallbacks never worked: it looked for the try
+  in the level's source, which doesn't hold it. Levels now say whether they are the plain fallback (`Level.Plain`).
+- **Three generator fixes** that the deeper seeds turned up:
+  - **Stations off the only way.** A station that stands in its cell (a candle, an anvil, an altar, a rift) is never
+    put where it would cut the floor in two. In the Stacks, candles did, and 3% of levels fell back.
+  - **The fallback is checked too.** The plain layout had never been checked, and one put two chests across the
+    only way to a room. It now gets 20 tries of its own; the first is the layout it always was.
+  - `Check` says why it failed (`Builder.Failure`), for tests.
+- **Results.** Depths 1, 5, 9, 13, 14, 18 and 22: 1,000 seeds each and no problems; 3 of 1,000 fell back at depth
+  14 and 4 at depth 18 (was 12 levels with problems at depth 14 and 1 at 22, all of them fallbacks).
+

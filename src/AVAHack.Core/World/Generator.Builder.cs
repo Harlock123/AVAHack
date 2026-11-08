@@ -505,7 +505,8 @@ public static partial class Generator
 
         private void Traps()
         {
-            int budget = Math.Min(14, (int)Math.Round((2 + depth * 0.8) * o.Traps));
+            // A vault's own traps count against the level's: they take the place of traps scattered elsewhere.
+            int budget = Math.Max(0, Math.Min(14, (int)Math.Round((2 + depth * 0.8) * o.Traps)) - _traps.Count);
             var kinds = TrapDepths.Where(t => t.MinDepth <= depth).Select(t => t.Kind).ToList();
             var path = PathTo(_start, _down).ToHashSet();
             int deadlyOnPath = 0;
@@ -628,6 +629,7 @@ public static partial class Generator
                 _taken.Add(at);
                 var def = db.Creature(_boss);
                 int lvl = depth + 1 + Roll(2); // the boss fits the depth (spec 12.5), not the depth × 1.6 of its level's creatures
+                if (_boss == Region.Beneath) lvl = Math.Max(lvl, def.Level); // but the Delve's last is never made smaller (section 43)
                 _spawns.Add(new Spawn(_boss, at, Enum.GetValues<Dir>().OrderBy(d => at.Step(d).Distance(_down)).First()) { Level = lvl });
                 if (_boss == "bellwrightEngine" && room is not null)
                 {
@@ -706,10 +708,27 @@ public static partial class Generator
                                           && Enum.GetValues<Dir>().All(d => At(c.Step(d)) != CellKind.Door)
                                           && Enum.GetValues<Dir>().Count(d => At(c.Step(d)) == CellKind.Floor) >= 3)
                               .ToList();
-            if (spots.Count == 0) return;
-            var at = spots[Roll(spots.Count)];
-            _stations[at] = kind;
-            _taken.Add(at);
+            // A station stands in its cell (only pods burst and tangles are cut), so never where it would cut the
+            // level in two: the cells round it must still meet without it (the Stacks' candles fell back 3% of the time).
+            bool blocks = kind is not ("pod" or "roots");
+            while (spots.Count > 0)
+            {
+                var at = spots[Roll(spots.Count)];
+                spots.Remove(at);
+                if (blocks && Cuts(at)) continue;
+                _stations[at] = kind;
+                _taken.Add(at);
+                return;
+            }
+        }
+
+        /// <summary>Whether blocking this cell would part the floor round it.</summary>
+        private bool Cuts(Cell c)
+        {
+            var round = Enum.GetValues<Dir>().Select(d => c.Step(d)).Where(n => At(n) != CellKind.Wall).ToList();
+            if (round.Count < 2) return false;
+            var reach = Flood(round[0], [c, .. _stations.Keys]);
+            return round.Any(n => !reach.ContainsKey(n));
         }
 
         /// <summary>Bookshelves along room walls (the Ossuary Stacks): never a door, a secret or the level's edge.</summary>
@@ -864,33 +883,38 @@ public static partial class Generator
         /// or plate is. Pits, chests and altars count as blocked. The stairs, the landing, every creature, every
         /// chest's side and every teleporter's destination must be reached.
         /// </summary>
+        /// <summary>Why the last <see cref="Check"/> failed, for tests.</summary>
+        public string? Failure { get; private set; }
+
+        private bool Fail(string why) { Failure = why; return false; }
+
         public bool Check()
         {
             foreach (var d in _doors)
             {
                 bool we = At(d.Cell.Step(Dir.West)) == CellKind.Wall && At(d.Cell.Step(Dir.East)) == CellKind.Wall;
                 bool ns = At(d.Cell.Step(Dir.North)) == CellKind.Wall && At(d.Cell.Step(Dir.South)) == CellKind.Wall;
-                if (we == ns) return false;
+                if (we == ns) return Fail("a door doesn't sit between two walls");
             }
             var reach = Walk(_start);
-            if (!reach.Contains(_down)) return false;
-            if (_landing is { } land && !reach.Contains(land)) return false;
+            if (!reach.Contains(_down)) return Fail("the stairs can't be reached");
+            if (_landing is { } land && !reach.Contains(land)) return Fail("the landing can't be reached");
             // A party that falls in lands here, with every barrier still shut: it must find the stairs from there too,
             // without a hidden door, and without crossing the stairs up, which would climb (AAAA62RB's level 12).
-            if (_landing is { } fell && !Walk(fell, avoid: depth > 1 ? _start : null, secrets: false).Contains(_down)) return false;
+            if (_landing is { } fell && !Walk(fell, avoid: depth > 1 ? _start : null, secrets: false).Contains(_down)) return Fail("the stairs can't be reached from the landing");
             // Below the first level the start holds the stairs up, and stepping back on them climbs: the way on
             // must not run back through the start.
             if (depth > 1 && !Enum.GetValues<Dir>().Select(d => _start.Step(d)).Where(reach.Contains)
-                    .Any(n => Walk(n, avoid: _start).Contains(_down))) return false;
-            if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } tt && !reach.Contains(tt))) return false;
+                    .Any(n => Walk(n, avoid: _start).Contains(_down))) return Fail("the way on runs over the stairs up");
+            if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } tt && !reach.Contains(tt))) return Fail("a teleporter goes nowhere reachable");
             // A teleporter must not drop the party in a pocket it can only leave through a hidden door: from where
             // it lands, it must find its way back to the start without one.
-            if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } to && !Walk(to, secrets: false).Contains(_start))) return false;
+            if (_traps.Any(t => t.Kind == TrapKind.Teleporter && t.Target is { } to && !Walk(to, secrets: false).Contains(_start))) return Fail("a teleporter drops the party in a pocket");
             // Secret doors count as found: what lies behind them must be reachable too.
             bool Reachable(Cell c) => reach.Contains(c) || Enum.GetValues<Dir>().Any(d => reach.Contains(c.Step(d)));
-            if (_spawns.Any(s => !Reachable(s.Cell))) return false;
-            if (_chests.Any(c => !Reachable(c.Cell))) return false;
-            if (_items.Any(i => !Reachable(i.Cell))) return false;
+            if (_spawns.Any(s => !Reachable(s.Cell))) return Fail("a creature can't be reached");
+            if (_chests.Any(c => !Reachable(c.Cell))) return Fail("a chest can't be reached");
+            if (_items.Any(i => !Reachable(i.Cell))) return Fail("an item can't be reached");
             return true;
         }
 
@@ -924,7 +948,8 @@ public static partial class Generator
 
         public Level Finish(ulong seed, int attempt)
         {
-            var level = new Level(Region.Final ? Region.Name : $"{Region.Name}, level {depth}", Size, Size, (CellKind[])_cells.Clone(), _start, _facing)
+            bool beneath = IsBeneath(db, depth, o.MaxDepth);
+            var level = new Level(beneath ? db.Creature(Region.Beneath!).Name : Region.Final ? Region.Name : $"{Region.Name}, level {depth}", Size, Size, (CellKind[])_cells.Clone(), _start, _facing)
             {
                 Source = $"gen:{seed}:{depth}:{o.Code}",
             };
@@ -940,7 +965,9 @@ public static partial class Generator
             if (Region.MirrorWalls > 0 && !Plain) PlaceMirrorWalls(level);
             if (Region.Shards > 0 && !Plain) PlaceShards(level);
             level.Final = Region.Final;
-            level.AddStairs(_down);
+            level.Plain = Plain;
+            level.Vaults.AddRange(_rooms.Where(r => r.Vault is not null).Select(r => r.Vault!.Name));
+            if (!beneath) level.AddStairs(_down); // the Delve's last level: nothing lies below the Knell
             if (depth > 1) level.AddStairsUp(_start);
             foreach (var d in _doors.GroupBy(d => d.Cell).Select(g => g.Last()))
             {

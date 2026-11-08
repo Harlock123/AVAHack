@@ -136,6 +136,16 @@ public sealed class Delve
         if (Depth >= Options.Depth)
         {
             if (FinalHook?.Invoke() == true) return;
+            if (Depth == Options.Depth + 1 && Generator.IsBeneath(Content, Depth + 1, Options.Depth))
+            {
+                // Below the Heart: the Knell, which tolls on now its ringer is gone.
+                Store();
+                Depth++;
+                var hall = Generate(Depth);
+                Arrive(hall, hall.Start, hall.StartFacing);
+                Engine.Say("The stairs wind down and down to a hall that hums. In its dark hangs a bell as big as a house. This is the Knell.");
+                return;
+            }
             if (Depth == Options.Depth && Generator.HasHeart(Options.Depth))
             {
                 // Below the last level: the Unmade Heart, and the Unmaker.

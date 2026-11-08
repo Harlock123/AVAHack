@@ -65,7 +65,8 @@ public static partial class Generator
     /// </summary>
     public static string? BossFor(ContentDb db, int depth, int maxDepth)
     {
-        if (depth > maxDepth) return HasHeart(maxDepth) && depth == maxDepth + 1 ? FinalRegion(db).Boss : null;
+        if (depth > maxDepth)
+            return !HasHeart(maxDepth) ? null : depth == maxDepth + 1 ? FinalRegion(db).Boss : depth == maxDepth + 2 ? FinalRegion(db).Beneath : null;
         var above = Regions(db);
         int index = (depth - 1) / RegionLevels;
         return depth % RegionLevels == 0 && index < above.Count ? above[index].Boss : null;
@@ -78,6 +79,9 @@ public static partial class Generator
     /// <summary>Whether a Delve this deep ends in the Unmade Heart.</summary>
     public static bool HasHeart(int maxDepth) => maxDepth >= 12;
 
+    /// <summary>The last level of a Delve with a Heart: the one below it, when the final region has a boss beneath (the Knell).</summary>
+    public static bool IsBeneath(ContentDb db, int depth, int maxDepth) => HasHeart(maxDepth) && depth == maxDepth + 2 && FinalRegion(db).Beneath is not null;
+
     public static string RegionName(ContentDb db, string theme) => db.Regions.FirstOrDefault(r => r.Id == theme)?.Name ?? theme;
 
     public static Level Generate(ContentDb db, ulong seed, int depth, GenOptions? options = null)
@@ -89,9 +93,14 @@ public static partial class Generator
             var b = new Builder(db, rng, depth, options);
             if (b.Build() && b.Check()) return b.Finish(seed, attempt);
         }
-        var fb = new Builder(db, new Pcg32(seed + (ulong)depth, 78), depth, options) { Plain = true };
-        fb.Build();
-        return fb.Finish(seed, 99);
+        // The plain layout, checked too: a fallback that can't be finished is no better (seed 2224417167718's
+        // Stacks put chests across the only way on). The first try is the plain layout as it always was.
+        for (int k = 0; ; k++)
+        {
+            var fb = new Builder(db, new Pcg32(seed + (ulong)depth + (ulong)k * 7919, 78), depth, options) { Plain = true };
+            fb.Build();
+            if (fb.Check() || k == 19) return fb.Finish(seed, 99);
+        }
     }
 
     /// <summary>The creatures a theme sends at a depth: (creature, weight).</summary>

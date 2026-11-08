@@ -2691,6 +2691,55 @@
   "loot": "chest.rich",
   "boss": "unmaker"
  },
+ {
+  "id": "theKnell",
+  "name": "The Knell",
+  "family": "unmade",
+  "tier": "dread",
+  "level": 23,
+  "hitDice": "28d10+90",
+  "ac": 17,
+  "perception": 14,
+  "stepSeconds": 1.0,
+  "turnSeconds": 0.8,
+  "size": "large",
+  "attacks": [
+   {
+    "id": "peal",
+    "windup": 1.2,
+    "recovery": 2.6,
+    "toHit": 12,
+    "damage": "3d10+6",
+    "type": "force",
+    "area": true
+   }
+  ],
+  "behaviour": [
+   "guard",
+   "melee",
+   "rooted",
+   "unyielding",
+   "boss"
+  ],
+  "immune": [
+   "poison",
+   "psychic"
+  ],
+  "conditionImmune": [
+   "poisoned",
+   "asleep",
+   "frightened",
+   "diseased",
+   "bleeding",
+   "blinded",
+   "stunned",
+   "paralysed"
+  ],
+  "sprite": "knell",
+  "text": "The bell under the Hollow, whose every toll shapes it anew. The Unmaker rang it; now it rings itself.",
+  "loot": "chest.rich",
+  "boss": "knell"
+ },
 {
  "id": "pageSwarm",
  "name": "Page Swarm",

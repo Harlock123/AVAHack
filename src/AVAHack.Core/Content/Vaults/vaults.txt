@@ -2,7 +2,7 @@
 # "map:" and the rows; vaults are separated by a line of three dashes. Coordinates in a vault's own lines count
 # from its top-left corner.
 #
-#   name / tags / themes          what it is, and where it fits (cellar, works, choir)
+#   name / tags / themes          what it is, and where it fits (a region id from regions.json)
 #   connectors: N3 S3             where corridors join: an edge (N, E, S, W) and the offset along it
 #   lever: x y face -> x y        a lever on a wall, working a door or portcullis
 #   plate: x y toggle|hold -> x y
@@ -243,3 +243,200 @@ map:
 #...#
 #...#
 #####
+---
+name: The Collapsed Drift
+tags: trap, treasure
+themes: works
+connectors: S4
+trap: collapsingCeiling 4 4
+trap: collapsingCeiling 1 3
+chest: 4 3 rich
+note: 4 5 Props of old timber hold up the roof. Most of them.
+map:
+#########
+#.......#
+#.#####.#
+#.#...#.#
+#.##.##.#
+#.......#
+####.####
+---
+name: The Reading Room
+tags: ambush, treasure
+themes: stacks
+connectors: W3 E3
+monster: 4 1
+monster: 6 5
+chest: 5 3 rich
+note: 1 1 A brass plaque: SILENCE. Scratched beneath it: OR ELSE.
+map:
+###########
+#.........#
+#.##...##.#
+...........
+#.##...##.#
+#.........#
+###########
+---
+name: The Sealed Stack
+tags: secret, treasure
+themes: stacks
+connectors: S2
+secret: 4 2
+chest: 6 2 rich
+note: 1 1 The shelves run right into the wall here, as if the wall came later.
+map:
+#########
+#...#...#
+#.......#
+#...#...#
+##.######
+---
+name: The Index
+tags: puzzle, treasure
+themes: stacks
+connectors: S3
+plate: 5 1 toggle -> 3 3
+chest: 3 1 rich
+note: 1 4 Cards from an old index lie everywhere. One drawer, far right, is worn smooth.
+map:
+#######
+#.#.#.#
+#.#.#.#
+#.#P#.#
+#.....#
+###.###
+---
+name: The Hollow Stump
+tags: ambush, treasure
+themes: rootdark
+connectors: S4
+monster: 3 2
+monster: 5 4
+monster: 2 4
+chest: 4 1
+note: 4 6 The inside of a great root, hollowed out. Something has been living in it.
+map:
+#########
+###...###
+##.....##
+#.......#
+#.......#
+##.....##
+###...###
+####.####
+---
+name: The Rot Pit
+tags: trap, treasure
+themes: rootdark
+connectors: W3
+trap: gasVent 4 2
+chest: 7 1 rich
+note: 1 1 The floor is soft, and gives. Bones show through it here and there.
+map:
+#########
+#..^....#
+#.....^.#
+.....^..#
+#.^.....#
+#########
+---
+name: The Root Gate
+tags: treasure
+themes: rootdark
+connectors: S2
+lever: 1 4 west -> 4 2
+chest: 6 1 rich
+monster: 6 4
+note: 2 1 Roots have grown through the gate's chains. A lever still stands by the wall.
+map:
+#########
+#...#...#
+#...P...#
+#...#...#
+#...#...#
+##.######
+---
+name: The Mirror Gallery
+tags: secret, treasure
+themes: glass
+connectors: W2
+illusory: 7 4
+chest: 7 5 rich
+note: 1 1 Black glass on every wall. In the far corner, your reflection doesn't move with you.
+map:
+#########
+#.......#
+........#
+#.......#
+#######.#
+#######.#
+#########
+---
+name: The Shattered Rotunda
+tags: trap, treasure
+themes: glass
+connectors: S4
+trap: lightningRune 4 3
+trap: frostGlyph 3 4
+trap: frostGlyph 5 4
+trap: lightningRune 4 5
+chest: 4 4 rich
+map:
+#########
+###...###
+##.....##
+#.......#
+#.......#
+#.......#
+##.....##
+###...###
+####.####
+---
+name: The Glass Maze
+tags: trap, puzzle, treasure
+themes: glass
+connectors: W5 E5
+trap: spinner 5 5
+trap: teleporter 3 3 -> 9 1
+chest: 5 1 rich
+note: 1 1 The walls are glass, and the glass is full of hallways that aren't there.
+map:
+###########
+#...#.....#
+#.#.#.###.#
+#.#...#...#
+#.#####.#.#
+...........
+###########
+---
+name: The Unfinished Room
+tags: secret, treasure
+themes: heart
+connectors: S2
+illusory: 4 2
+chest: 6 2 rich
+monster: 6 1
+note: 1 1 Half of this room was never made. Where the wall should be, the stone just stops.
+map:
+#########
+#...#...#
+#.......#
+#...#...#
+##.######
+---
+name: The Hall of Echoes
+tags: ambush, treasure
+themes: heart
+connectors: W2 E2
+monster: 1 1
+monster: 5 3
+monster: 9 1
+chest: 7 3
+note: 3 1 Your footsteps come back to you a moment late, and from the wrong side.
+map:
+###########
+#.#.#.#.#.#
+...........
+#.#.#.#.#.#
+###########

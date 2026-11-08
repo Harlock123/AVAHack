@@ -73,6 +73,42 @@ public sealed partial class SpriteFactory
     /// The Lens: a vast disc of black glass edge-on to the hall, a cracked rim of facets, and a white-violet light
     /// gathering in its centre.
     /// </summary>
+    /// <summary>The Knell: a great bronze bell hung from nothing, cracked through with the Unmade's violet.</summary>
+    private static void Knell(Paint p, SpriteView v, SpriteFrame f)
+    {
+        uint bronze = C(122, 88, 46), dark = C(70, 48, 26), rim = C(160, 122, 70), violet = C(190, 130, 255);
+        if (f == SpriteFrame.Dead)
+        {
+            p.Mat = Material.Metal;
+            p.Poly(dark, (6, 62), (20, 46), (30, 52), (26, 63));
+            p.Poly(bronze, (30, 63), (36, 44), (50, 48), (58, 63));
+            p.Ellipse(44, 58, 4, 3, rim);
+            p.Mat = Material.Matte;
+            return;
+        }
+        double sway = f == SpriteFrame.Windup ? -3 : f == SpriteFrame.Strike ? 3 : 0, w = v == SpriteView.Side ? 0.75 : 1.0;
+        double cx = 32 + sway;
+        p.Ellipse(32, 62, 20, 2.4, C(14, 12, 20), false);
+        p.Line(cx, 0, cx, 8, 1.6, C(40, 34, 40));                                         // the chain into the dark
+        p.Mat = Material.Metal;
+        p.Ellipse(cx, 10, 6 * w, 4, dark);                                                 // the crown
+        p.Poly(bronze, (cx - 10 * w, 12), (cx + 10 * w, 12), (cx + 16 * w, 36), (cx + 24 * w, 54), (cx - 24 * w, 54), (cx - 16 * w, 36));
+        p.Poly(dark, (cx - 10 * w, 12), (cx - 4 * w, 12), (cx - 10 * w, 36), (cx - 18 * w, 54), (cx - 24 * w, 54), (cx - 16 * w, 36));
+        p.Ellipse(cx, 54, 24 * w, 4, rim);                                                // the lip
+        p.Rect(cx - 15 * w, 30, cx + 15 * w, 32, rim);                                    // a band
+        p.Mat = Material.Matte;
+        p.Ellipse(cx, 55, 18 * w, 2.4, C(20, 14, 26), false);                             // the mouth
+        p.Ellipse(cx + sway, 57, 3, 3, dark);                                             // the tongue
+        // The cracks, and the light through them, brighter as it tolls.
+        p.Line(cx - 4 * w, 16, cx + 2 * w, 30, 0.7, violet);
+        p.Line(cx + 2 * w, 30, cx - 3 * w, 42, 0.7, violet);
+        p.Line(cx + 9 * w, 34, cx + 16 * w, 50, 0.6, violet);
+        if (v == SpriteView.Back) return;
+        double glow = f == SpriteFrame.Windup ? 6 : f == SpriteFrame.Strike ? 9 : 3.5;
+        p.Ellipse(cx, 55, glow * 1.6 * w, glow * 0.5, C(170, 120, 255), false);
+        p.Ellipse(cx, 55, glow * 0.8 * w, glow * 0.25, C(240, 230, 255), false);
+    }
+
     private static void Lens(Paint p, SpriteView v, SpriteFrame f)
     {
         if (f == SpriteFrame.Dead)

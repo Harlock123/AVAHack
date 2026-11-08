@@ -33,6 +33,10 @@ public sealed class Level
     public IEnumerable<Pit> Pits => _pits.Values;
     public IEnumerable<Plate> Plates => _plates.Values;
     public IEnumerable<Note> Notes => _notes.Values;
+    /// <summary>The plain layout the generator falls back on when 20 tries all fail its check (for tests).</summary>
+    public bool Plain { get; internal set; }
+    /// <summary>The handmade rooms stitched into it, by name (for tests and reports).</summary>
+    public List<string> Vaults { get; } = new();
     public IEnumerable<Cell> Stairs => _stairs;
     public IReadOnlyList<Spawn> Spawns => _spawns;
     public IEnumerable<SecretDoor> Secrets => _secrets.Values;

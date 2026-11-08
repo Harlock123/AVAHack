@@ -415,7 +415,7 @@ public sealed class BestiaryTests
     }
 
     [Fact]
-    public void The_Unmaker_borrows_the_runs_champion_affixes_and_its_fall_ends_the_Delve()
+    public void The_Unmaker_borrows_the_runs_champion_affixes_and_its_fall_opens_the_way_to_the_Knell()
     {
         var g = Arena();
         g.ChampionAffixes.AddRange(["vampiric", "venomous"]);
@@ -425,6 +425,33 @@ public sealed class BestiaryTests
         Assert.Contains("vampiric", u.Affixes);
         Assert.Contains("venomous", u.Affixes);
         Kill(g, u);
+        Assert.Equal(GameMode.Playing, g.Mode);                     // the Heart has stairs down: the Knell is below
+        Assert.Contains(g.Log, l => l.Contains("the Knell tolls on"));
+    }
+
+    [Fact]
+    public void The_Knell_tolls_through_the_party_calls_echoes_cracks_and_its_fall_ends_the_Delve()
+    {
+        var g = Arena();
+        var k = Awake(g, "theKnell", new Cell(8, 1));
+        double hp = g.Party.Members.Sum(c => c.Hp);
+        Run(g, 12.2);
+        Assert.True(g.Party.Members.Sum(c => c.Hp) < hp);
+        Assert.Contains(g.Log, l => l.Contains("The Knell tolls"));
+        Assert.Contains(g.Monsters, m => m.SummonedBy == k.Id && m.Def.Id == "unmadeHound");
+        Assert.Equal(k.Cell, new Cell(8, 1));                       // it hangs where it hangs
+        // Hushed, it holds its toll.
+        foreach (var hound in g.Monsters.Where(m => m.SummonedBy == k.Id).ToList()) Kill(g, hound);
+        foreach (var c in g.Party.Members) c.Rest();
+        int tolls = g.Log.Count(l => l.Contains("The Knell tolls"));
+        k.HushLeft = 13;
+        Run(g, 12.2);
+        Assert.Equal(tolls, g.Log.Count(l => l.Contains("The Knell tolls")));
+        Assert.Equal(GameMode.Playing, g.Mode);
+        g.DamageMonster(k, k.MaxHp / 2 + 1, DamageType.Force);
+        g.Tick();
+        Assert.Equal(8, GameEngine.KnellEvery(k));
+        Kill(g, k);
         Assert.Equal(GameMode.Won, g.Mode);
     }
 
@@ -443,6 +470,16 @@ public sealed class BestiaryTests
         var back = Delve.FromSave(d.ToSave(), Db);
         Assert.Equal(13, back.Depth);
         Assert.Contains(back.Engine.Monsters, m => m.Boss == "unmaker");
+
+        // Below the Heart, once the Unmaker is gone: the Knell, the last level, with a Waystone and no stairs.
+        d.Engine.Level.Boss = null;
+        d.Descend();
+        Assert.Equal(14, d.Depth);
+        Assert.Equal("The Knell", d.Engine.Level.Name);
+        Assert.Empty(d.Engine.Level.Stairs);
+        Assert.NotNull(d.Engine.Level.Waystone);
+        Assert.Contains(d.Engine.Monsters, m => m.Boss == "knell");
+        Assert.Equal(14, Delve.FromSave(d.ToSave(), Db).Depth);
     }
 
     [Fact]

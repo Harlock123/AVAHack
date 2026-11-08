@@ -475,6 +475,7 @@ public sealed partial class GameEngine
                 if (target is not null)
                 {
                     target.HushLeft = s.Seconds * (1 + fx.Caster.PerkTotalFor("durationPct", "warding") / 100);
+                    if (target.Boss == "knell") target.HushLeft = Math.Min(target.HushLeft, 4); // a hush only dampens it a moment
                     Say($"{target.TheName} opens its mouth, and nothing comes out.");
                     Practice(fx, target.Def.Level + 2);
                 }

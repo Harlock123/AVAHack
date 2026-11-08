@@ -87,7 +87,7 @@ public sealed class ContentTests
             "choir" => r with { Boss = "cellarRat" },
             "stacks" => r with { Final = true },
             "rootdark" => r with { PackMax = 1 },
-            "glass" => r with { MaxLevel = 0 },
+            "glass" => r with { MaxLevel = 0, Beneath = "theKnell" },
             _ => r,
         }).ToList();
         var broken = new ContentDb(db.Skills, db.Ancestries, db.Callings, db.Backgrounds, db.Perks, db.Conditions)
@@ -98,5 +98,6 @@ public sealed class ContentTests
         Assert.Contains("exactly one region must be final", problems);
         Assert.Contains("'rootdark' has packMax 1", problems);
         Assert.Contains("'glass' has maxLevel 0", problems);
+        Assert.Contains("'glass''s beneath 'theKnell' must be a boss creature, under the final region", problems);
     }
 }

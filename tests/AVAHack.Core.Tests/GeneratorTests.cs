@@ -67,16 +67,22 @@ public sealed class GeneratorTests(ITestOutputHelper output)
     [InlineData(1)]
     [InlineData(5)]
     [InlineData(9)]
-    public void A_thousand_seeds_make_levels_that_can_be_finished(int depth)
+    [InlineData(13)]      // the Unmade Heart below a 12-level Delve
+    [InlineData(14, 24)]  // the Ossuary Stacks, the Rootdark and the Glass Roads of a 24-level one
+    [InlineData(18, 24)]
+    [InlineData(22, 24)]
+    public void A_thousand_seeds_make_levels_that_can_be_finished(int depth, int maxDepth = 12)
     {
         int runs = int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_GEN_RUNS"), out int n) ? n : 1000;
         int fallbacks = 0;
         var problems = new System.Collections.Concurrent.ConcurrentBag<string>();
+        var placed = new System.Collections.Concurrent.ConcurrentDictionary<string, byte>();
         Parallel.For(1, runs + 1, i =>
         {
             ulong seed = (ulong)i * 2654435761UL;
-            var l = Generator.Generate(Db, seed, depth);
-            if (l.Source.EndsWith(":99", StringComparison.Ordinal)) Interlocked.Increment(ref fallbacks);
+            var l = Generator.Generate(Db, seed, depth, new GenOptions { MaxDepth = maxDepth });
+            if (l.Plain) Interlocked.Increment(ref fallbacks);
+            foreach (var v in l.Vaults) placed.TryAdd(v, 0);
             var reach = Reach(l);
             bool Near(Cell c) => reach.Contains(c) || Enum.GetValues<Dir>().Any(d => reach.Contains(c.Step(d)));
             void Need(bool ok, string what) { if (!ok) problems.Add($"seed {seed} depth {depth}: {what}"); }
@@ -111,6 +117,10 @@ public sealed class GeneratorTests(ITestOutputHelper output)
         foreach (var p in problems.Take(10)) output.WriteLine(p);
         Assert.Empty(problems);
         Assert.True(fallbacks <= runs / 100, $"{fallbacks} of {runs} fell back");
+        // Every vault made for this region turns up somewhere.
+        string theme = Generator.ThemeFor(Db, depth, maxDepth);
+        if (runs >= 1000)
+            Assert.All(Vault.All.Where(v => v.Themes.Contains(theme)), v => Assert.True(placed.ContainsKey(v.Name), $"{v.Name} never placed at depth {depth}"));
     }
 
     [Fact]
@@ -148,6 +158,9 @@ public sealed class GeneratorTests(ITestOutputHelper output)
         Assert.Equal(("hollowKing", "bellwrightEngine", "motherOfCoils"), (Generator.BossFor(Db, 4, 24), Generator.BossFor(Db, 8, 24), Generator.BossFor(Db, 12, 24)));
         Assert.Equal("unmaker", Generator.BossFor(Db, 25, 24));
         Assert.Equal("unmaker", Generator.BossFor(Db, 13, 12));
+        Assert.Equal("theKnell", Generator.BossFor(Db, 14, 12));                                  // and the Knell below it
+        Assert.Equal("theKnell", Generator.BossFor(Db, 26, 24));
+        Assert.Null(Generator.BossFor(Db, 15, 12));
         Assert.Null(Generator.BossFor(Db, 13, 6));                                               // a short Delve has no Heart
         Assert.Null(Generator.BossFor(Db, 7, 24));
         // Every boss a region has gets its Waystone on the next level; every level of a 24-level Delve builds.
@@ -169,7 +182,10 @@ public sealed class GeneratorTests(ITestOutputHelper output)
     public void Every_vault_reads_cleanly()
     {
         var vaults = Vault.All;
-        Assert.True(vaults.Count >= 15);
+        Assert.True(vaults.Count >= 28);
+        // Every region has handmade rooms of its own, the Heart too.
+        foreach (var r in Db.Regions) Assert.True(vaults.Count(v => v.Themes.Contains(r.Id)) >= 2, $"{r.Id} has too few vaults");
+        Assert.All(vaults.SelectMany(v => v.Themes), t => Assert.Contains(Db.Regions, r => r.Id == t));
         foreach (var v in vaults)
         {
             Assert.NotEmpty(v.Themes);

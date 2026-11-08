@@ -53,6 +53,7 @@ public sealed partial class SpriteFactory
         "pages", "slimeInk", "quill", "waxGolem", "errata", "bell", "veil", "keener", "hush",
         "grub", "rootBeetle", "sapsucker", "wyrm", "matron", "gnawing", "mossWarg", "carrier", "bloom", "node", "crown",
         "shardling", "prism", "strider", "hulk", "refractor", "tornHound", "echo", "lens", "lensShard",
+        "knell",
     ];
 
     /// <summary>Draws the M7 creatures. False if the id isn't one of them.</summary>
@@ -135,6 +136,7 @@ public sealed partial class SpriteFactory
             case "tornHound": Beast(p, v, f, C(40, 34, 52), C(190, 140, 255), false, lean: true); return true;
             case "echo": Floater(p, f, C(170, 160, 210), C(240, 230, 255), "ghost"); return true;
             case "lens": Lens(p, v, f); return true;
+            case "knell": Knell(p, v, f); return true;
         }
         return false;
     }

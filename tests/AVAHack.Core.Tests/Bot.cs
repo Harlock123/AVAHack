@@ -327,10 +327,15 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (_prey is not { IsAlive: true } prey || !Calls(prey))
                 if (g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null && m.IsAware && Calls(m) && m.Cell.Distance(g.PartyCell) <= 8 && !_gaveUp.Contains(m) && Reachable(m.Cell))
                         .MinBy(m => m.Cell.Distance(g.PartyCell)) is { } caller) { Goal = "hunt"; _prey = caller; return (caller.Cell, null, null); }
-            // The Hollow Choir: the singer whose turn it is, as the carving says (spec 12.5).
-            if (g.ChoirNext is { IsAlive: true } voice && !_gaveUp.Contains(voice) && Reachable(voice.Cell)) { Goal = "hunt"; _prey = voice; return (voice.Cell, null, null); }
+            // The Hollow Choir: the singer whose turn it is, as the carving says (spec 12.5). It's an optional fight, and
+            // a party below the singers' level leaves it alone.
+            if (g.ChoirNext is { IsAlive: true } voice && !_gaveUp.Contains(voice) && Reachable(voice.Cell)
+                && g.Party.Members.Where(c => !c.IsDead).Average(c => c.Level) >= voice.Def.Level)
+            { Goal = "hunt"; _prey = voice; return (voice.Cell, null, null); }
             if (_prey is { IsAlive: true } p && !_gaveUp.Contains(p) && Reachable(p.Cell)) { Goal = "hunt"; return (p.Cell, null, null); }
-            var foe = g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null or "crownNode" && !_gaveUp.Contains(m) && Reachable(m.Cell))
+            // What a boss calls up is fought where it stands in the way, not hunted: there are always more.
+            var foe = g.Monsters.Where(m => m.IsAlive && !m.Ally && m.Boss is null or "crownNode" && !_gaveUp.Contains(m) && Reachable(m.Cell)
+                                            && !CalledByBoss(m))
                        .MinBy(m => m.Cell.Distance(g.PartyCell));
             if (foe is not null) { Goal = "hunt"; _prey = foe; return (foe.Cell, null, null); }
             foreach (var chest in g.Level.Chests.Where(c => !c.Opened).OrderBy(c => c.Cell.Distance(g.PartyCell)))
@@ -477,6 +482,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
 
     private Lever? OpenValve() =>
         g.Level.Levers.FirstOrDefault(l => g.Level.Valves.Contains(l.Cell) && !l.Down && !Gave("valve", l.Cell) && Reachable(l.Cell));
+
+    /// <summary>Called up by a living boss (the Knell's hounds, the Choir's Calling Voice): there are always more.</summary>
+    private bool CalledByBoss(Monster m) => m.SummonedBy is { } by && g.Monsters.FirstOrDefault(o => o.Id == by) is { Boss: not null, IsAlive: true };
 
     private static bool Calls(Monster m) => m.Def.Has("summoner") || m.Def.Has("raises") || m.Affixes.Contains("summoner");
 

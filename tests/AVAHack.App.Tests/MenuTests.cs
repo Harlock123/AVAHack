@@ -96,6 +96,24 @@ public sealed class MenuTests
     }
 
     [AvaloniaFact]
+    public void A_heroic_hero_is_rolled_and_made()
+    {
+        var (w, v) = Open(new GameView(Db, startLoop: false, TempStore()));
+        Click(w, 640, 408); // Make a party
+        Click(w, 700, 662); // Heroic
+        Shot(w, "create-heroic");
+        Click(w, 1120, 753); // Begin the descent
+        Assert.Equal(Screen.Options, v.Screen);
+        Click(w, 410, 753); // Practise in The Cellars
+        var hero = v.Engine.Party.Members.Single();
+        Assert.True(hero.Heroic);
+        Assert.All(Enum.GetValues<AVAHack.Rules.Attribute>(), a => Assert.InRange(hero.BaseAttributes[a], 10, 18));
+        Assert.Equal(125, hero.XpToNextLevel);
+        // Laid out for the calling: the first hero is a fighter, so Strength is its best score.
+        Assert.Equal(Enum.GetValues<AVAHack.Rules.Attribute>().Max(a => hero.BaseAttributes[a]), hero.BaseAttributes[AVAHack.Rules.Attribute.Str]);
+    }
+
+    [AvaloniaFact]
     public void The_Waystone_screen_trains_a_hero_and_closes()
     {
         var level = Generator.Generate(Db, 41, 5, new GenOptions { MaxDepth = 12 });

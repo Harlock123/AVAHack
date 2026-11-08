@@ -8,13 +8,19 @@ public static class CharacterBuilder
 {
     /// <summary>
     /// Creates a level-1 hero. <paramref name="scores"/> are before ancestry bonuses. Unless
-    /// <paramref name="rolled"/>, they must be a legal 27-point buy; rolled scores must be 3–18.
+    /// <paramref name="rolled"/> or <paramref name="heroic"/>, they must be a legal 27-point buy; rolled scores must be
+    /// 3–18, and heroic ones 10–18. A heroic hero needs more XP for each level (<see cref="Progression.HeroicXp"/>).
     /// </summary>
     public static Character Create(ContentDb content, string name, string ancestry, string calling, string background,
-                                   AttributeSet scores, bool rolled = false)
+                                   AttributeSet scores, bool rolled = false, bool heroic = false)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("A hero needs a name.", nameof(name));
         var all = Enum.GetValues<Rules.Attribute>();
+        if (heroic)
+        {
+            if (all.Any(a => scores[a] is < AttributeGen.HeroicMin or > 18)) throw new ArgumentException("Heroic scores run 10–18.", nameof(scores));
+            return new Character(content, name.Trim(), content.Ancestry(ancestry), content.Calling(calling), content.Background(background), scores) { Heroic = true };
+        }
         if (rolled)
         {
             if (all.Any(a => scores[a] is < 3 or > 18)) throw new ArgumentException("Rolled scores run 3–18.", nameof(scores));

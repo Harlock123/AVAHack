@@ -121,6 +121,7 @@ implicit usings, invariant globalization and central package versions. Package v
       `AVAHACK_BALANCE_TRACE_FILE=<path>`: it writes a map of each level. `AVAHACK_BALANCE_DEEP=1` adds the 24-level
       Delve, `AVAHACK_BALANCE_GLASS=1` the Glass Roads on their own, from parties that reached level 21, and
       `AVAHACK_BALANCE_HEART=1` the Unmade Heart on its own, from parties that came down to it.
+      `AVAHACK_BALANCE_HEROIC=1` gives the reports heroic quick-start parties.
   - `Bot` plays like a fallible person. With `Clears` it clears each level first (hunting, looting, Waystones,
     valves, locks, searching), as the 12-level report needs.
 - `tests/AVAHack.Render.Tests`:

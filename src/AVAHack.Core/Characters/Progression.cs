@@ -22,6 +22,12 @@ public static class Progression
     /// <summary>How much faster than M4's curve skills rise.</summary>
     public const double SkillPace = 3;
 
+    /// <summary>How much more character XP a heroic hero needs for each level (spec 5.3): the price of its attributes.</summary>
+    public const double HeroicXp = 1.25;
+
+    /// <summary>The character XP for the next level, for a heroic hero or not.</summary>
+    public static int LevelXp(int level, bool heroic) => heroic ? (int)Math.Ceiling(LevelXp(level) * HeroicXp) : LevelXp(level);
+
     /// <summary>Character XP a skill's new rank gives: a third of the rank, rounded up (spec 7.3, as tuned in M4).</summary>
     public static int CharacterXpFor(int newRank) => (newRank + 2) / 3;
 

@@ -63,7 +63,7 @@ public sealed partial class GameView
         [
             $"HP {Fmt(h.Hp)}/{h.MaxHp} · ST {Fmt(h.Stamina)}/{h.MaxStamina} · MP {Fmt(h.Mana)}/{h.MaxMana}",
             $"AC {h.ArmourClass} · Perception {h.PassivePerception()} · carry {h.CarryCapacityKg} kg",
-            $"XP {h.CharacterXp} / {h.XpToNextLevel} to level {h.Level + 1}",
+            $"XP {h.CharacterXp} / {h.XpToNextLevel} to level {h.Level + 1}{(h.Heroic ? " (heroic)" : "")}",
             $"Skill ceiling {h.SkillCeiling} · perk points {h.PerkPoints}",
             $"Saves: " + string.Join(" ", Enum.GetValues<Attribute>().Select(a => $"{a.ToString()[..1]}{h.SaveBonus(a):+0;-0;0}")),
         ];

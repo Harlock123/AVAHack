@@ -223,6 +223,12 @@ gear and one **signature ability**. It does **not** restrict what the character 
 Attributes are set by **point buy (27 points, scores 8–15)** or by **4d6, dropping the lowest**. The roll mode
 locks the result in and shows the rolls. Ancestry bonuses are added afterwards.
 
+**Heroic attributes** are the third way: 4d6 dropping the lowest, with any 1 rolled again, and a score under 10
+rolled again whole. Scores run 10–18 and average about 14 (4d6 averages about 12). They are laid out for the
+calling, best first, as the standard array is. The price is slower levels: a heroic hero needs a quarter more
+character XP for each level (section 7.3, `Progression.HeroicXp`). It is a fair trade, not an easy mode: the
+bot wins about as often either way (section 41).
+
 ### 5.4 Background
 
 There are 8 backgrounds. Each gives +10 to one skill, a small item and one line of flavour.
@@ -378,6 +384,8 @@ up** (changed in M4 from the whole rank; see section 26). The XP needed for the 
 ```
 levelXp(L) = (L + 3) × 25        (L1→2: 100, L10→11: 325, L30→31: 825)
 ```
+
+A heroic hero (section 5.3) needs 1.25 × that, rounded up (L1→2: 125).
 
 Raising skills that are already high levels the character faster. That is intended: specialists level quickly.
 
@@ -1426,8 +1434,8 @@ is built.
   and auto.
 - **The screens:**
   - **Title:** quick start, make a party, continue, load, quit.
-  - **Making a party:** one to four heroes, each with a name, ancestry, calling, background, and point buy or
-    4d6, with a preview of HP, AC, best skills and kit.
+  - **Making a party:** one to four heroes, each with a name, ancestry, calling, background, and point buy,
+    4d6 or heroic attributes, with a preview of HP, AC, best skills and kit.
   - **The game** shows four hero cards in the party bar (portrait, bars, both hands with cooldowns, conditions),
     with overlays for the inventory (I), the Esc menu (save, load, help, quit), the character sheet (C) and help
     (F1). The game pauses under any overlay but help.
@@ -2442,3 +2450,23 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
 - **Results**, the Glass Roads after the fixes: 14 of 24 through and none stuck (was 13, with two stuck).
 - **Tests.** The Heart's creatures are level 28 below a 24-level Delve and 20–21 below a 12-level one. The validator
   rejects a `packMax` under 2 and a `maxLevel` under 1.
+
+## 41. Implementation decisions (heroic heroes)
+
+- **What it is.** A third way to set attributes at creation (section 5.3): better scores (10–18, about 14 on
+  average) for slower levels (1.25 × the character XP for each). It is set per hero, so a party can mix them, and
+  saved with the hero (`CharacterSave.Heroic`). The sheet marks the XP line "(heroic)".
+- **Why levels pay for it.** Attributes help with everything: to-hit, AC, HP, saves and spell power. Slower skills
+  would have taken from what the hero is good at, which the scores make up for; slower levels cost perks, HP and
+  the attribute points of every 4th level instead. The advantage is largest at the start and narrows as the
+  levels fall behind.
+- **Laid out for the calling.** Heroic scores go best first to what the calling needs, as the standard array
+  does; the 4d6 roll keeps its order, as before.
+- **A fair trade.** The 12-level Delve report with heroic quick-start parties (`AVAHACK_BALANCE_HEROIC=1`, rolled
+  from the seed and laid out by the quick-start heroes' own scores), on 16 seeds: normal parties won 10, heroic
+  ones 9. The heroic winners ended at level 21–22, the normal ones at 23–26. A quarter more XP is the price.
+  (Both runs had a seed stuck on the bot: AAAA62RB on its stairs in both, and AAAAVFWY on a hunt in the heroic
+  one. Neither is in the 8 seeds the test suite plays.)
+- **Tests.** The roll (ones rolled again, a score under 10 rolled again, 10–18 averaging about 14); a heroic hero
+  needing 125 XP for level 2 and keeping the flag through a save; creation refusing a heroic score under 10; and,
+  in the App, the Heroic button making a heroic fighter with Strength its best score.

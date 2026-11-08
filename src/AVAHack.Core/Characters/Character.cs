@@ -476,7 +476,10 @@ public sealed partial class Character
 
     // ---- Levels (spec 7.3, 7.4) ----
 
-    public int XpToNextLevel => Progression.LevelXp(Level);
+    public int XpToNextLevel => Progression.LevelXp(Level, Heroic);
+
+    /// <summary>Made with heroic attributes (spec 5.3): each level needs <see cref="Progression.HeroicXp"/> times the XP.</summary>
+    public bool Heroic { get; set; }
 
     /// <summary>Character XP from deeds rather than skills (a kill, spec 7.3). Returns the levels gained.</summary>
     public int GainCharacterXp(int amount) => amount > 0 ? AddCharacterXp(amount) : 0;
@@ -485,9 +488,9 @@ public sealed partial class Character
     {
         CharacterXp += amount;
         int gained = 0;
-        while (CharacterXp >= Progression.LevelXp(Level))
+        while (CharacterXp >= XpToNextLevel)
         {
-            CharacterXp -= Progression.LevelXp(Level);
+            CharacterXp -= XpToNextLevel;
             int oldMax = MaxHp;
             Level++;
             gained++;

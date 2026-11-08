@@ -83,6 +83,7 @@ public sealed partial class GameView
         public int Ancestry, Calling, Background;
         public AttributeSet Scores = new(10, 10, 10, 10, 10, 10);
         public bool Rolled;
+        public bool Heroic;
         public int[][]? Rolls;
 
         private static readonly string[] Names = ["Brannoc", "Pell", "Ama", "Ithren", "Odo", "Sefa", "Kael", "Mirren", "Tova", "Ruun"];
@@ -97,6 +98,24 @@ public sealed partial class GameView
 
         public void Standard(ContentDb db)
         {
+            Lay(db, [15, 14, 13, 12, 10, 8]);
+            Rolled = Heroic = false;
+            Rolls = null;
+        }
+
+        /// <summary>Heroic attributes (spec 5.3), laid out for the calling as the standard array is.</summary>
+        public void RollHeroic(ContentDb db, Rng dice)
+        {
+            var (s, rolls) = AttributeGen.RollHeroic(dice);
+            Rolls = rolls;
+            Lay(db, Enum.GetValues<Attribute>().Select(a => s[a]).OrderDescending().ToArray());
+            Heroic = true;
+            Rolled = false;
+        }
+
+        /// <summary>Scores, best first, to the attributes the calling needs most.</summary>
+        private void Lay(ContentDb db, int[] best)
+        {
             var order = db.Callings[Calling].Id switch
             {
                 "fighter" or "barbarian" or "paladin" => new[] { Attribute.Str, Attribute.Con, Attribute.Dex, Attribute.Wis, Attribute.Cha, Attribute.Int },
@@ -104,15 +123,19 @@ public sealed partial class GameView
                 "cleric" or "druid" => [Attribute.Wis, Attribute.Con, Attribute.Str, Attribute.Dex, Attribute.Cha, Attribute.Int],
                 _ => [Attribute.Int, Attribute.Con, Attribute.Dex, Attribute.Wis, Attribute.Str, Attribute.Cha],
             };
-            int[] arr = [15, 14, 13, 12, 10, 8];
-            for (int i = 0; i < 6; i++) Scores[order[i]] = arr[i];
-            Rolled = false;
-            Rolls = null;
+            for (int i = 0; i < 6; i++) Scores[order[i]] = best[i];
+        }
+
+        /// <summary>After a change of calling: the standard array, or the same heroic scores, laid out again.</summary>
+        public void Relay(ContentDb db)
+        {
+            if (Heroic) Lay(db, Enum.GetValues<Attribute>().Select(a => Scores[a]).OrderDescending().ToArray());
+            else if (!Rolled) Standard(db);
         }
 
         public Character Build(ContentDb db) =>
             CharacterBuilder.Create(db, string.IsNullOrWhiteSpace(Name) ? "Nameless" : Name, db.Ancestries[Ancestry].Id,
-                db.Callings[Calling].Id, db.Backgrounds[Background].Id, Scores, Rolled);
+                db.Callings[Calling].Id, db.Backgrounds[Background].Id, Scores, Rolled, Heroic);
     }
 
     private readonly List<HeroDraft> _drafts = new();
@@ -146,12 +169,14 @@ public sealed partial class GameView
         y += 74;
         Chooser(dc, x, y, "Calling", Content.Callings[hero.Calling].Name,
             $"d{Content.Callings[hero.Calling].HitDie} · {Content.Callings[hero.Calling].SignatureText}",
-            d => { hero.Calling = Wrap(hero.Calling + d, Content.Callings.Count); if (!hero.Rolled) hero.Standard(Content); });
+            d => { hero.Calling = Wrap(hero.Calling + d, Content.Callings.Count); hero.Relay(Content); });
         y += 74;
         Chooser(dc, x, y, "Background", Content.Backgrounds[hero.Background].Name, Content.Backgrounds[hero.Background].Text, d => hero.Background = Wrap(hero.Background + d, Content.Backgrounds.Count));
         y += 84;
 
-        DrawText(dc, hero.Rolled ? "Attributes (rolled: 4d6, drop the lowest)" : $"Attributes (point buy: {AttributeGen.PointBuyBudget - AttributeGen.PointsSpent(hero.Scores)} points left)", x, y, 15, Gold, face: Bold);
+        DrawText(dc, hero.Heroic ? $"Attributes (heroic: each level needs {(Progression.HeroicXp - 1) * 100:0}% more XP)"
+                   : hero.Rolled ? "Attributes (rolled: 4d6, drop the lowest)"
+                   : $"Attributes (point buy: {AttributeGen.PointBuyBudget - AttributeGen.PointsSpent(hero.Scores)} points left)", x, y, 15, Gold, face: Bold);
         y += 30;
         var preview = Safe(() => hero.Build(Content));
         foreach (var a in Enum.GetValues<Attribute>())
@@ -160,19 +185,20 @@ public sealed partial class GameView
             DrawText(dc, attr.ToString().ToUpperInvariant(), x, y + 4, 15, Parchment, face: Bold);
             int final = preview?.Score(attr) ?? hero.Scores[attr];
             DrawText(dc, $"{hero.Scores[attr]} → {final} ({AttributeSet.Modifier(final):+0;-0;0})", x + 60, y + 4, 15, Parchment);
-            if (!hero.Rolled)
+            if (!hero.Rolled && !hero.Heroic)
             {
                 Button(dc, new Rect(x + 200, y, 34, 30), "−", () => Nudge(hero, attr, -1), enabled: hero.Scores[attr] > AttributeGen.PointBuyMin);
                 Button(dc, new Rect(x + 240, y, 34, 30), "+", () => Nudge(hero, attr, +1), enabled: hero.Scores[attr] < AttributeGen.PointBuyMax && CanAfford(hero, attr));
             }
             y += 36;
         }
-        Button(dc, new Rect(x, y + 6, 160, 36), hero.Rolled ? "Point buy" : "Roll 4d6", () =>
-        {
-            if (hero.Rolled) hero.Standard(Content);
-            else { var (s, rolls) = AttributeGen.Roll4d6DropLowest(_dice); hero.Scores = s; hero.Rolls = rolls; hero.Rolled = true; }
-        });
-        if (hero.Rolled) Button(dc, new Rect(x + 170, y + 6, 120, 36), "Reroll", () => { var (s, rolls) = AttributeGen.Roll4d6DropLowest(_dice); hero.Scores = s; hero.Rolls = rolls; });
+        // Three ways to set them (spec 5.3). Heroic scores run 10–18, at the price of slower levels.
+        void Roll4d6() { var (s, rolls) = AttributeGen.Roll4d6DropLowest(_dice); hero.Scores = s; hero.Rolls = rolls; hero.Rolled = true; hero.Heroic = false; }
+        bool buying = !hero.Rolled && !hero.Heroic;
+        Button(dc, new Rect(x, y + 6, 120, 36), "Point buy", () => hero.Standard(Content), selected: buying);
+        Button(dc, new Rect(x + 130, y + 6, 120, 36), "Roll 4d6", Roll4d6, selected: hero.Rolled);
+        Button(dc, new Rect(x + 260, y + 6, 120, 36), "Heroic", () => hero.RollHeroic(Content, _dice), selected: hero.Heroic);
+        if (!buying) Button(dc, new Rect(x + 390, y + 6, 110, 36), "Reroll", () => { if (hero.Heroic) hero.RollHeroic(Content, _dice); else Roll4d6(); });
 
         // The preview.
         double px = 900, py = 330;

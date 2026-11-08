@@ -1,6 +1,7 @@
 using AVAHack.Characters;
 using AVAHack.Content;
 using AVAHack.Game;
+using AVAHack.Rules;
 using AVAHack.World;
 
 namespace AVAHack.Core.Tests;
@@ -31,7 +32,7 @@ public sealed class DelveReport(ITestOutputHelper output)
     {
         var db = ContentDb.LoadBuiltIn();
         string code = DelveOptions.Code(seed);
-        var heroes = party is null ? PartyTests.QuickParty(db) : new Party(party.Heroes.Select(h => Character.FromSave(db, h)).ToArray()) { Gold = party.Gold };
+        var heroes = party is null ? (Environment.GetEnvironmentVariable("AVAHACK_BALANCE_HEROIC") == "1" ? HeroicParty(db, seed) : PartyTests.QuickParty(db)) : new Party(party.Heroes.Select(h => Character.FromSave(db, h)).ToArray()) { Gold = party.Gold };
         var d = Delve.Start(db, heroes, new DelveOptions { Seed = code, Depth = depth });
         while (d.Depth < from) d.Descend();
         var g = d.Engine;
@@ -72,6 +73,27 @@ public sealed class DelveReport(ITestOutputHelper output)
                 + $" | hurt by {string.Join(", ", struck.OrderByDescending(x => x.Value).Take(5).Select(x => $"{x.Key} {x.Value}"))}"
                 + $" | boss {g.LivingBoss?.Name} {g.LivingBoss?.Hp:F0}/{g.LivingBoss?.MaxHp:F0} {bot.NodeReport} {bot.PreyReport} | about: {string.Join(", ", g.Monsters.Where(m => m.IsAlive && !m.Ally && m.IsAware && m.Cell.Distance(g.PartyCell) <= 8).Select(m => $"{m.Name}({m.Def.Level},{m.Hp:F0}hp)"))} | {string.Join(" / ", g.Log.TakeLast(int.TryParse(Environment.GetEnvironmentVariable("AVAHACK_BALANCE_LOG"), out int lines) ? lines : 2))}";
         return new Run(code, g.Mode, d.Depth, g.Time / 60, g.Kills, g.Party.Members.Max(m => m.Level), note);
+    }
+
+    /// <summary>
+    /// The quick-start party with heroic attributes (AVAHACK_BALANCE_HEROIC=1): each hero's rolls, best first, go where
+    /// its point buy put its best scores, as a player would lay them out.
+    /// </summary>
+    internal static Party HeroicParty(ContentDb db, ulong seed)
+    {
+        var rng = new Pcg32(seed ^ 0x4E50_1C);
+        var heroes = CharacterBuilder.QuickStartParty(db).Select(h =>
+        {
+            var rolled = AttributeGen.RollHeroic(rng).Scores;
+            var best = Enum.GetValues<AVAHack.Rules.Attribute>().Select(a => rolled[a]).OrderDescending().ToArray();
+            var order = Enum.GetValues<AVAHack.Rules.Attribute>().OrderByDescending(a => h.BaseAttributes[a]).ToArray(); // stable: ties keep their order
+            var scores = new AttributeSet();
+            for (int i = 0; i < 6; i++) scores[order[i]] = best[i];
+            return CharacterBuilder.Create(db, h.Name, h.Ancestry.Id, h.Calling.Id, h.Background.Id, scores, heroic: true);
+        }).ToArray();
+        var party = new Party(heroes);
+        Kit.Arm(db, party);
+        return party;
     }
 
     /// <summary>A level's mechanisms and a map: # wall, + / D L doors (shut, open, gate, locked), ^ v levers, o plates,

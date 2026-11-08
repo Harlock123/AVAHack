@@ -98,6 +98,23 @@ public sealed class RulesTests
     }
 
     [Fact]
+    public void A_heroic_roll_rolls_ones_again_and_keeps_no_score_under_ten()
+    {
+        // STR: a 1 rolled again (as 6), then 6 5 4 → 15. DEX: 2 2 2 2 → 6, under 10, so rolled again: 3 3 3 4 → 10.
+        var rng = new ScriptedRng(1, 6, 5, 4, 2,  2, 2, 2, 2,  3, 3, 3, 4,  6, 6, 6, 6,  5, 5, 5, 5,  4, 4, 4, 4,  3, 4, 4, 4);
+        var (s, rolls) = AttributeGen.RollHeroic(rng);
+        Assert.Equal([15, 10, 18, 15, 12, 12], Enum.GetValues<Attribute>().Select(a => s[a]));
+        Assert.Equal([6, 5, 4, 2], rolls[0]);
+        Assert.Equal([3, 3, 3, 4], rolls[1]);
+        // Over many rolls: 10–18, and about 14 on average (4d6 drop the lowest averages about 12.2).
+        var real = new Pcg32(77);
+        var scores = Enumerable.Range(0, 2000).SelectMany(_ => { var r = AttributeGen.RollHeroic(real).Scores; return Enum.GetValues<Attribute>().Select(a => r[a]); }).ToList();
+        Assert.InRange(scores.Min(), 10, 10);
+        Assert.Equal(18, scores.Max());
+        Assert.InRange(scores.Average(), 13.7, 14.4);
+    }
+
+    [Fact]
     public void Advantage_keeps_the_better_die_and_disadvantage_the_worse()
     {
         Assert.Equal(17, Checks.RollD20(new ScriptedRng(5, 17), Advantage.Advantage));

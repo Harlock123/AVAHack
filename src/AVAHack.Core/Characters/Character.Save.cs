@@ -12,7 +12,7 @@ public sealed partial class Character
         BaseAttributes = Enum.GetValues<Rules.Attribute>().Select(a => BaseAttributes[a]).ToArray(),
         Increases = Enum.GetValues<Rules.Attribute>().Select(a => _increases[a]).ToArray(),
         IncreasesThisLevel = (int[])_increasesThisLevel.Clone(),
-        Level = Level, CharacterXp = CharacterXp, PerkPoints = PerkPoints, AttributePoints = AttributePoints,
+        Level = Level, CharacterXp = CharacterXp, Heroic = Heroic, PerkPoints = PerkPoints, AttributePoints = AttributePoints,
         PendingLevelChoices = PendingLevelChoices, HealthChoices = HealthChoices, StaminaChoices = StaminaChoices,
         ManaChoices = ManaChoices, RecoverySpeedUps = RecoverySpeedUps, Respecs = Respecs, LessonsThisLevel = LessonsThisLevel,
         ExtraSkillXpPercent = ExtraSkillXpPercent - (LoneDelver ? 100 : 0), LoneDelver = LoneDelver,
@@ -52,6 +52,7 @@ public sealed partial class Character
         c.Respecs = s.Respecs;
         c.LessonsThisLevel = s.LessonsThisLevel;
         c._lone = s.LoneDelver;
+        c.Heroic = s.Heroic;
         c.ExtraSkillXpPercent = s.ExtraSkillXpPercent + (s.LoneDelver ? 100 : 0);
         Array.Copy(s.Ranks, c._rank, Math.Min(c._rank.Length, s.Ranks.Length));
         Array.Copy(s.Xp, c._xp, Math.Min(c._xp.Length, s.Xp.Length));

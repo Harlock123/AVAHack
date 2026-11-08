@@ -24,6 +24,7 @@ public sealed record CharacterSave
     public int[] IncreasesThisLevel { get; init; } = new int[6];
     public int Level { get; init; } = 1;
     public int CharacterXp { get; init; }
+    public bool Heroic { get; init; }
     public int PerkPoints { get; init; }
     public int AttributePoints { get; init; }
     public int PendingLevelChoices { get; init; }

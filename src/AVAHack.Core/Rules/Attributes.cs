@@ -37,7 +37,7 @@ public sealed class AttributeSet
     public override string ToString() => string.Join(' ', Enum.GetValues<Attribute>().Select(a => $"{a.ToString().ToUpperInvariant()} {this[a]}"));
 }
 
-/// <summary>Setting attributes at creation (spec 5.3): point buy or 4d6 drop the lowest.</summary>
+/// <summary>Setting attributes at creation (spec 5.3): point buy, 4d6 drop the lowest, or heroic.</summary>
 public static class AttributeGen
 {
     public const int PointBuyBudget = 27;
@@ -66,6 +66,32 @@ public static class AttributeGen
         foreach (var a in Enum.GetValues<Attribute>())
         {
             var four = new[] { rng.Die(6), rng.Die(6), rng.Die(6), rng.Die(6) };
+            rolls[(int)a] = four;
+            set[a] = four.Sum() - four.Min();
+        }
+        return (set, rolls);
+    }
+
+    /// <summary>The lowest score a heroic roll keeps.</summary>
+    public const int HeroicMin = 10;
+
+    /// <summary>
+    /// Heroic attributes (spec 5.3): 4d6 drop the lowest, with any 1 rolled again, and a score under
+    /// <see cref="HeroicMin"/> rolled again whole. Scores run 10–18 and average about 14. Returns the kept rolls.
+    /// </summary>
+    public static (AttributeSet Scores, int[][] Rolls) RollHeroic(Rng rng)
+    {
+        var set = new AttributeSet();
+        var rolls = new int[6][];
+        foreach (var a in Enum.GetValues<Attribute>())
+        {
+            int[] four;
+            do
+            {
+                four = new int[4];
+                for (int i = 0; i < 4; i++)
+                    do four[i] = rng.Die(6); while (four[i] == 1);
+            } while (four.Sum() - four.Min() < HeroicMin);
             rolls[(int)a] = four;
             set[a] = four.Sum() - four.Min();
         }

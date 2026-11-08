@@ -221,14 +221,14 @@ public sealed class CharacterTests
         Assert.Throws<ArgumentException>(() => CharacterBuilder.Create(db, "X", "human", "fighter", "miner", new AttributeSet(18, 16, 15, 12, 11, 9), heroic: true));
         var plain = CharacterBuilder.Create(db, "Y", "human", "fighter", "miner", new AttributeSet(15, 14, 13, 12, 10, 8));
         Assert.False(plain.Heroic);
-        // A quarter more XP for each level: 125 for level 2, not 100.
+        // 15% more XP for each level: 115 for level 2, not 100.
         Assert.Equal(100, plain.XpToNextLevel);
-        Assert.Equal(125, hero.XpToNextLevel);
+        Assert.Equal(115, hero.XpToNextLevel);
         Assert.Equal(1, plain.GainCharacterXp(100));
         Assert.Equal(0, hero.GainCharacterXp(100));
-        Assert.Equal(1, hero.GainCharacterXp(25));
+        Assert.Equal(1, hero.GainCharacterXp(15));
         Assert.Equal(2, hero.Level);
-        Assert.Equal(Progression.LevelXp(10) * 5 / 4 + (Progression.LevelXp(10) % 4 == 0 ? 0 : 1), Progression.LevelXp(10, heroic: true));
+        Assert.Equal((Progression.LevelXp(10) * 115 + 99) / 100, Progression.LevelXp(10, heroic: true)); // 1.15 ×, rounded up
         // A save keeps it.
         Assert.True(Character.FromSave(db, hero.ToSave()).Heroic);
         Assert.False(Character.FromSave(db, plain.ToSave()).Heroic);

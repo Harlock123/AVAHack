@@ -23,7 +23,7 @@ public static class Progression
     public const double SkillPace = 3;
 
     /// <summary>How much more character XP a heroic hero needs for each level (spec 5.3): the price of its attributes.</summary>
-    public const double HeroicXp = 1.25;
+    public const double HeroicXp = 1.15;
 
     /// <summary>The character XP for the next level, for a heroic hero or not.</summary>
     public static int LevelXp(int level, bool heroic) => heroic ? (int)Math.Ceiling(LevelXp(level) * HeroicXp) : LevelXp(level);

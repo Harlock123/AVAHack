@@ -22,7 +22,7 @@ The design is in [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md).
     and the Lens learns every blow you strike and throws a beam down the hall.
   Choose the seed, depth, monster strength, density, traps, magic items, food and Ironman before you start.
 - **Your party.** Up to four heroes, made from ancestries, callings and backgrounds. Attributes come from a point
-  buy, a 4d6 roll, or a heroic roll (10–18) that costs a quarter more XP for each level; each hero rolls once.
+  buy, a 4d6 roll, or a heroic roll (10–18) that costs 15% more XP for each level; each hero rolls once.
   Skills grow with use and kills bring experience, with level-ups and perk trees.
 - **The bestiary.** 100 creatures in seventeen families, plus wanderers, each drawn in code. Elites and named champions
   carry the 16 affixes, and bosses guard each region's way down. On level 6 the optional Hollow Choir sings five

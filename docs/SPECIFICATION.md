@@ -228,7 +228,7 @@ other kind of roll is closed. Any two rolled scores can swap places (click Swap 
 
 **Heroic attributes** are the third way: 4d6 dropping the lowest, with any 1 rolled again, and a score under 10
 rolled again whole. Scores run 10–18 and average about 14 (4d6 averages about 12). They are laid out for the
-calling, best first, as the standard array is. The price is slower levels: a heroic hero needs a quarter more
+calling, best first, as the standard array is. The price is slower levels: a heroic hero needs 15% more
 character XP for each level (section 7.3, `Progression.HeroicXp`). It is a fair trade, not an easy mode: the
 bot wins about as often either way (section 41).
 
@@ -388,7 +388,7 @@ up** (changed in M4 from the whole rank; see section 26). The XP needed for the 
 levelXp(L) = (L + 3) × 25        (L1→2: 100, L10→11: 325, L30→31: 825)
 ```
 
-A heroic hero (section 5.3) needs 1.25 × that, rounded up (L1→2: 125).
+A heroic hero (section 5.3) needs 1.15 × that, rounded up (L1→2: 115).
 
 Raising skills that are already high levels the character faster. That is intended: specialists level quickly.
 
@@ -2472,11 +2472,11 @@ outgrows the deep regions' own creatures, which are made near their depth. An Un
   changes.
 - **A fair trade.** The 12-level Delve report with heroic quick-start parties (`AVAHACK_BALANCE_HEROIC=1`, rolled
   from the seed and laid out by the quick-start heroes' own scores), on 16 seeds: normal parties won 10, heroic
-  ones 9. The heroic winners ended at level 21–22, the normal ones at 23–26. A quarter more XP is the price.
+  ones 9. The heroic winners ended at level 21–22, the normal ones at 23–26. A quarter more XP was the price, until the Knell (section 46).
   (Both runs had a seed stuck on the bot: AAAA62RB on its stairs in both, and AAAAVFWY on a hunt in the heroic
   one. Neither is in the 8 seeds the test suite plays. Both are fixed below.)
 - **Tests.** The roll (ones rolled again, a score under 10 rolled again, 10–18 averaging about 14); a heroic hero
-  needing 125 XP for level 2 and keeping the flag through a save; creation refusing a heroic score under 10; and,
+  needing 115 XP (was 125) for level 2 and keeping the flag through a save; creation refusing a heroic score under 10; and,
   in the App, the Heroic button making a heroic fighter with Strength its best score, and a hero's one roll
   coming back after point buy, with 4d6 closed.
 - **Three stuck seeds, fixed.**
@@ -2597,4 +2597,28 @@ boss calls up alone is needed, or the bot farms the Choir. The one real fault wa
   (38%), none stuck. Most falls are at the Bellwright Engine (4), on level 12 (3 to 6) and in the Knell's hall (5).
   Heroic parties now lag by five wins in 32, more than the one or two of section 41; the extra level may make their
   slower levels count for more. Worth another look before calling the trade fair again.
+
+## 46. Implementation decisions (the heroic price, again)
+
+Section 45 left heroic parties five wins in 32 behind normal ones, where before the Knell they had been one or two.
+On 64 seeds of the 12-level Delve, the Heart and the Knell:
+
+| Parties | Won | Winners' level |
+| --- | --- | --- |
+| Normal | 37 (58%) | 25–29 |
+| Heroic, 1.25 × the XP | 28 (44%) | 23–26 |
+| Heroic, 1.20 × | 31 (48%) | 24–27 |
+| Heroic, 1.15 × | 35 (55%) | 24–28 |
+
+(The 1.25 run was made before the two bot fixes below; normal parties won 38 then.) With a level more at the
+bottom, every level the heroes are behind counts for more. **`Progression.HeroicXp` is 1.15 now:** 115 XP for
+level 2, and heroic parties win within two in 64 of normal ones, their winners a level or so lower.
+
+- **Two bot stalls the 64 seeds turned up, fixed:**
+  - On level 6, while the Choir's Calling Voice kept sending creatures, every one the bot killed counted as
+    progress, so it never gave up on a chest or a singer it couldn't get to. Kills of what something called up don't
+    count now.
+  - In the Knell's hall the bot couldn't find the way to the bell, and with no stairs on that level it never
+    searched the walls. It searches when it can't reach the boss there, as it does for the stairs elsewhere.
+- **Results** on 64 seeds after the fixes: none stuck in any of the three runs.
 

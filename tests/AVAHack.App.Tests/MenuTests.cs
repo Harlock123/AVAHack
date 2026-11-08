@@ -161,7 +161,7 @@ public sealed class MenuTests
         var hero = v.Engine.Party.Members.Single();
         Assert.True(hero.Heroic);
         Assert.All(Enum.GetValues<AVAHack.Rules.Attribute>(), a => Assert.InRange(hero.BaseAttributes[a], 10, 18));
-        Assert.Equal(125, hero.XpToNextLevel);
+        Assert.Equal(115, hero.XpToNextLevel);
         // Laid out for the calling: the first hero is a fighter, so Strength is its best score.
         Assert.Equal(Enum.GetValues<AVAHack.Rules.Attribute>().Max(a => hero.BaseAttributes[a]), hero.BaseAttributes[AVAHack.Rules.Attribute.Str]);
     }

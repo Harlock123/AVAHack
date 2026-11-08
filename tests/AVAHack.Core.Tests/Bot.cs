@@ -204,7 +204,8 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             // and gets up again (AAABKTUF's level 4). Only a new high counts as done: a singer of the Choir that
             // rises takes its kill back, and kill-rise-kill must not keep the chase alive for ever (AAAAVFWY's level 6).
             object key = Goal == "hunt" && _prey is not null ? _prey : (Goal!, t);
-            int progress = g.Kills + _searched.Count + _looted.Count + _pulled.Count + _pressed.Count + g.Level.Chests.Count(c => c.Opened);
+            // Kills of what something called up don't count: there are always more (the Choir's Calling Voice).
+            int progress = g.Monsters.Count(m => m.State == MonsterState.Dead && m.SummonedBy == 0 && !m.Ally) + _searched.Count + _looted.Count + _pulled.Count + _pressed.Count + g.Level.Chests.Count(c => c.Opened);
             if (progress > _killsThen) { _killsThen = progress; _spent.Clear(); }
             else if ((_spent[key] = _spent.GetValueOrDefault(key) + dt) > 120) { _gaveUp.Add(key); _gaveUpAt[key] = g.Time; _spent.Remove(key); return; }
         }
@@ -354,7 +355,9 @@ internal sealed class Bot(GameEngine g, int seed = 1)
             if (g.LivingBoss is { } boss && Reachable(boss.Cell)) { Goal = "boss"; return (boss.Cell, null, null); }
         }
         // No way to the stairs: search the walls for a hidden door, nearest first, as a stuck player would.
-        if (Clears && g.Level.Stairs.Any() && !g.Level.Stairs.Any(Reachable) && WallToSearch() is { } w2)
+        // The Knell's hall has no stairs: there, it's the bell that must be found.
+        bool lost = g.Level.Stairs.Any() ? !g.Level.Stairs.Any(Reachable) : g.LivingBoss is { } last && !Reachable(last.Cell);
+        if (Clears && lost && WallToSearch() is { } w2)
         {
             Goal = "search";
             return (w2.Cell, w2.Face, null);
